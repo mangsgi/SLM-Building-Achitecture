@@ -2,71 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+/* Global CSS Variables for a modern look */
+
+@font-face {
+  font-family: 'Pretendard-Regular';
+  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff')
+    format('woff');
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+:root {
+  --font-family-base: 'Pretendard-Regular', sans-serif;
+  /* BlinkMacSystemFont, system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, */
+  --font-size-base: 16px;
+  --line-height-base: 1.5;
+  --color-text: #333333;
+  --color-background: #f4f7f9; /* 텍스트와 배경의 기본 색상 */
+  /* 주 색상, 어두운 주 색상, 보조 색상 정의 */
+  --color-primary: #000000; /* Tailwind blue-500 3b82f6 */
+  --color-primary-dark: #000000; /* Tailwind blue-600 2563eb*/
+  --color-secondary: #000000; /* Tailwind indigo-500 6366f1*/
+  /* 링크의 기본 색상과 호버 시 색상 */
+  --color-link: #000000; /* 3b82f6 */
+  --color-link-hover: #000000; /* 2563eb */
+  --transition-speed: 0.3s;
 }
-a:hover {
-  color: #535bf2;
+
+/* 기본 HTML 요소 스타일링 */
+html {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
 }
 
 body {
   margin: 0;
-  /* display: flex;
-  place-items: center; */
-  min-width: 320px;
+  background: var(--color-background);
+  color: var(--color-text);
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Modern Link Styles */
+a {
+  font-weight: 500;
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease;
+}
+a:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
 }
 
+/* Headings */
+h1 {
+  font-size: 2.5rem;
+  /* margin-bottom: 1rem; */
+  font-weight: 600;
+}
+
+/* Modern Button Styles */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  background-color: var(--color-primary);
+  color: white;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition:
+    background-color var(--transition-speed) ease,
+    transform 0.2s ease;
 }
 button:hover {
-  border-color: #646cff;
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
 }
 
+/* Modern Edge Button (used in ReactFlow edges) */
+/* .edgebutton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-secondary);
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    background var(--transition-speed) ease,
+    box-shadow var(--transition-speed) ease;
+}
+.edgebutton:hover {
+  background: var(--color-primary);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+} */
+/* 
+.edgebutton-foreignobject div {
+  background: transparent;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+} */
+
+/* ReactFlow Container Styling */
+/* .reactflow-parent-wrapper {
+  display: flex;
+  flex-grow: 1;
+  height: 100%;
+}
+.reactflow-parent-wrapper .reactflow-wrapper {
+  flex-grow: 1;
+  height: 100%;
+} */
+
+/* Chatflow Canvas Handle Styling */
+.chatflow-canvas .react-flow__handle-connecting {
+  cursor: not-allowed;
+  background: #e11d48 !important; /* red-600 */
+}
+.chatflow-canvas .react-flow__handle-valid {
+  cursor: crosshair;
+  background: #22c55e !important; /* green-500 */
+}
+
+/* Light Mode Adjustments */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    --color-background: #ffffff;
+    --color-text: #333333;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
   }
   a:hover {
-    color: #747bff;
+    color: var(--color-link-hover);
   }
   button {
-    background-color: #f9f9f9;
+    background-color: var(--color-primary);
+    color: white;
   }
 }
