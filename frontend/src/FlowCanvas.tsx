@@ -3,11 +3,12 @@ import ReactFlow, {
   addEdge,
   useNodesState,
   useEdgesState,
-  MiniMap,
+  // MiniMap,
   Controls,
   Connection,
   Edge,
   Node,
+  MarkerType,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -17,20 +18,22 @@ function FlowCanvas() {
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
-  // 노드 연결 이벤트 처리 (타입에 unknown 사용)
   const onConnect = useCallback(
     (params: Edge<unknown> | Connection) =>
-      setEdges((eds) => addEdge(params, eds)),
+      setEdges((eds) =>
+        addEdge(
+          { ...params, markerEnd: { type: MarkerType.ArrowClosed } },
+          eds,
+        ),
+      ),
     [setEdges],
   );
 
-  // 캔버스 위에 드래그 중일 때
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // 드롭 시 새로운 노드 생성
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -59,8 +62,7 @@ function FlowCanvas() {
   );
 
   return (
-    // Tailwind 클래스: 80% 너비, 전체 높이, 어두운 배경
-    <div ref={reactFlowWrapper} className="w-4/5 h-full bg-gray-900">
+    <div ref={reactFlowWrapper} className="w-full h-full bg-gray-50">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -69,9 +71,11 @@ function FlowCanvas() {
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        snapToGrid={true}
+        snapGrid={[3, 3]}
       >
         <Controls />
-        <MiniMap />
+        {/* <MiniMap /> */}
       </ReactFlow>
     </div>
   );

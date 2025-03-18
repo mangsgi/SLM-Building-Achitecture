@@ -1,6 +1,11 @@
 import React from 'react';
+import SidebarNodeItem from './SidebarNodeItem';
 
-const Sidebar = () => {
+interface SidebarProps {
+  onToggle: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   // 드래그 시작 시 dataTransfer에 노드 타입 저장
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
@@ -11,30 +16,45 @@ const Sidebar = () => {
   };
 
   return (
-    // Tailwind 클래스: 20% 너비, 전체 높이, 어두운 배경, 흰색 글자, 내부 여백
-    <aside className="w-1/5 h-full bg-gray-800 text-white p-4">
+    <aside className="w-1/5 h-full bg-green-100 p-4">
+      <div className="flex items-center justify-end">
+        <button
+          onClick={onToggle}
+          className="p-2 focus:outline-none"
+          aria-label="Toggle Sidebar"
+        >
+          {/* 햄버거 아이콘 */}
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+      </div>
       <h2 className="text-xl font-bold mb-4">레이어 목록</h2>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Transformer')}
-      >
-        Transformer Block
-      </div>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Linear')}
-      >
-        Linear Layer
-      </div>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Embedding')}
-      >
-        Embedding Layer
-      </div>
+      <SidebarNodeItem
+        nodeType="Transformer"
+        label="Transformer Block"
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="Linear"
+        label="Linear Layer"
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="Embedding"
+        label="Embedding Layer"
+        onDragStart={onDragStart}
+      />
     </aside>
   );
 };
