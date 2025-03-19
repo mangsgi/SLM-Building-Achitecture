@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 import math
+import numpy as np
 
 from config import GPT_CONFIG_124M as config
+from token_embedding import TokenEmbedding
 
 
 vocab_size = config["vocab_size"]
@@ -15,7 +17,7 @@ tokens = torch.randint(0, vocab_size, (1, 10))  # (batch, seq_len)
 class LearnedPositionalEmbedding(nn.Module): 
     def __init__(self, max_len, d_model):
         super().__init__()
-        self.position_embeddings = nn.Embedding(max_len, d_model)
+        self.position_embeddings = nn.Embedding(max_len, d_model) # 학습
 
     def forward(self, x):
         seq_len = x.shape[1]
@@ -26,10 +28,38 @@ class LearnedPositionalEmbedding(nn.Module):
 def learned_ex():
     pos_embedding_layer = LearnedPositionalEmbedding(context_length, emb_dim)
     positional_embeddings = pos_embedding_layer(tokens)
-    print(positional_embeddings.shape)  # 출력: torch.Size([1, 10, 512]) (batch, seq_len, d_model)
+    print(positional_embeddings.shape)  # 출력: torch.Size([1, 10, 768]) (batch, seq_len, d_model)
 
 
-# 2. 일반적인 위치 인코딩 대신, 토큰 간 상대적 거리를 학습 - (T5, Transformer-XL)
+# 2. 토큰 간 상대적 거리를 sin, cos 함수로 표현 
+class SinusoidalPositionalEmbedding(nn.Module):
+    def __init__(self, max_len, d_model):
+        super().__init__()
+        self.d_model = d_model
+        self.pe = self._generate_sinusoidal_embeddings(max_len, d_model)
+    
+    def _generate_sinusoidal_embeddings(self, seq_length, d_model):
+        position = np.arange(seq_length)[:, np.newaxis]  # Shape: (seq_length, 1)
+        div_term = np.exp(np.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))  # Shape: (d_model/2,)
+        
+        # 학습 X, 미리 생성
+        pe = np.zeros((seq_length, d_model))
+        pe[:, 0::2] = np.sin(position * div_term)  # Apply sin to even indices
+        pe[:, 1::2] = np.cos(position * div_term)  # Apply cos to odd indices
+        
+        return torch.tensor(pe, dtype=torch.float32).unsqueeze(0)  # Shape: (1, seq_length, d_model)
+    
+    def forward(self, x):
+        return self.pe[:, :x.shape[1], :]
+
+# 예제
+def sinusoidal_ex():
+    pos_embedding_layer = SinusoidalPositionalEmbedding(context_length, emb_dim)
+    positional_embeddings = pos_embedding_layer(tokens)
+    print(positional_embeddings.shape)  # Should output: (1, 10, 768)
+
+
+# 3. 일반적인 위치 인코딩 대신, 토큰 간 상대적 거리를 학습 - (T5, Transformer-XL)
 class RelativePositionalEncoding(nn.Module):
     def __init__(self, max_len, d_model):
         super().__init__()
@@ -48,7 +78,7 @@ def relative_ex():
     print(rel_pos_embeddings.shape)  # 출력: torch.Size([10, 10, 512]) 
 
 
-# 3. 위치를 임베딩 벡터 회전(rotate) 연산으로 인코딩 - (LLaMA, GPT-4)
+# 4. 위치를 임베딩 벡터 회전(rotate) 연산으로 인코딩 - (LLaMA, GPT-4)
 class RotaryPositionalEmbedding(nn.Module):
     def __init__(self, d_model):
         super().__init__()
@@ -73,7 +103,8 @@ def rotary_ex():
 
 
 if __name__ == "__main__":
+    print(tokens.shape)
     learned_ex()
+    sinusoidal_ex()
     relative_ex()
     rotary_ex()
-    print(tokens.shape)
