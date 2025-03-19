@@ -61,7 +61,7 @@ def sinusoidal_ex():
 """
 word embedding + positional embedding 단순 덧셈(두 임베딩 차원 동일)
 ==========================================================================================================================
-
+쿼리 & 키 벡터가 input이 되므로 어텐션 계산 중간에 수행됨
 """
 
 # 3. 일반적인 위치 인코딩 대신, 토큰 간 상대적 거리를 학습 - (T5, Transformer-XL)
@@ -86,37 +86,63 @@ class RelativePositionalEmbedding(nn.Module):
 
 # 예제
 def relative_ex():
-    queries = torch.randint(0, vocab_size, (1, 10, emb_dim))
-    keys = torch.randint(0, vocab_size, (1, 10, emb_dim))  
+    queries = torch.randn(1, 10, emb_dim)  # 쿼리 벡터
+    keys = torch.randn(1, 10, emb_dim)  # 키 벡터
     
     pos_embedding_layer = RelativePositionalEmbedding(context_length, emb_dim)
-    relative_positional_embeddings = pos_embedding_layer(queries, keys)
+    relative_positional_embeddings = pos_embedding_layer(queries, keys) # 어텐션 연산에 쓰이는 토큰 간 상대적 거리 임베딩 벡터
     
-    print(relative_positional_embeddings.shape)  # Should output: (token_len, token_len, emb_dim) -> 각 토큰 사이의 상대적 거리에 대한 임베딩 값
+    print(relative_positional_embeddings.shape)  # Should output: (token_len, token_len, emb_dim) -> 각 토큰 사이의 상대적 거리에 대한 임베딩 값 (10, 10, 768)
 
 
-# 4. 위치를 임베딩 벡터 회전(rotate) 연산으로 인코딩 - (LLaMA, GPT-4)
+# 4. 위치를 임베딩 벡터 회전(rotate) 연산으로 인코딩 - (LLaMA, GPT-4 등 최신 모델)
 class RotaryPositionalEmbedding(nn.Module):
-    def __init__(self, d_model):
+    def __init__(self, d_model, max_len):
         super().__init__()
         self.d_model = d_model
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, d_model, 2).float() / d_model))
-        self.register_buffer("inv_freq", inv_freq)
+        self.max_len = max_len
 
-    def forward(self, x):
-        seq_len = x.shape[1]
-        positions = torch.arange(seq_len, device=x.device).unsqueeze(1)  # [seq_len, 1]
-        sinusoid_inp = positions * self.inv_freq
-        sin, cos = sinusoid_inp.sin(), sinusoid_inp.cos()
-        emb = torch.cat([sin, cos], dim=-1)  # [seq_len, d_model]
+        # 위치별 회전 각도 (theta) 생성
+        position = torch.arange(max_len).unsqueeze(1)  # (max_len, 1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))  # (d_model/2,)
 
-        return emb.unsqueeze(0)  # [1, seq_len, d_model]
+        # 짝수 인덱스에는 cos, 홀수 인덱스에는 sin 적용
+        self.theta = torch.zeros(max_len, d_model)
+        self.theta[:, 0::2] = torch.cos(position * div_term)  # 짝수 차원
+        self.theta[:, 1::2] = torch.sin(position * div_term)  # 홀수 차원
 
-# 예제 실행
+    def forward(self, x, pos):
+        """
+        x: (batch_size, seq_len, d_model) - 입력 벡터
+        pos: (seq_len,) - 토큰 위치 인덱스
+        """
+        # 위치 정보에 해당하는 회전 행렬 추출
+        theta = self.theta[pos]  # (seq_len, d_model)
+
+        # 짝수 차원: cos(theta) * x_even - sin(theta) * x_odd
+        # 홀수 차원: sin(theta) * x_even + cos(theta) * x_odd
+        x_even = x[..., 0::2]
+        x_odd = x[..., 1::2]
+
+        x_rotated = torch.zeros_like(x)
+        x_rotated[..., 0::2] = x_even * theta[:, 0::2] - x_odd * theta[:, 1::2]
+        x_rotated[..., 1::2] = x_even * theta[:, 1::2] + x_odd * theta[:, 0::2]
+
+        return x_rotated
+
+# 예제
 def rotary_ex():
-    rope_embedding = RotaryPositionalEmbedding(emb_dim)
-    rope_pos_embeddings = rope_embedding(tokens)
-    print(rope_pos_embeddings.shape)  # 출력: torch.Size([1, 10, 512])
+    queries = torch.randn(1, 10, emb_dim)  # 쿼리 벡터
+    keys = torch.randn(1, 10, emb_dim)  # 키 벡터
+
+    rope = RotaryPositionalEmbedding(emb_dim, context_length)
+    position_ids = torch.arange(10)  # (seq_len,)
+
+    queries_rotated = rope(queries, position_ids)
+    keys_rotated = rope(keys, position_ids)
+
+    print(queries_rotated.shape)  # (1, 10, 768)
+    print(keys_rotated.shape)  # (1, 10, 768)
 
 
 if __name__ == "__main__":
