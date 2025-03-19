@@ -58,24 +58,41 @@ def sinusoidal_ex():
     positional_embeddings = pos_embedding_layer(tokens)
     print(positional_embeddings.shape)  # Should output: (1, 10, 768)
 
+"""
+word embedding + positional embedding 단순 덧셈(두 임베딩 차원 동일)
+==========================================================================================================================
+
+"""
 
 # 3. 일반적인 위치 인코딩 대신, 토큰 간 상대적 거리를 학습 - (T5, Transformer-XL)
-class RelativePositionalEncoding(nn.Module):
+class RelativePositionalEmbedding(nn.Module):
     def __init__(self, max_len, d_model):
         super().__init__()
-        self.relative_embeddings = nn.Embedding(2 * max_len, d_model)
-
-    def forward(self, x):
-        seq_len = x.shape[1]
-        positions = torch.arange(seq_len, device=x.device).view(-1, 1) - torch.arange(seq_len, device=x.device).view(1, -1)
-        positions = positions + (seq_len - 1)  # 음수를 방지
-        return self.relative_embeddings(positions)
+        self.d_model = d_model
+        self.max_len = max_len
+        
+        # 상대적 위치 행렬을 위한 임베딩 테이블 생성 - 상대적 위치이므로 행 크기 2배
+        self.rel_emb = nn.Embedding(2 * max_len, d_model)
+    
+    def forward(self, q, k):
+        q_len = q.shape[1]
+        k_len = k.shape[1]
+        
+        # 상대적 위치 행렬 생성 (i - j)
+        position_ids = torch.arange(q_len, device=q.device).unsqueeze(1) - torch.arange(k_len, device=k.device).unsqueeze(0)
+        position_ids = position_ids + self.max_len  # 음수 방지 (Offset)
+        
+        return self.rel_emb(position_ids)  # (q_len, k_len, d_model)
 
 # 예제
 def relative_ex():
-    rel_pos_embedding = RelativePositionalEncoding(context_length, emb_dim)
-    rel_pos_embeddings = rel_pos_embedding(tokens)
-    print(rel_pos_embeddings.shape)  # 출력: torch.Size([10, 10, 512]) 
+    queries = torch.randint(0, vocab_size, (1, 10, emb_dim))
+    keys = torch.randint(0, vocab_size, (1, 10, emb_dim))  
+    
+    pos_embedding_layer = RelativePositionalEmbedding(context_length, emb_dim)
+    relative_positional_embeddings = pos_embedding_layer(queries, keys)
+    
+    print(relative_positional_embeddings.shape)  # Should output: (token_len, token_len, emb_dim) -> 각 토큰 사이의 상대적 거리에 대한 임베딩 값
 
 
 # 4. 위치를 임베딩 벡터 회전(rotate) 연산으로 인코딩 - (LLaMA, GPT-4)

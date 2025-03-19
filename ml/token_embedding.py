@@ -20,7 +20,7 @@ class TokenEmbedding(nn.Module):
 def token_ex():
     embedding_layer = TokenEmbedding(vocab_size, emb_dim)
     embedded_tokens = embedding_layer(tokens)
-    print(embedded_tokens.shape)  # 출력: torch.Size([1, 10, 512])
+    print(embedded_tokens.shape)  # 출력: torch.Size([1, 10, 768])
 
 
 if __name__ == "__main__":
