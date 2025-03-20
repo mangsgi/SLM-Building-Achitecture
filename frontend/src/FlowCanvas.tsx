@@ -8,11 +8,14 @@ import ReactFlow, {
   Connection,
   Edge,
   Node,
-  MarkerType,
+  // MarkerType, { type: MarkerType.ArrowClosed }
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 import * as GPT2Nodes from './nodes/GPT2Nodes';
+import TokenEmbeddingLayer from './nodes/TokenEmbedding';
+import PositionalEmbeddingLayer from './nodes/PositionalEmbedding';
+import LayerNormLayer from './nodes/LayerNorm';
 
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -22,27 +25,21 @@ function FlowCanvas() {
 
   const nodeTypes = useMemo(
     () => ({
-      tokenEmbedding: GPT2Nodes.TokenEmbeddingLayer,
-      positionalEmbedding: GPT2Nodes.PositionalEmbeddingLayer,
+      tokenEmbedding: TokenEmbeddingLayer,
+      positionalEmbedding: PositionalEmbeddingLayer,
+      layerNorm: LayerNormLayer,
       maskedMultiHeadAttention: GPT2Nodes.MaskedMultiHeadAttention,
-      layerNorm1: GPT2Nodes.LayerNorm1,
       feedForward: GPT2Nodes.FeedForward,
       dropout: GPT2Nodes.Dropout,
-      layerNorm2: GPT2Nodes.LayerNorm2,
-      finalLayerNorm: GPT2Nodes.FinalLayerNorm,
       linearOutput: GPT2Nodes.LinearOutputLayer,
     }),
     [],
   );
 
+  // Node Connect 이벤트 처리
   const onConnect = useCallback(
     (params: Edge<unknown> | Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          { ...params, markerEnd: { type: MarkerType.ArrowClosed } },
-          eds,
-        ),
-      ),
+      setEdges((eds) => addEdge({ ...params }, eds)),
     [setEdges],
   );
 
@@ -51,7 +48,7 @@ function FlowCanvas() {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Sidebar의 Node를 canvas에 Drop할 때 함수
+  // Sidebar의 Node를 Canvas에 Drop 이벤트 처리
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -61,6 +58,7 @@ function FlowCanvas() {
 
       const dataString = event.dataTransfer.getData('application/reactflow');
       if (!dataString) return;
+
       const parsedData = JSON.parse(dataString);
       const { nodeType, label, ...props } = parsedData;
 

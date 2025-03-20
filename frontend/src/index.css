@@ -14,7 +14,6 @@
 
 :root {
   --font-family-base: 'Pretendard-Regular', sans-serif;
-  /* BlinkMacSystemFont, system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, */
   --font-size-base: 16px;
   --line-height-base: 1.5;
   --color-text: #333333;
@@ -86,66 +85,14 @@ button:focus-visible {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
 }
 
-/* Modern Edge Button (used in ReactFlow edges) */
-/* .edgebutton {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: var(--color-secondary);
-  border: 2px solid white;
-  border-radius: 50%;
-  cursor: pointer;
-  transition:
-    background var(--transition-speed) ease,
-    box-shadow var(--transition-speed) ease;
-}
-.edgebutton:hover {
-  background: var(--color-primary);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
-} */
-/* 
-.edgebutton-foreignobject div {
-  background: transparent;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */
-
-/* ReactFlow Container Styling */
-/* .reactflow-parent-wrapper {
-  display: flex;
-  flex-grow: 1;
-  height: 100%;
-}
-.reactflow-parent-wrapper .reactflow-wrapper {
-  flex-grow: 1;
-  height: 100%;
-} */
-
-/* Chatflow Canvas Handle Styling */
-/* .chatflow-canvas .react-flow__handle-connecting {
-  cursor: not-allowed;
-  background: #e11d48 !important; /* red-600 
-} */
-/* .chatflow-canvas .react-flow__handle-valid {
-  cursor: crosshair;
-  background: #22c55e !important; /* green-500
-} */
-
-/* Input 태그의 스피너 제거 */
-/* Chrome, Safari, Edge, Opera */
+/* Input 태그의 스피너 제거 ( Chrome, Safari, Edge, Opera / Firefox ) */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-/* Firefox */
 input[type='number'] {
-  -moz-appearance: textfield;
+  appearance: textfield; /* -moz-appearance */
 }
 
 /* Light Mode Adjustments */

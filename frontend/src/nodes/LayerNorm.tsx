@@ -7,19 +7,19 @@ import {
   EditField,
   ActionButton,
 } from './NodeComponents';
-import { TokenEmbeddingData } from './NodeData';
+import { LayerNormData } from './NodeData';
 import NodeWrapper from './NodeWrapper';
 
-export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
+export const LayerNormLayer: React.FC<{ data: LayerNormData }> = ({
   data: initialData,
 }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [vocabSizeStr, setVocabSizeStr] = useState<string>(
-    initialData.vocabSize.toString(),
+  const [inDimStr, setInDimStr] = useState<string>(
+    initialData.inDim.toString(),
   );
-  const [embDimStr, setEmbDimStr] = useState<string>(
-    initialData.embDim.toString(),
+  const [outDimStr, setOutDimStr] = useState<string>(
+    initialData.outDim.toString(),
   );
 
   // Edit 버튼 클릭
@@ -32,9 +32,8 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
   // Save 버튼 클릭
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    const newVocabSize =
-      vocabSizeStr === '' ? initialData.vocabSize : Number(vocabSizeStr);
-    const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
+    const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
+    const newOutDim = outDimStr === '' ? initialData.outDim : Number(outDimStr);
 
     setEditMode(false);
 
@@ -47,8 +46,8 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
               ...node,
               data: {
                 ...node.data,
-                vocabSize: newVocabSize,
-                embDim: newEmbDim,
+                inDim: newInDim,
+                outDim: newOutDim,
               },
             };
           }
@@ -64,20 +63,20 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
       {editMode ? (
         <div>
           <EditField
-            label="Vocabulary Size:"
-            id="vocabSizeInput"
-            name="vocabSize"
-            value={vocabSizeStr}
-            placeholder="Enter Vocabulary Size"
-            onChange={setVocabSizeStr}
+            label="Input Dimension:"
+            id="inDimInput"
+            name="inDim"
+            value={inDimStr}
+            placeholder="Enter Input Dimension"
+            onChange={setInDimStr}
           />
           <EditField
-            label="Embedding Dimension Size:"
-            id="embDimSize"
-            name="embDim"
-            value={embDimStr}
-            placeholder="Enter embedding dimension"
-            onChange={setEmbDimStr}
+            label="Output Dimension:"
+            id="outDimInput"
+            name="outDim"
+            value={outDimStr}
+            placeholder="Enter Output Dimension"
+            onChange={setOutDimStr}
           />
           <ActionButton onClick={handleSaveClick} className="bg-green-200">
             Save
@@ -85,8 +84,8 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
         </div>
       ) : (
         <div>
-          <ReadField label="Vocabulary Size:" value={vocabSizeStr} />
-          <ReadField label="Embedding Dimension Size:" value={embDimStr} />
+          <ReadField label="Input Dimension:" value={inDimStr} />
+          <ReadField label="Output Dimension:" value={outDimStr} />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>
@@ -96,4 +95,4 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
   );
 };
 
-export default TokenEmbeddingLayer;
+export default LayerNormLayer;
