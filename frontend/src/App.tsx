@@ -2,7 +2,7 @@ import { ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useState } from 'react';
 
-import CanvasHamburgerIcon from './CanvasHamburgerIcon';
+import CanvasHamburgerIcon from './ui-component/CanvasHamburgerIcon';
 import Sidebar from './Sidebar';
 import FlowCanvas from './FlowCanvas';
 
@@ -13,7 +13,7 @@ function App() {
   return (
     <div className="flex flex-col w-full h-screen">
       {/* Header 영역 */}
-      <header className="bg-green-100 p-4 shadow">
+      <header className="bg-white p-4 shadow">
         <h1 className="text-2xl font-semibold text-left">
           나만의 작은 언어 모델 만들기
         </h1>
