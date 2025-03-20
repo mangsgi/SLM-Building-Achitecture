@@ -31,26 +31,35 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       {/* GPT-2 노드 항목들 */}
       <SidebarNodeItem
         nodeType="tokenEmbedding"
-        label="Token Embedding Layer"
-        nodeData={{ inDim: 50000, outDim: 768 }}
+        nodeData={{
+          vocabSize: 50267,
+          embDim: 768,
+          label: 'Token Embedding Layer',
+        }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="positionalEmbedding"
-        label="Positional Embedding Layer"
-        nodeData={{ inDim: 512, outDim: 768 }}
+        nodeData={{
+          ctxLength: 512,
+          embDim: 768,
+          label: 'Positional Embedding Layer',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="layerNorm"
+        nodeData={{
+          inDim: 768,
+          outDim: 512,
+          label: 'Layer Normalization Layer',
+        }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="maskedMultiHeadAttention"
         label="Masked Multi-Head Attention"
         nodeData={{ inDim: 768, outDim: 768, numHeads: 12 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="layerNorm1"
-        label="LayerNorm 1"
-        nodeData={{ inDim: 768, outDim: 768 }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
@@ -66,21 +75,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="layerNorm2"
-        label="LayerNorm 2"
-        nodeData={{ inDim: 768, outDim: 768 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="finalLayerNorm"
-        label="Final LayerNorm"
-        nodeData={{ inDim: 768, outDim: 768 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
         nodeType="linearOutput"
         label="Linear Output Layer"
-        nodeData={{ inDim: 768, outDim: 50000 }}
+        nodeData={{ inDim: 768, outDim: 50267 }}
         onDragStart={onDragStart}
       />
     </aside>

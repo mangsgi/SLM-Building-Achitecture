@@ -1,16 +1,10 @@
 import React from 'react';
 
-// 차원 정보를 담은 JSON 문자열 datatransfer
-interface NodeData {
-  inDim: number;
-  outDim: number;
-  [key: string]: unknown;
-}
+import { BaseNodeData } from './nodes/NodeData';
 
 interface SidebarNodeItemProps {
   nodeType: string;
-  label: string;
-  nodeData: NodeData;
+  nodeData: BaseNodeData;
   onDragStart: (
     event: React.DragEvent<HTMLDivElement>,
     nodeType: string,
@@ -19,11 +13,10 @@ interface SidebarNodeItemProps {
 
 const SidebarNodeItem: React.FC<SidebarNodeItemProps> = ({
   nodeType,
-  label,
   nodeData,
   onDragStart,
 }) => {
-  const dataString = JSON.stringify({ nodeType, label, ...nodeData });
+  const dataString = JSON.stringify({ nodeType, ...nodeData });
 
   return (
     <div
@@ -31,7 +24,7 @@ const SidebarNodeItem: React.FC<SidebarNodeItemProps> = ({
       draggable
       onDragStart={(event) => onDragStart(event, dataString)}
     >
-      {label}
+      {nodeData.label}
     </div>
   );
 };

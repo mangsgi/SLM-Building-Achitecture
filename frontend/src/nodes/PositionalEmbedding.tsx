@@ -1,25 +1,45 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
+import { PositionalEmbeddingData, Option } from './NodeData';
+import NodeWrapper from './NodeWrapper';
 import {
   NodeTitle,
   ReadField,
   EditField,
   ActionButton,
+  EditSelectField,
 } from './NodeComponents';
-import { TokenEmbeddingData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
 
-export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
-  data: initialData,
-}) => {
+const posTypeOptions: Option[] = [
+  {
+    value: 'LearnedPositionalEmbedding',
+    label: 'Learned Positional Embedding',
+  },
+  {
+    value: 'SinusoidalPositionalEmbedding',
+    label: 'Sinusoidal Positional Embedding',
+  },
+  {
+    value: 'RelativePositionalEmbedding',
+    label: 'Relative Positional Embedding',
+  },
+  { value: 'RotaryPositionalEmbedding', label: 'Rotary Positional Embedding' },
+];
+
+export const TokenEmbeddingLayer: React.FC<{
+  data: PositionalEmbeddingData;
+}> = ({ data: initialData }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [vocabSizeStr, setVocabSizeStr] = useState<string>(
-    initialData.vocabSize.toString(),
+  const [ctxLengthStr, setCtxLengthStr] = useState<string>(
+    initialData.ctxLength.toString(),
   );
   const [embDimStr, setEmbDimStr] = useState<string>(
     initialData.embDim.toString(),
+  );
+  const [posType, setPosType] = useState<string>(
+    initialData.posEmbeddingType || 'LearnedPositionalEmbedding',
   );
 
   // Edit 버튼 클릭
@@ -32,8 +52,8 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
   // Save 버튼 클릭
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    const newVocabSize =
-      vocabSizeStr === '' ? initialData.vocabSize : Number(vocabSizeStr);
+    const newContextLength =
+      ctxLengthStr === '' ? initialData.ctxLength : Number(ctxLengthStr);
     const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
 
     setEditMode(false);
@@ -47,8 +67,9 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
               ...node,
               data: {
                 ...node.data,
-                vocabSize: newVocabSize,
+                ctxLength: newContextLength,
                 embDim: newEmbDim,
+                posEmbeddingType: posType,
               },
             };
           }
@@ -64,12 +85,12 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
       {editMode ? (
         <div>
           <EditField
-            label="Vocabulary Size:"
-            id="vocabSizeInput"
-            name="vocabSize"
-            value={vocabSizeStr}
-            placeholder="Enter Vocabulary Size"
-            onChange={setVocabSizeStr}
+            label="Context Length:"
+            id="ctxLengthInput"
+            name="ctxLength"
+            value={ctxLengthStr}
+            placeholder="Enter Context Length"
+            onChange={setCtxLengthStr}
           />
           <EditField
             label="Embedding Dimension Size:"
@@ -79,14 +100,29 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
             placeholder="Enter embedding dimension"
             onChange={setEmbDimStr}
           />
+          <EditSelectField
+            label="Positional Embedding Type:"
+            id="posTypeSelect"
+            name="posType"
+            value={posType}
+            onChange={setPosType}
+            options={posTypeOptions}
+          />
           <ActionButton onClick={handleSaveClick} className="bg-green-200">
             Save
           </ActionButton>
         </div>
       ) : (
         <div>
-          <ReadField label="Vocabulary Size:" value={vocabSizeStr} />
+          <ReadField label="Context Length:" value={ctxLengthStr} />
           <ReadField label="Embedding Dimension Size:" value={embDimStr} />
+          <ReadField
+            label="Positional Embedding Type:"
+            value={
+              posTypeOptions.find((option) => option.value === posType)
+                ?.label || posType
+            }
+          />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>

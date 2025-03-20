@@ -22,7 +22,7 @@ function App() {
       <div className="flex flex-grow relative">
         <ReactFlowProvider>
           {isSidebarOpen && <Sidebar onToggle={toggleSidebar} />}
-          {/* FlowCanvas를 감싸는 래퍼에 flex-1 추가 */}
+          {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
           <div className="flex-1">
             <FlowCanvas />
           </div>
