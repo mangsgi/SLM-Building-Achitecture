@@ -127,13 +127,25 @@ button:focus-visible {
 } */
 
 /* Chatflow Canvas Handle Styling */
-.chatflow-canvas .react-flow__handle-connecting {
+/* .chatflow-canvas .react-flow__handle-connecting {
   cursor: not-allowed;
-  background: #e11d48 !important; /* red-600 */
-}
-.chatflow-canvas .react-flow__handle-valid {
+  background: #e11d48 !important; /* red-600 
+} */
+/* .chatflow-canvas .react-flow__handle-valid {
   cursor: crosshair;
-  background: #22c55e !important; /* green-500 */
+  background: #22c55e !important; /* green-500
+} */
+
+/* Input 태그의 스피너 제거 */
+/* Chrome, Safari, Edge, Opera */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 /* Light Mode Adjustments */

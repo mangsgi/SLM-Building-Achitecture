@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   useNodesState,
@@ -12,11 +12,28 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+import * as GPT2Nodes from './nodes/GPT2Nodes';
+
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  const nodeTypes = useMemo(
+    () => ({
+      tokenEmbedding: GPT2Nodes.TokenEmbeddingLayer,
+      positionalEmbedding: GPT2Nodes.PositionalEmbeddingLayer,
+      maskedMultiHeadAttention: GPT2Nodes.MaskedMultiHeadAttention,
+      layerNorm1: GPT2Nodes.LayerNorm1,
+      feedForward: GPT2Nodes.FeedForward,
+      dropout: GPT2Nodes.Dropout,
+      layerNorm2: GPT2Nodes.LayerNorm2,
+      finalLayerNorm: GPT2Nodes.FinalLayerNorm,
+      linearOutput: GPT2Nodes.LinearOutputLayer,
+    }),
+    [],
+  );
 
   const onConnect = useCallback(
     (params: Edge<unknown> | Connection) =>
@@ -34,6 +51,7 @@ function FlowCanvas() {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Sidebar의 Node를 canvas에 Drop할 때 함수
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -41,19 +59,22 @@ function FlowCanvas() {
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       if (!reactFlowBounds) return;
 
-      const nodeType = event.dataTransfer.getData('application/reactflow');
-      if (!nodeType) return;
+      const dataString = event.dataTransfer.getData('application/reactflow');
+      if (!dataString) return;
+      const parsedData = JSON.parse(dataString);
+      const { nodeType, label, ...props } = parsedData;
 
       const position = {
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       };
 
+      const id = `${nodeType}-${+new Date()}`;
       const newNode: Node = {
-        id: `${nodeType}-${+new Date()}`,
-        type: 'default',
+        id,
+        type: nodeType,
         position,
-        data: { label: `${nodeType} Node` },
+        data: { id, label, ...props }, // id를 data에도 포함
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -73,6 +94,7 @@ function FlowCanvas() {
         onDragOver={onDragOver}
         snapToGrid={true}
         snapGrid={[3, 3]}
+        nodeTypes={nodeTypes} // 전달된 nodeTypes 매핑 적용
       >
         <Controls />
         {/* <MiniMap /> */}
