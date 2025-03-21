@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { PositionalEmbeddingData, Option } from './NodeData';
+import { PositionalEmbeddingData } from './NodeData'; //, Option
 import NodeWrapper from './NodeWrapper';
 import {
   NodeTitle,
@@ -11,27 +11,19 @@ import {
   EditSelectField,
 } from './NodeComponents';
 
-const posTypeOptions: Option[] = [
-  {
-    value: 'LearnedPositionalEmbedding',
-    label: 'Learned Positional Embedding',
-  },
-  {
-    value: 'SinusoidalPositionalEmbedding',
-    label: 'Sinusoidal Positional Embedding',
-  },
-  {
-    value: 'RelativePositionalEmbedding',
-    label: 'Relative Positional Embedding',
-  },
-  { value: 'RotaryPositionalEmbedding', label: 'Rotary Positional Embedding' },
+const posTypeOptions: string[] = [
+  'Learned Positional Embedding',
+  'Sinusoidal Positional Embedding',
+  'Relative Positional Embedding',
+  'Rotary Positional Embedding',
 ];
 
-export const TokenEmbeddingLayer: React.FC<{
+export const PositionalEmbeddingLayer: React.FC<{
   data: PositionalEmbeddingData;
 }> = ({ data: initialData }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
+
   const [ctxLengthStr, setCtxLengthStr] = useState<string>(
     initialData.ctxLength.toString(),
   );
@@ -39,7 +31,7 @@ export const TokenEmbeddingLayer: React.FC<{
     initialData.embDim.toString(),
   );
   const [posType, setPosType] = useState<string>(
-    initialData.posEmbeddingType || 'LearnedPositionalEmbedding',
+    initialData.posEmbeddingType || 'Learned Positional Embedding',
   );
 
   // Edit 버튼 클릭
@@ -89,11 +81,11 @@ export const TokenEmbeddingLayer: React.FC<{
             id="ctxLengthInput"
             name="ctxLength"
             value={ctxLengthStr}
-            placeholder="Enter Context Length"
+            placeholder="Enter context length"
             onChange={setCtxLengthStr}
           />
           <EditField
-            label="Embedding Dimension Size:"
+            label="Embedding dimension size:"
             id="embDimSize"
             name="embDim"
             value={embDimStr}
@@ -116,13 +108,7 @@ export const TokenEmbeddingLayer: React.FC<{
         <div>
           <ReadField label="Context Length:" value={ctxLengthStr} />
           <ReadField label="Embedding Dimension Size:" value={embDimStr} />
-          <ReadField
-            label="Positional Embedding Type:"
-            value={
-              posTypeOptions.find((option) => option.value === posType)
-                ?.label || posType
-            }
-          />
+          <ReadField label="Positional Embedding Type:" value={posType} />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>
@@ -132,4 +118,4 @@ export const TokenEmbeddingLayer: React.FC<{
   );
 };
 
-export default TokenEmbeddingLayer;
+export default PositionalEmbeddingLayer;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Option } from './NodeData';
+// import { Option } from './NodeData';
 
 export const NodeTitle: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -66,7 +66,7 @@ export const EditSelectField: React.FC<{
   name: string;
   value: string;
   onChange: (value: string) => void;
-  options: Option[];
+  options: string[];
 }> = ({ label, id, name, value, onChange, options }) => {
   return (
     <div className="mb-2">
@@ -81,8 +81,8 @@ export const EditSelectField: React.FC<{
         className="border rounded p-1 text-sm w-full"
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
+          <option key={opt} value={opt}>
+            {opt}
           </option>
         ))}
       </select>

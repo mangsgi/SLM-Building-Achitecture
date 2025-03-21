@@ -48,11 +48,37 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
+        nodeType="linear"
+        nodeData={{ inDim: 768, outDim: 50267, label: 'Linear Layer' }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
         nodeType="layerNorm"
         nodeData={{
           inDim: 768,
-          outDim: 512,
           label: 'Layer Normalization Layer',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="feedForward"
+        nodeData={{
+          inDim: 768,
+          numOfFactor: 3072,
+          actFunc: 'GELU',
+          label: 'Feed Forward Layer',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="dropout"
+        nodeData={{ dropoutRate: 0.1, label: 'Dropout Layer' }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="dynamicBlock"
+        nodeData={{
+          label: 'Dynamic Block',
         }}
         onDragStart={onDragStart}
       />
@@ -60,24 +86,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         nodeType="maskedMultiHeadAttention"
         label="Masked Multi-Head Attention"
         nodeData={{ inDim: 768, outDim: 768, numHeads: 12 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="feedForward"
-        label="Feed Forward"
-        nodeData={{ inDim: 768, outDim: 3072 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="dropout"
-        label="Dropout"
-        nodeData={{ inDim: 3072, outDim: 3072, dropoutRate: 0.1 }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="linearOutput"
-        label="Linear Output Layer"
-        nodeData={{ inDim: 768, outDim: 50267 }}
         onDragStart={onDragStart}
       />
     </aside>
