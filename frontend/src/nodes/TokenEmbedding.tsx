@@ -15,6 +15,7 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
 }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
+
   const [vocabSizeStr, setVocabSizeStr] = useState<string>(
     initialData.vocabSize.toString(),
   );

@@ -12,10 +12,13 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import * as GPT2Nodes from './nodes/GPT2Nodes';
 import TokenEmbeddingLayer from './nodes/TokenEmbedding';
 import PositionalEmbeddingLayer from './nodes/PositionalEmbedding';
 import LayerNormLayer from './nodes/LayerNorm';
+import FeedForwardLayer from './nodes/FeedForward';
+import DynamicBlock from './nodes/DynamicBlock';
+import DropoutLayer from './nodes/Dropout';
+import LinearLayer from './nodes/Linear';
 
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -28,10 +31,12 @@ function FlowCanvas() {
       tokenEmbedding: TokenEmbeddingLayer,
       positionalEmbedding: PositionalEmbeddingLayer,
       layerNorm: LayerNormLayer,
-      maskedMultiHeadAttention: GPT2Nodes.MaskedMultiHeadAttention,
-      feedForward: GPT2Nodes.FeedForward,
-      dropout: GPT2Nodes.Dropout,
-      linearOutput: GPT2Nodes.LinearOutputLayer,
+      dynamicBlock: DynamicBlock,
+      feedForward: FeedForwardLayer,
+      dropout: DropoutLayer,
+      linear: LinearLayer,
+      // transformerBlock: TransformerBlock,
+      // maskedMultiHeadAttention: GPT2Nodes.MaskedMultiHeadAttention,
     }),
     [],
   );

@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
+import { FeedForwardData } from './NodeData';
+import NodeWrapper from './NodeWrapper';
 import {
   NodeTitle,
   ReadField,
   EditField,
   ActionButton,
+  EditSelectField,
 } from './NodeComponents';
-import { BaseNodeData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
 
-export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
-  data: initialData,
-}) => {
+const actFuncTypeOptions: string[] = ['ReLU', 'GELU', 'SwiGLU'];
+
+export const FeedForwardLayer: React.FC<{
+  data: FeedForwardData;
+}> = ({ data: initialData }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
@@ -21,6 +24,10 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
       ? initialData.inDim.toString()
       : '정의되지 않았습니다.',
   );
+  const [numOfFactorStr, setNumOfFactorStr] = useState<string>(
+    initialData.numOfFactor.toString(),
+  );
+  const [actFunc, setActFunc] = useState<string>(initialData.actFunc);
 
   // Edit 버튼 클릭
   const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -33,6 +40,9 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
+    const newActFunc = actFunc === '' ? initialData.actFunc : actFunc;
+    const newNumOfFactor =
+      numOfFactorStr === '' ? initialData.numOfFactor : Number(numOfFactorStr);
 
     setEditMode(false);
 
@@ -46,6 +56,8 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
               data: {
                 ...node.data,
                 inDim: newInDim,
+                actFunc: newActFunc,
+                numOfFactor: newNumOfFactor,
               },
             };
           }
@@ -65,8 +77,24 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
             id="inDimInput"
             name="inDim"
             value={inDimStr}
-            placeholder="Enter Input Dimension"
+            placeholder="Enter input dimension"
             onChange={setInDimStr}
+          />
+          <EditField
+            label="Number of Factor:"
+            id="numOfFactorInput"
+            name="numOfFactor"
+            value={numOfFactorStr}
+            placeholder="Enter Number of factor"
+            onChange={setNumOfFactorStr}
+          />
+          <EditSelectField
+            label="Activation Function Type:"
+            id="actFuncSelect"
+            name="actFunc"
+            value={actFunc}
+            onChange={setActFunc}
+            options={actFuncTypeOptions}
           />
           <ActionButton onClick={handleSaveClick} className="bg-green-200">
             Save
@@ -75,6 +103,8 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
       ) : (
         <div>
           <ReadField label="Input Dimension:" value={inDimStr} />
+          <ReadField label="Number of Factor:" value={numOfFactorStr} />
+          <ReadField label="Activation Function Type:" value={actFunc} />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>
@@ -84,4 +114,4 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
   );
 };
 
-export default LayerNormLayer;
+export default FeedForwardLayer;

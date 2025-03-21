@@ -10,7 +10,7 @@ import {
 import { BaseNodeData } from './NodeData';
 import NodeWrapper from './NodeWrapper';
 
-export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
+export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
   data: initialData,
 }) => {
   const { setNodes } = useReactFlow();
@@ -19,6 +19,11 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
   const [inDimStr, setInDimStr] = useState<string>(
     initialData.inDim !== undefined
       ? initialData.inDim.toString()
+      : '정의되지 않았습니다.',
+  );
+  const [outDimStr, setOutDimStr] = useState<string>(
+    initialData.outDim !== undefined
+      ? initialData.outDim.toString()
       : '정의되지 않았습니다.',
   );
 
@@ -33,6 +38,7 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
+    const newOutDim = outDimStr === '' ? initialData.outDim : Number(outDimStr);
 
     setEditMode(false);
 
@@ -46,6 +52,7 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
               data: {
                 ...node.data,
                 inDim: newInDim,
+                outDim: newOutDim,
               },
             };
           }
@@ -65,8 +72,16 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
             id="inDimInput"
             name="inDim"
             value={inDimStr}
-            placeholder="Enter Input Dimension"
+            placeholder="Enter input dimension"
             onChange={setInDimStr}
+          />
+          <EditField
+            label="Output Dimension:"
+            id="outDimInput"
+            name="outDim"
+            value={outDimStr}
+            placeholder="Enter output dimension"
+            onChange={setOutDimStr}
           />
           <ActionButton onClick={handleSaveClick} className="bg-green-200">
             Save
@@ -75,6 +90,7 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
       ) : (
         <div>
           <ReadField label="Input Dimension:" value={inDimStr} />
+          <ReadField label="Output Dimension:" value={outDimStr} />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>
@@ -84,4 +100,4 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
   );
 };
 
-export default LayerNormLayer;
+export default LinearLayer;
