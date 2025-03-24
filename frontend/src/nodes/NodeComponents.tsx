@@ -14,7 +14,7 @@ export const ReadField: React.FC<{ label: string; value: string }> = ({
 }) => {
   return (
     <p className="text-sm">
-      {label} {value || 'Not set'}
+      {label} {value || '-'}
     </p>
   );
 };

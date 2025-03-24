@@ -17,10 +17,10 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const [vocabSizeStr, setVocabSizeStr] = useState<string>(
-    initialData.vocabSize.toString(),
+    initialData.vocabSize !== undefined ? initialData.vocabSize.toString() : '',
   );
   const [embDimStr, setEmbDimStr] = useState<string>(
-    initialData.embDim.toString(),
+    initialData.embDim !== undefined ? initialData.embDim.toString() : '',
   );
 
   // Edit 버튼 클릭

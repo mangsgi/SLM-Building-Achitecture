@@ -17,14 +17,10 @@ export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined
-      ? initialData.inDim.toString()
-      : '정의되지 않았습니다.',
+    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
   );
   const [outDimStr, setOutDimStr] = useState<string>(
-    initialData.outDim !== undefined
-      ? initialData.outDim.toString()
-      : '정의되지 않았습니다.',
+    initialData.outDim !== undefined ? initialData.outDim.toString() : '',
   );
 
   // Edit 버튼 클릭

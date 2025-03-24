@@ -35,8 +35,22 @@ export interface DropoutData extends BaseNodeData {
   dropoutRate: number;
 }
 
-export interface MaskedMHAData extends BaseNodeData {
-  inDim: number;
-  outDim: number;
+export interface SDPAttentionData extends BaseNodeData {
+  dropoutRate: number;
+  ctxLength: number;
+}
+
+export interface MaskedMHABlockData extends BaseNodeData {
   numHeads: number;
+  sdpAttention?: SDPAttentionData | null;
+}
+
+export interface TransformerBlockData extends BaseNodeData {
+  dropout1?: DropoutData | null;
+  feedForward?: FeedForwardData | null;
+  layerNorm2?: BaseNodeData | null;
+  dropout2?: DropoutData | null;
+  maskedMHA?: MaskedMHABlockData | null;
+  layerNorm1?: BaseNodeData | null;
+  numLayers: number;
 }

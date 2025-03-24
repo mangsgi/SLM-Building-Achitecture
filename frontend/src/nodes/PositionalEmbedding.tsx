@@ -25,13 +25,15 @@ export const PositionalEmbeddingLayer: React.FC<{
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const [ctxLengthStr, setCtxLengthStr] = useState<string>(
-    initialData.ctxLength.toString(),
+    initialData.ctxLength !== undefined ? initialData.ctxLength.toString() : '',
   );
   const [embDimStr, setEmbDimStr] = useState<string>(
-    initialData.embDim.toString(),
+    initialData.embDim !== undefined ? initialData.embDim.toString() : '',
   );
   const [posType, setPosType] = useState<string>(
-    initialData.posEmbeddingType || 'Learned Positional Embedding',
+    initialData.posEmbeddingType !== undefined
+      ? initialData.posEmbeddingType
+      : posTypeOptions[0],
   );
 
   // Edit 버튼 클릭
