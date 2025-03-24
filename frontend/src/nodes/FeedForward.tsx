@@ -11,23 +11,33 @@ import {
   EditSelectField,
 } from './NodeComponents';
 
+interface FeedForwardDataProps {
+  data: FeedForwardData;
+  onChange?: (newData: FeedForwardData) => void;
+}
+
 const actFuncTypeOptions: string[] = ['ReLU', 'GELU', 'SwiGLU'];
 
-export const FeedForwardLayer: React.FC<{
-  data: FeedForwardData;
-}> = ({ data: initialData }) => {
+export const FeedForwardLayer: React.FC<FeedForwardDataProps> = ({
+  data: initialData,
+  onChange,
+}) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined
-      ? initialData.inDim.toString()
-      : '정의되지 않았습니다.',
+    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
   );
   const [numOfFactorStr, setNumOfFactorStr] = useState<string>(
-    initialData.numOfFactor.toString(),
+    initialData.numOfFactor !== undefined
+      ? initialData.numOfFactor.toString()
+      : '',
   );
-  const [actFunc, setActFunc] = useState<string>(initialData.actFunc);
+  const [actFunc, setActFunc] = useState<string>(
+    initialData.actFunc !== undefined
+      ? initialData.actFunc
+      : actFuncTypeOptions[0],
+  );
 
   // Edit 버튼 클릭
   const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -64,6 +74,16 @@ export const FeedForwardLayer: React.FC<{
           return node;
         }),
       );
+    }
+
+    // Block 안에 있는 노드 데이터 업데이트
+    if (onChange) {
+      onChange({
+        ...initialData,
+        inDim: newInDim,
+        actFunc: newActFunc,
+        numOfFactor: newNumOfFactor,
+      });
     }
   };
 

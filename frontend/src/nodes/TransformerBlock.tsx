@@ -1,181 +1,27 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
+import { useReactFlow, Edge } from 'reactflow';
+
 import NodeWrapper from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
-
 import {
   BaseNodeData,
   DropoutData,
   FeedForwardData,
-  LayerNormData,
-  MaskedMHAData,
+  MaskedMHABlockData,
+  TransformerBlockData,
 } from './NodeData';
-
-// TransformerBlock이 가지는 6개 슬롯
-interface TransformerBlockData {
-  label?: string;
-  dropout1?: DropoutData | null;
-  feedForward?: FeedForwardData | null;
-  layerNorm2?: LayerNormData | null;
-  dropout2?: DropoutData | null;
-  maskedMHA?: MaskedMHAData | null;
-  layerNorm1?: LayerNormData | null;
-}
+import DropoutLayer from './Dropout';
+import FeedForwardLayer from './FeedForward';
+import LayerNormLayer from './LayerNorm';
+import MaskedMHABlock from './MaskedMHABlock';
 
 interface TransformerBlockProps {
   data: TransformerBlockData;
 }
 
-// 각 노드 편집 UI를 간단히 구현
-// ------------------------------
-
-// 1) Dropout Editor
-const DropoutEditor: React.FC<{
-  data: DropoutData;
-  onChange: (newData: DropoutData) => void;
-}> = ({ data, onChange }) => {
-  const [editMode, setEditMode] = useState(false);
-  const [inDim, setInDim] = useState(data.inDim.toString());
-  const [outDim, setOutDim] = useState(data.outDim.toString());
-  const [dropoutRate, setDropoutRate] = useState(data.dropoutRate.toString());
-
-  const handleSave = () => {
-    onChange({
-      ...data,
-      inDim: Number(inDim),
-      outDim: Number(outDim),
-      dropoutRate: Number(dropoutRate),
-    });
-    setEditMode(false);
-  };
-
-  return (
-    <div className="p-2 border bg-white rounded w-full">
-      <div className="font-bold">{data.label || 'Dropout'}</div>
-      {editMode ? (
-        <div className="mt-1">
-          <label className="text-sm">inDim</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            value={inDim}
-            onChange={(e) => setInDim(e.target.value)}
-          />
-          <label className="text-sm">outDim</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            value={outDim}
-            onChange={(e) => setOutDim(e.target.value)}
-          />
-          <label className="text-sm">dropoutRate</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            step="0.01"
-            value={dropoutRate}
-            onChange={(e) => setDropoutRate(e.target.value)}
-          />
-          <button
-            className="mt-2 bg-green-100 px-2 py-1 rounded text-sm"
-            onClick={handleSave}
-          >
-            Save
-          </button>
-        </div>
-      ) : (
-        <div className="mt-1 text-sm">
-          <p>inDim: {data.inDim}</p>
-          <p>outDim: {data.outDim}</p>
-          <p>dropoutRate: {data.dropoutRate}</p>
-          <button
-            className="mt-2 bg-blue-100 px-2 py-1 rounded text-sm"
-            onClick={() => setEditMode(true)}
-          >
-            Edit
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// 4) Masked Multi-Head Attention Editor
-const MaskedMHAEditor: React.FC<{
-  data: MaskedMHAData;
-  onChange: (newData: MaskedMHAData) => void;
-}> = ({ data, onChange }) => {
-  const [editMode, setEditMode] = useState(false);
-  const [inDim, setInDim] = useState(data.inDim.toString());
-  const [outDim, setOutDim] = useState(data.outDim.toString());
-  const [numHeads, setNumHeads] = useState(data.numHeads.toString());
-
-  const handleSave = () => {
-    onChange({
-      ...data,
-      inDim: Number(inDim),
-      outDim: Number(outDim),
-      numHeads: Number(numHeads),
-    });
-    setEditMode(false);
-  };
-
-  return (
-    <div className="p-2 border bg-gray-200 rounded w-full">
-      <div className="font-bold">
-        {data.label || 'Masked Multi-Head Attention'}
-      </div>
-      {editMode ? (
-        <div className="mt-1 text-sm">
-          <label>inDim</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            value={inDim}
-            onChange={(e) => setInDim(e.target.value)}
-          />
-          <label>outDim</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            value={outDim}
-            onChange={(e) => setOutDim(e.target.value)}
-          />
-          <label>numHeads</label>
-          <input
-            className="border rounded p-1 w-full text-sm"
-            type="number"
-            value={numHeads}
-            onChange={(e) => setNumHeads(e.target.value)}
-          />
-          <button
-            className="mt-2 bg-green-100 px-2 py-1 rounded text-sm"
-            onClick={handleSave}
-          >
-            Save
-          </button>
-        </div>
-      ) : (
-        <div className="mt-1 text-sm">
-          <p>inDim: {data.inDim}</p>
-          <p>outDim: {data.outDim}</p>
-          <p>numHeads: {data.numHeads}</p>
-          <button
-            className="mt-2 bg-blue-100 px-2 py-1 rounded text-sm"
-            onClick={() => setEditMode(true)}
-          >
-            Edit
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ----------------------------------------------------
-
 // Slot 컴포넌트: 특정 노드 타입만 드롭받아서 상태를 저장/편집
 interface SlotProps {
-  allowedType: string; // 예: 'dropout', 'feedForward', 'layerNorm', 'maskedMultiHeadAttention'
+  allowedType: string; // e.g. 'dropout', 'feedForward', 'layerNorm', 'maskedMultiHeadAttention'
   slotLabel: string;
   data: BaseNodeData | null;
   onChange: (newData: BaseNodeData | null) => void;
@@ -195,6 +41,8 @@ const Slot: React.FC<SlotProps> = ({
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
+      e.stopPropagation(); // 이벤트 전파 차단 추가
+
       const raw = e.dataTransfer.getData('application/reactflow');
       if (!raw) return;
       const dropped = JSON.parse(raw);
@@ -229,33 +77,33 @@ const Slot: React.FC<SlotProps> = ({
     switch (allowedType) {
       case 'dropout':
         content = (
-          <DropoutEditor
+          <DropoutLayer
             data={data as DropoutData}
             onChange={(nd) => onChange(nd)}
           />
         );
         break;
       case 'feedForward':
-        // content = (
-        //   <FeedForwardEditor
-        //     data={data as FeedForwardData}
-        //     onChange={(nd) => onChange(nd)}
-        //   />
-        // );
+        content = (
+          <FeedForwardLayer
+            data={data as FeedForwardData}
+            onChange={(nd) => onChange(nd)}
+          />
+        );
         break;
       case 'layerNorm':
-        // content = (
-        //   <LayerNormEditor
-        //     data={data as LayerNormData}
-        //     onChange={(nd) => onChange(nd)}
-        //   />
-        // );
-        break;
-      case 'maskedMultiHeadAttention':
         content = (
-          <MaskedMHAEditor
-            data={data as MaskedMHAData}
-            onChange={(nd) => onChange(nd)}
+          <LayerNormLayer
+            data={data as BaseNodeData}
+            onChange={(nd: BaseNodeData) => onChange(nd)}
+          />
+        );
+        break;
+      case 'maskedMHABlock':
+        content = (
+          <MaskedMHABlock
+            data={data as MaskedMHABlockData}
+            onChange={(nd: MaskedMHABlockData) => onChange(nd)}
           />
         );
         break;
@@ -276,33 +124,132 @@ const Slot: React.FC<SlotProps> = ({
   );
 };
 
-// ----------------------------------------------------
-
 // 최종 TransformerBlock 컴포넌트
 const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
-  // 6개 슬롯 상태
+  const { getEdges, setEdges, setNodes, getNode } = useReactFlow();
+
+  // 6개 슬롯 useState
   const [dropout1, setDropout1] = useState<DropoutData | null>(
     data.dropout1 || null,
   );
   const [feedForward, setFeedForward] = useState<FeedForwardData | null>(
     data.feedForward || null,
   );
-  const [layerNorm2, setLayerNorm2] = useState<LayerNormData | null>(
+  const [layerNorm2, setLayerNorm2] = useState<BaseNodeData | null>(
     data.layerNorm2 || null,
   );
   const [dropout2, setDropout2] = useState<DropoutData | null>(
     data.dropout2 || null,
   );
-  const [maskedMHA, setMaskedMHA] = useState<MaskedMHAData | null>(
+  const [maskedMHA, setMaskedMHA] = useState<MaskedMHABlockData | null>(
     data.maskedMHA || null,
   );
-  const [layerNorm1, setLayerNorm1] = useState<LayerNormData | null>(
+  const [layerNorm1, setLayerNorm1] = useState<BaseNodeData | null>(
     data.layerNorm1 || null,
   );
 
+  // const [numLayers, setNumLayers] = useState<number>(data.numLayers);
+
+  // 프로그램적으로 내부 슬롯들을 순서대로 연결하는 Internal Edge 생성
+  // 내부 edge 업데이트: 이전 내부 edge와 비교하여 변경된 경우에만 업데이트
+  useEffect(() => {
+    const newInternalEdges: Edge[] = [];
+    // Top down: Dropout1 ← FeedForward ← LayerNorm2 ← Dropout2 ← MaskedMHA ← LayerNorm1
+    const slotNodes = [
+      dropout1,
+      feedForward,
+      layerNorm2,
+      dropout2,
+      maskedMHA,
+      layerNorm1,
+    ];
+    for (let i = 0; i < slotNodes.length - 1; i++) {
+      const source = slotNodes[i];
+      const target = slotNodes[i + 1];
+      // source/target이 not-null일 때 Edge를 push
+      if (source && target && source.id && target.id) {
+        newInternalEdges.push({
+          id: `internal-${data.id}-${source.id}-${target.id}`,
+          source: source.id,
+          target: target.id,
+          type: 'default',
+          style: { stroke: 'transparent' },
+        });
+      }
+    }
+
+    // 기존 글로벌 edge 중 이 TransformerBlock에 속하는 internal edge를 제거 후 새로 추가
+    const existingEdges = getEdges();
+    const filteredEdges = existingEdges.filter(
+      (edge) => !edge.id.startsWith(`internal-${data.id}-`),
+    );
+    setEdges([...filteredEdges, ...newInternalEdges]);
+  }, [
+    dropout1,
+    feedForward,
+    layerNorm2,
+    dropout2,
+    maskedMHA,
+    layerNorm1,
+    data.id,
+    getEdges,
+    setEdges,
+  ]);
+
+  // TransformerBlock 자체의 inDim/outDim 업데이트:
+  // 첫 슬롯(dropout1)의 inDim을 블록의 inDim, 마지막 슬롯(layerNorm1)의 outDim을 블록의 outDim으로 사용
+  useEffect(() => {
+    if (dropout1 && layerNorm1 && dropout1.inDim !== undefined) {
+      const newInDim = dropout1.inDim;
+      const newOutDim = (layerNorm1 as { outDim: number }).outDim;
+      const currentNode = getNode(data.id!);
+      if (
+        currentNode &&
+        (currentNode.data.inDim !== newInDim ||
+          currentNode.data.outDim !== newOutDim)
+      ) {
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.id === data.id) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  inDim: newInDim,
+                  outDim: newOutDim,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+      }
+    }
+  }, [dropout1, layerNorm1, data.id, setNodes, getNode]);
+
+  // numLayers 업데이트
+  // useEffect(() => {
+  //   if (data.id) {
+  //     setNodes((nds) =>
+  //       nds.map((node) => {
+  //         if (node.id === data.id) {
+  //           return {
+  //             ...node,
+  //             data: {
+  //               ...node.data,
+  //               numLayers: numLayers,
+  //             },
+  //           };
+  //         }
+  //         return node;
+  //       }),
+  //     );
+  //   }
+  // }, [numLayers, data.id, setNodes]);
+
   return (
-    <NodeWrapper>
-      <NodeTitle>{data.label || 'Transformer Block'}</NodeTitle>
+    <NodeWrapper hideHandles={true}>
+      <NodeTitle>{data.label}</NodeTitle>
       {/* 그림에 나온 순서대로 6개 슬롯 배치 (필요시 CSS로 정렬) */}
       <div className="flex flex-col items-center gap-2 mt-2 w-56">
         {/* Dropout 1 */}
@@ -326,7 +273,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
           allowedType="layerNorm"
           slotLabel="LayerNorm 2"
           data={layerNorm2}
-          onChange={(nd) => setLayerNorm2(nd as LayerNormData)}
+          onChange={(nd) => setLayerNorm2(nd as BaseNodeData)}
         />
 
         {/* Dropout 2 */}
@@ -339,10 +286,10 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
 
         {/* Masked Multi-Head Attention */}
         <Slot
-          allowedType="maskedMultiHeadAttention"
+          allowedType="maskedMHABlock"
           slotLabel="Masked MHA"
           data={maskedMHA}
-          onChange={(nd) => setMaskedMHA(nd as MaskedMHAData)}
+          onChange={(nd) => setMaskedMHA(nd as MaskedMHABlockData)}
         />
 
         {/* LayerNorm 1 */}
@@ -350,7 +297,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
           allowedType="layerNorm"
           slotLabel="LayerNorm 1"
           data={layerNorm1}
-          onChange={(nd) => setLayerNorm1(nd as LayerNormData)}
+          onChange={(nd) => setLayerNorm1(nd as BaseNodeData)}
         />
       </div>
     </NodeWrapper>

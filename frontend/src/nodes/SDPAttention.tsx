@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import {
@@ -7,68 +7,35 @@ import {
   EditField,
   ActionButton,
 } from './NodeComponents';
-import { DropoutData } from './NodeData';
+import { SDPAttentionData } from './NodeData';
 import NodeWrapper from './NodeWrapper';
 
-interface DropoutLayerProps {
-  data: DropoutData;
-  onChange?: (newData: DropoutData) => void;
+interface SPDAttentionLayerProps {
+  data: SDPAttentionData;
+  onChange?: (newData: SDPAttentionData) => void;
 }
 
-export const DropoutLayer: React.FC<DropoutLayerProps> = ({
+export const SPDAttentionLayer: React.FC<SPDAttentionLayerProps> = ({
   data: initialData,
   onChange,
 }) => {
-  const { setNodes, getEdges, getNode } = useReactFlow();
+  const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
-  const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
-  );
   const [dropoutRateStr, setDropoutRateStr] = useState<string>(
     initialData.dropoutRate !== undefined
       ? initialData.dropoutRate.toString()
       : '',
   );
-
-  // Edge가 연결될 때 Source Node의 Input Dimension을 받아오는 useEffect
-  useEffect(() => {
-    // 이 노드로 들어오는 엣지가 있는지 찾는다
-    const edges = getEdges();
-    const incomingEdge = edges.find((edge) => edge.target === initialData.id);
-    if (!incomingEdge) return;
-
-    // 소스 노드를 찾는다
-    const sourceNode = getNode(incomingEdge.source);
-    if (!sourceNode || !sourceNode.data) return;
-
-    // 소스 노드가 outDim을 가지고 있으면, 그 값을 inDim에 반영
-    const sourceOutDim = sourceNode.data.inDim;
-    console.log({ sourceOutDim });
-    if (typeof sourceOutDim === 'number') {
-      // 이미 inDim이 동일하면 굳이 업데이트 X
-      if (inDimStr === sourceOutDim.toString()) return;
-
-      // 로컬 state 업데이트
-      setInDimStr(String(sourceOutDim));
-
-      // 글로벌 노드 데이터도 업데이트
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inDim: sourceOutDim,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-  }, [getEdges, getNode, setNodes, inDimStr, initialData.id]);
+  const [ctxLengthStr, setCtxLengthStr] = useState<string>(
+    initialData.ctxLength !== undefined ? initialData.ctxLength.toString() : '',
+  );
+  const [inDimStr, setInDimStr] = useState<string>(
+    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
+  );
+  const [outDimStr, setOutDimStr] = useState<string>(
+    initialData.outDim !== undefined ? initialData.outDim.toString() : '',
+  );
 
   // Edit 버튼 클릭
   const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -80,9 +47,10 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
   // Save 버튼 클릭
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
     const newDropoutRate =
       dropoutRateStr === '' ? initialData.dropoutRate : Number(dropoutRateStr);
+    const newCtxLength =
+      ctxLengthStr === '' ? initialData.ctxLength : Number(ctxLengthStr);
 
     setEditMode(false);
 
@@ -95,8 +63,8 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
               ...node,
               data: {
                 ...node.data,
-                inDim: newInDim,
                 dropoutRate: newDropoutRate,
+                ctxLength: newCtxLength,
               },
             };
           }
@@ -109,8 +77,8 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
     if (onChange) {
       onChange({
         ...initialData,
-        inDim: newInDim,
         dropoutRate: newDropoutRate,
+        ctxLength: newCtxLength,
       });
     }
   };
@@ -121,6 +89,22 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
       {editMode ? (
         <div>
           <EditField
+            label="Input Dimension:"
+            id="inDimInput"
+            name="inDim"
+            value={inDimStr}
+            placeholder="Enter input dimension"
+            onChange={setInDimStr}
+          />
+          <EditField
+            label="Output Dimension:"
+            id="outDimInput"
+            name="outDim"
+            value={outDimStr}
+            placeholder="Enter output dimension"
+            onChange={setOutDimStr}
+          />
+          <EditField
             label="Dropout Rate:"
             id="dropoutRateInput"
             name="dropoutRate"
@@ -128,14 +112,24 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
             placeholder="Enter dropout rate"
             onChange={setDropoutRateStr}
           />
+          <EditField
+            label="Context Length:"
+            id="ctxLengthInput"
+            name="ctxLength"
+            value={ctxLengthStr}
+            placeholder="Enter context length"
+            onChange={setCtxLengthStr}
+          />
           <ActionButton onClick={handleSaveClick} className="bg-green-200">
             Save
           </ActionButton>
         </div>
       ) : (
         <div>
-          {/* <ReadField label="Input Dimension:" value={inDimStr} /> */}
+          <ReadField label="Input Dimension:" value={inDimStr} />
+          <ReadField label="Output Dimension:" value={outDimStr} />
           <ReadField label="Dropout Rate:" value={dropoutRateStr} />
+          <ReadField label="Context Length:" value={ctxLengthStr} />
           <ActionButton onClick={handleEditClick} className="bg-blue-200">
             Edit
           </ActionButton>
@@ -145,4 +139,4 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
   );
 };
 
-export default DropoutLayer;
+export default SPDAttentionLayer;

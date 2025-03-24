@@ -32,8 +32,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       <SidebarNodeItem
         nodeType="tokenEmbedding"
         nodeData={{
-          vocabSize: 50267,
-          embDim: 768,
           label: 'Token Embedding Layer',
         }}
         onDragStart={onDragStart}
@@ -41,21 +39,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       <SidebarNodeItem
         nodeType="positionalEmbedding"
         nodeData={{
-          ctxLength: 512,
-          embDim: 768,
           label: 'Positional Embedding Layer',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="linear"
-        nodeData={{ inDim: 768, outDim: 50267, label: 'Linear Layer' }}
+        nodeData={{ label: 'Linear Layer' }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="layerNorm"
         nodeData={{
-          inDim: 768,
           label: 'Layer Normalization Layer',
         }}
         onDragStart={onDragStart}
@@ -63,16 +58,32 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       <SidebarNodeItem
         nodeType="feedForward"
         nodeData={{
-          inDim: 768,
-          numOfFactor: 3072,
-          actFunc: 'GELU',
           label: 'Feed Forward Layer',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="dropout"
-        nodeData={{ dropoutRate: 0.1, label: 'Dropout Layer' }}
+        nodeData={{ label: 'Dropout Layer' }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="sdpAttention"
+        nodeData={{
+          label: 'Scaled Dot-Product Attention',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="maskedMHABlock"
+        nodeData={{ label: 'Masked Multi-Head Attention' }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="transformerBlock"
+        nodeData={{
+          label: 'Trasnformer Block',
+        }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
@@ -80,12 +91,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         nodeData={{
           label: 'Dynamic Block',
         }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="maskedMultiHeadAttention"
-        label="Masked Multi-Head Attention"
-        nodeData={{ inDim: 768, outDim: 768, numHeads: 12 }}
         onDragStart={onDragStart}
       />
     </aside>

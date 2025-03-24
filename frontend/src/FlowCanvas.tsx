@@ -16,9 +16,12 @@ import TokenEmbeddingLayer from './nodes/TokenEmbedding';
 import PositionalEmbeddingLayer from './nodes/PositionalEmbedding';
 import LayerNormLayer from './nodes/LayerNorm';
 import FeedForwardLayer from './nodes/FeedForward';
-import DynamicBlock from './nodes/DynamicBlock';
 import DropoutLayer from './nodes/Dropout';
 import LinearLayer from './nodes/Linear';
+import SDPAttentionLayer from './nodes/SDPAttention';
+import MaskedMHABlock from './nodes/MaskedMHABlock';
+import TransformerBlock from './nodes/TransformerBlock';
+import DynamicBlock from './nodes/DynamicBlock';
 
 function FlowCanvas() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -31,12 +34,13 @@ function FlowCanvas() {
       tokenEmbedding: TokenEmbeddingLayer,
       positionalEmbedding: PositionalEmbeddingLayer,
       layerNorm: LayerNormLayer,
-      dynamicBlock: DynamicBlock,
       feedForward: FeedForwardLayer,
       dropout: DropoutLayer,
       linear: LinearLayer,
-      // transformerBlock: TransformerBlock,
-      // maskedMultiHeadAttention: GPT2Nodes.MaskedMultiHeadAttention,
+      sdpAttention: SDPAttentionLayer,
+      maskedMHABlock: MaskedMHABlock,
+      transformerBlock: TransformerBlock,
+      dynamicBlock: DynamicBlock,
     }),
     [],
   );

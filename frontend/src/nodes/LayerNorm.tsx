@@ -10,16 +10,20 @@ import {
 import { BaseNodeData } from './NodeData';
 import NodeWrapper from './NodeWrapper';
 
-export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
+interface LayerNormLayerProps {
+  data: BaseNodeData;
+  onChange?: (newData: BaseNodeData) => void;
+}
+
+export const LayerNormLayer: React.FC<LayerNormLayerProps> = ({
   data: initialData,
+  onChange,
 }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined
-      ? initialData.inDim.toString()
-      : '정의되지 않았습니다.',
+    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
   );
 
   // Edit 버튼 클릭
@@ -52,6 +56,14 @@ export const LayerNormLayer: React.FC<{ data: BaseNodeData }> = ({
           return node;
         }),
       );
+    }
+
+    // Block 안에 있는 노드 데이터 업데이트
+    if (onChange) {
+      onChange({
+        ...initialData,
+        inDim: newInDim,
+      });
     }
   };
 
