@@ -65,7 +65,7 @@ def sinusoidal_ex():
     print(positional_embeddings.shape)  # Should output: (1, 10, 768)
 
 """
-word embedding + positional embedding 단순 덧셈(두 임베딩 차원 동일)
+token embedding + positional embedding 단순 덧셈(두 임베딩 차원 동일)
 ==========================================================================================================================
 쿼리 & 키 벡터가 input이 되므로 어텐션 계산 중간에 수행됨
 """
