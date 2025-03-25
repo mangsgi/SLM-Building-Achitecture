@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { FeedForwardData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 import {
   NodeTitle,
   ReadField,

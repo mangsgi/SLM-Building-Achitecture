@@ -1,24 +1,26 @@
 import React from 'react';
 
-// import { Option } from './NodeData';
-
+// Node의 Title 컴포넌트
 export const NodeTitle: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  return <h3 className="font-bold">{children}</h3>;
+  return <h3 className="font-bold mb-2">{children}</h3>;
 };
 
+// 읽기: Node의 각 Data별 렌더링
 export const ReadField: React.FC<{ label: string; value: string }> = ({
   label,
   value,
 }) => {
   return (
-    <p className="text-sm">
-      {label} {value || '-'}
-    </p>
+    <div className="mb-2 pt-1">
+      <label className="text-base">{label}</label>
+      <div className="border rounded p-1 text-sm w-full">{value || '-'}</div>
+    </div>
   );
 };
 
+// 쓰기: (Input 태그) Node의 각 Data별 렌더링
 export const EditField: React.FC<{
   label: string;
   id: string;
@@ -28,8 +30,8 @@ export const EditField: React.FC<{
   onChange: (value: string) => void;
 }> = ({ label, id, name, value, placeholder, onChange }) => {
   return (
-    <div className="mb-2">
-      <label htmlFor={id} className="text-sm">
+    <div className="mb-2 pt-1">
+      <label htmlFor={id} className="text-base font-medium">
         {label}
       </label>
       <input
@@ -45,21 +47,7 @@ export const EditField: React.FC<{
   );
 };
 
-export const ActionButton: React.FC<{
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  children: React.ReactNode;
-  className?: string;
-}> = ({ onClick, children, className = '' }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={`mt-2 px-2 py-1 rounded text-sm ${className}`}
-    >
-      {children}
-    </button>
-  );
-};
-
+// 쓰기: (Select 태그) Node의 각 Data별 렌더링
 export const EditSelectField: React.FC<{
   label: string;
   id: string;
@@ -87,5 +75,21 @@ export const EditSelectField: React.FC<{
         ))}
       </select>
     </div>
+  );
+};
+
+// Save와 Edit 버튼
+export const ActionButton: React.FC<{
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ onClick, children, className = '' }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`bg-white p-2 hover:bg-green-100 rounded focus:outline-none focus:ring-0 ${className}`}
+    >
+      {children}
+    </button>
   );
 };

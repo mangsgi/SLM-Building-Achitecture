@@ -8,7 +8,7 @@ import {
   ActionButton,
 } from './NodeComponents';
 import { SDPAttentionData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 
 interface SPDAttentionLayerProps {
   data: SDPAttentionData;

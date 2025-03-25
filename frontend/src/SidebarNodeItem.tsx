@@ -5,6 +5,7 @@ import { BaseNodeData } from './nodes/NodeData';
 interface SidebarNodeItemProps {
   nodeType: string;
   nodeData: BaseNodeData;
+  // onDragStart를 부모(Sidebar)에서 실행할 수 있도록 Data 전달
   onDragStart: (
     event: React.DragEvent<HTMLDivElement>,
     nodeType: string,

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useReactFlow, Edge } from 'reactflow';
 
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
 import {
   BaseNodeData,
