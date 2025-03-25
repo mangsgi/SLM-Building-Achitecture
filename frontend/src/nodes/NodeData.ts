@@ -5,9 +5,9 @@ export interface Option {
 }
 
 // 모든 노드에 공통으로 필요한 속성을 포함하는 Base interface
-// inDim과 outDim을 기본 정보로 저장 -> LayerNormData와 LinearLayerData 삭제
+// inDim과 outDim을 기본 정보로 저장
 export interface BaseNodeData {
-  id?: string; // 각 Canvas에 고유한 id로 Node 구분
+  id?: string; // Canvas에서 고유한 id로 각 Node를 구분
   label: string; // Node 이름
   inDim?: number; // 입력 차원
   outDim?: number; // 출력 차원

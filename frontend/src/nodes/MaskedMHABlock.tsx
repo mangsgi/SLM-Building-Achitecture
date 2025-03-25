@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useReactFlow } from 'reactflow';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
 import { BaseNodeData, SDPAttentionData, MaskedMHABlockData } from './NodeData';
 import SDPAttentionLayer from './SDPAttention';

@@ -8,7 +8,7 @@ import {
   ActionButton,
 } from './NodeComponents';
 import { DropoutData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 
 interface DropoutLayerProps {
   data: DropoutData;

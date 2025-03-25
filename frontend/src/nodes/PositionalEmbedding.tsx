@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { PositionalEmbeddingData } from './NodeData'; //, Option
-import NodeWrapper from './NodeWrapper';
+import { LayerWrapper } from './NodeWrapper';
 import {
   NodeTitle,
   ReadField,
   EditField,
-  ActionButton,
   EditSelectField,
 } from './NodeComponents';
+import NodeActionPanel from './NodeActionPanel';
+import NodeInfoModal from './NodeInfoModal';
 
 const posTypeOptions: string[] = [
   'Learned Positional Embedding',
@@ -23,7 +24,9 @@ export const PositionalEmbeddingLayer: React.FC<{
 }> = ({ data: initialData }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
+  // PositionalEmbeddingData 상태변수 저장
   const [ctxLengthStr, setCtxLengthStr] = useState<string>(
     initialData.ctxLength !== undefined ? initialData.ctxLength.toString() : '',
   );
@@ -39,18 +42,17 @@ export const PositionalEmbeddingLayer: React.FC<{
   // Edit 버튼 클릭
   const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    console.log('Edit button clicked');
     setEditMode(true);
   };
 
   // Save 버튼 클릭
   const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    setEditMode(false);
+
     const newContextLength =
       ctxLengthStr === '' ? initialData.ctxLength : Number(ctxLengthStr);
     const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
-
-    setEditMode(false);
 
     // 노드 데이터 업데이트
     if (initialData.id) {
@@ -73,50 +75,76 @@ export const PositionalEmbeddingLayer: React.FC<{
     }
   };
 
+  // Delete 버튼 클릭
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (initialData.id) {
+      setNodes((nds) => nds.filter((node) => node.id !== initialData.id));
+    }
+  };
+
+  // 정보 아이콘 클릭
+  const handleInfoClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setIsInfoOpen(true);
+    // 여기에 추가 동작을 구현하세요.
+  };
+
   return (
-    <NodeWrapper>
-      <NodeTitle>{initialData.label}</NodeTitle>
-      {editMode ? (
-        <div>
-          <EditField
-            label="Context Length:"
-            id="ctxLengthInput"
-            name="ctxLength"
-            value={ctxLengthStr}
-            placeholder="Enter context length"
-            onChange={setCtxLengthStr}
-          />
-          <EditField
-            label="Embedding dimension size:"
-            id="embDimSize"
-            name="embDim"
-            value={embDimStr}
-            placeholder="Enter embedding dimension"
-            onChange={setEmbDimStr}
-          />
-          <EditSelectField
-            label="Positional Embedding Type:"
-            id="posTypeSelect"
-            name="posType"
-            value={posType}
-            onChange={setPosType}
-            options={posTypeOptions}
-          />
-          <ActionButton onClick={handleSaveClick} className="bg-green-200">
-            Save
-          </ActionButton>
-        </div>
-      ) : (
-        <div>
-          <ReadField label="Context Length:" value={ctxLengthStr} />
-          <ReadField label="Embedding Dimension Size:" value={embDimStr} />
-          <ReadField label="Positional Embedding Type:" value={posType} />
-          <ActionButton onClick={handleEditClick} className="bg-blue-200">
-            Edit
-          </ActionButton>
-        </div>
-      )}
-    </NodeWrapper>
+    <LayerWrapper>
+      <div className="relative group">
+        <NodeTitle>{initialData.label}</NodeTitle>
+        {editMode ? (
+          <div>
+            <EditField
+              label="Context Length:"
+              id="ctxLengthInput"
+              name="ctxLength"
+              value={ctxLengthStr}
+              placeholder="Enter context length"
+              onChange={setCtxLengthStr}
+            />
+            <EditField
+              label="Embedding dimension size:"
+              id="embDimSize"
+              name="embDim"
+              value={embDimStr}
+              placeholder="Enter embedding dimension"
+              onChange={setEmbDimStr}
+            />
+            <EditSelectField
+              label="Positional Embedding Type:"
+              id="posTypeSelect"
+              name="posType"
+              value={posType}
+              onChange={setPosType}
+              options={posTypeOptions}
+            />
+          </div>
+        ) : (
+          <div>
+            <ReadField label="Context Length:" value={ctxLengthStr} />
+            <ReadField label="Embedding Dimension Size:" value={embDimStr} />
+            <ReadField label="Positional Embedding Type:" value={posType} />
+          </div>
+        )}
+        <NodeActionPanel
+          editMode={editMode}
+          onInfo={handleInfoClick}
+          onEdit={handleEditClick}
+          onSave={handleSaveClick}
+          onDelete={handleDeleteClick}
+        />
+      </div>
+
+      {/* InfoModal은 여기서 렌더링 */}
+      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
+        <p className="text-sm">
+          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+        </p>
+      </NodeInfoModal>
+    </LayerWrapper>
   );
 };
 

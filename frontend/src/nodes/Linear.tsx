@@ -8,7 +8,7 @@ import {
   ActionButton,
 } from './NodeComponents';
 import { BaseNodeData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 
 export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
   data: initialData,

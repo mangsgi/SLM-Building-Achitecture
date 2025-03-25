@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
-  // 드래그 시작 시 dataTransfer에 노드 타입 저장
+  // Drag 이벤트 핸들러 함수
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
     data: string,
@@ -18,17 +18,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
 
   return (
     <aside className="w-1/5 h-full bg-white p-4">
+      {/* Sidebar Header 영역 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold mb-4">레이어 목록</h2>
+        <h2 className="text-xl font-bold">레이어 목록</h2>
         <button
           onClick={onToggle}
-          className="p-2 focus:outline-none"
+          className="p-2 bg-green-100 rounded focus:outline-none shadow"
           aria-label="Toggle Sidebar"
         >
           <CanvasHamburgerIcon />
         </button>
       </div>
-      {/* GPT-2 노드 항목들 */}
+      {/* 노드 항목 영역 */}
       <SidebarNodeItem
         nodeType="tokenEmbedding"
         nodeData={{

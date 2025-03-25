@@ -9,6 +9,7 @@ const HamburgerIcon: React.FC = () => {
       strokeWidth="2"
       viewBox="0 0 24 24"
     >
+      {/* 햄버거 모양 그리기 */}
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

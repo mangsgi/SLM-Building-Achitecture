@@ -8,7 +8,7 @@ import {
   ActionButton,
 } from './NodeComponents';
 import { BaseNodeData } from './NodeData';
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 
 interface LayerNormLayerProps {
   data: BaseNodeData;

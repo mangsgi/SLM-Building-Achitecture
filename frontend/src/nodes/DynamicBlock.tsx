@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
-import NodeWrapper from './NodeWrapper';
+import { NodeWrapper } from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
 
 interface LayerData {
