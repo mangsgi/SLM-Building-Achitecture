@@ -3,10 +3,12 @@ import torch.nn as nn
 
 from config import GPT_CONFIG_124M as config
 
-
+torch.manual_seed(123)
+batch_size = config["batch_size"]
 vocab_size = config["vocab_size"]
 emb_dim = config["emb_dim"]
-tokens = torch.randint(0, vocab_size, (1, 10))  # 랜덤 토큰 10개
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+tokens = torch.randint(0, vocab_size, (batch_size, 10))  # 랜덤 토큰 10개
 
 
 class TokenEmbedding(nn.Module):
@@ -20,7 +22,7 @@ class TokenEmbedding(nn.Module):
 def token_ex():
     embedding_layer = TokenEmbedding(vocab_size, emb_dim)
     embedded_tokens = embedding_layer(tokens)
-    print(embedded_tokens.shape)  # 출력: torch.Size([1, 10, 768])
+    print(embedded_tokens.shape)  # 출력: torch.Size([8, 10, 768])
 
 
 if __name__ == "__main__":

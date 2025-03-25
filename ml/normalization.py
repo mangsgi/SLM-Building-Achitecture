@@ -26,7 +26,7 @@ class LayerNorm(nn.Module):
 def layer_ex():
     layer_norm = LayerNorm(emb_dim)
     output = layer_norm(x)
-    print(output.shape)  # torch.Size([2, 10, 512])
+    print(output.shape)  # torch.Size([2, 10, 768])
 
 
 # 2. 평균을 빼지 않고 분산만 정규화
@@ -44,7 +44,7 @@ class RMSNorm(nn.Module):
 def rms_ex():
     rms_norm = RMSNorm(emb_dim)
     output = rms_norm(x)
-    print(output.shape)  # torch.Size([2, 10, 512])
+    print(output.shape)  # torch.Size([2, 10, 768])
 
 
 if __name__ == "__main__":

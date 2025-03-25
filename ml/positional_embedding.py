@@ -6,11 +6,13 @@ import numpy as np
 from config import GPT_CONFIG_124M as config
 from token_embedding import TokenEmbedding
 
-
+torch.manual_seed(123)
+batch_size = config["batch_size"]
 vocab_size = config["vocab_size"]
 emb_dim = config["emb_dim"]
 context_length = config["context_length"]
-tokens = torch.randint(0, vocab_size, (1, 10))  # (batch, seq_len)
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+tokens = torch.randint(0, vocab_size, (batch_size, 10))  # (batch, seq_len)
 
 
 # 1. 고정된 위치 정보를 학습 가능한 벡터로 저장 - (GPT2)
@@ -22,6 +24,10 @@ class LearnedPositionalEmbedding(nn.Module):
     def forward(self, x):
         seq_len = x.shape[1]
         positions = torch.arange(seq_len, device=x.device).unsqueeze(0)  # [1, seq_len]
+        """
+        추후에 token embedding에 더해줄 때 모든 배치에 같은 값을 더해준다.
+        tok_embeds + pos_embeds -> Broadcasting: [batch, seq_len, emb_dim] + [seq_len, emb_dim]
+        """
         return self.position_embeddings(positions)
 
 # 예제
