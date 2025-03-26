@@ -208,7 +208,7 @@ class SharedBuffers:
 #         d_in=emb_dim,
 #         d_out=emb_dim,
 #         context_length=context_length,
-#         num_heads=12,
+#         num_heads=32,
 #         num_kv_groups=8,
 #         rope_base=llama_3_theta_base
 #     ).to(device)

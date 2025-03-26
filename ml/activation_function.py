@@ -43,3 +43,18 @@ class LeakyReLU(nn.Module):
 
     def forward(self, x):
         return F.leaky_relu(x, negative_slope=self.negative_slope)
+    
+activation_map = {
+    "relu": ReLU(),
+    "gelu": GELU(),
+    "silu": SiLU(),
+    "leaky": LeakyReLU(),
+}
+
+"""
+FFN의 구조에 따라 activation function 쓰이는 과정이 달라짐
+- Sequential: Linear - Act - Linear 형식
+- Gated: Linear - Act * Linear - Linear 형식
+
+--> FFN 구성할 때 토글 형식으로 정하기
+"""
