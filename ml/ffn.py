@@ -7,6 +7,7 @@ from config import GPT_CONFIG_124M as config
 torch.manual_seed(123)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+cfg = config
 
     
 class CustomFFN(nn.Module):
@@ -40,11 +41,8 @@ class CustomFFN(nn.Module):
 
 
 def ffn():
-    cfg = config
     ffn = CustomFFN(cfg)
-
     x = torch.randn(cfg["batch_size"], cfg["context_length"], cfg["emb_dim"], dtype=cfg["dtype"])
-
     out = ffn(x)
 
     print("입력 shape:", x.shape)   # torch.Size([2, 10, 512])

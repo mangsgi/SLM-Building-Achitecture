@@ -104,119 +104,119 @@ class SharedBuffers:
         return SharedBuffers._buffers[key]
 
 
-# class GroupedQueryAttention(nn.Module):
-#     def __init__(
-#             self, d_in, d_out, context_length, num_heads,
-#             num_kv_groups,       # NEW
-#             rope_base=10_000,    # NEW
-#             rope_config=None,    # NEW
-#             dtype=None
-#         ):
-#         super().__init__()
-#         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
-#         assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"  # NEW
+class GroupedQueryAttention(nn.Module):
+    def __init__(
+            self, d_in, d_out, context_length, num_heads,
+            num_kv_groups,       # NEW
+            rope_base=10_000,    # NEW
+            rope_config=None,    # NEW
+            dtype=None
+        ):
+        super().__init__()
+        assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
+        assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"  # NEW
 
-#         self.d_out = d_out
-#         self.num_heads = num_heads
-#         self.head_dim = d_out // num_heads
+        self.d_out = d_out
+        self.num_heads = num_heads
+        self.head_dim = d_out // num_heads
 
-#         ############################# NEW  #############################
-#         # self.W_key = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
-#         # self.W_value = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
-#         self.W_key = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
-#         self.W_value = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
-#         self.num_kv_groups = num_kv_groups
-#         self.group_size = num_heads // num_kv_groups
-#         ################################################################
+        ############################# NEW  #############################
+        # self.W_key = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
+        # self.W_value = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
+        self.W_key = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
+        self.W_value = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
+        self.num_kv_groups = num_kv_groups
+        self.group_size = num_heads // num_kv_groups
+        ################################################################
 
-#         self.W_query = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
-#         self.out_proj = nn.Linear(d_out, d_out, bias=False, dtype=dtype)
+        self.W_query = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
+        self.out_proj = nn.Linear(d_out, d_out, bias=False, dtype=dtype)
 
-#         ############################# NEW  #############################
-#         # Fetch buffers using SharedBuffers
-#         mask, cos, sin = SharedBuffers.get_buffers(context_length, self.head_dim, rope_base, rope_config, dtype)
-#         ############################# NEW  #############################
+        ############################# NEW  #############################
+        # Fetch buffers using SharedBuffers
+        mask, cos, sin = SharedBuffers.get_buffers(context_length, self.head_dim, rope_base, rope_config, dtype)
+        ############################# NEW  #############################
         
-#         self.register_buffer("mask", mask)
-#         self.register_buffer("cos", cos)
-#         self.register_buffer("sin", sin)
+        self.register_buffer("mask", mask)
+        self.register_buffer("cos", cos)
+        self.register_buffer("sin", sin)
 
-#     def forward(self, x):
-#         b, num_tokens, d_in = x.shape
+    def forward(self, x):
+        b, num_tokens, d_in = x.shape
 
-#         queries = self.W_query(x)  # Shape: (b, num_tokens, d_out)
-#         keys = self.W_key(x)  # Shape: (b, num_tokens, num_kv_groups * head_dim)
-#         values = self.W_value(x)  # Shape: (b, num_tokens, num_kv_groups * head_dim)
+        queries = self.W_query(x)  # Shape: (b, num_tokens, d_out)
+        keys = self.W_key(x)  # Shape: (b, num_tokens, num_kv_groups * head_dim)
+        values = self.W_value(x)  # Shape: (b, num_tokens, num_kv_groups * head_dim)
 
-#         # Reshape queries, keys, and values
-#         queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
+        # Reshape queries, keys, and values
+        queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
 
-#         ##################### NEW  #####################
-#         # keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
-#         # values = values.view(b, num_tokens, self.num_heads, self.head_dim)
-#         keys = keys.view(b, num_tokens, self.num_kv_groups, self.head_dim)
-#         values = values.view(b, num_tokens, self.num_kv_groups, self.head_dim)
-#         ################################################
+        ##################### NEW  #####################
+        # keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
+        # values = values.view(b, num_tokens, self.num_heads, self.head_dim)
+        keys = keys.view(b, num_tokens, self.num_kv_groups, self.head_dim)
+        values = values.view(b, num_tokens, self.num_kv_groups, self.head_dim)
+        ################################################
 
-#         # Transpose keys, values, and queries
-#         keys = keys.transpose(1, 2)  # Shape: (b, num_heads, num_tokens, head_dim)
-#         values = values.transpose(1, 2)  # Shape: (b, num_heads, num_tokens, head_dim)
-#         queries = queries.transpose(1, 2)  # Shape: (b, num_query_groups, num_tokens, head_dim)
+        # Transpose keys, values, and queries
+        keys = keys.transpose(1, 2)  # Shape: (b, num_heads, num_tokens, head_dim)
+        values = values.transpose(1, 2)  # Shape: (b, num_heads, num_tokens, head_dim)
+        queries = queries.transpose(1, 2)  # Shape: (b, num_query_groups, num_tokens, head_dim)
 
-#         # Apply RoPE
-#         keys = compute_rope(keys, self.cos, self.sin)
-#         queries = compute_rope(queries, self.cos, self.sin)
+        # Apply RoPE
+        keys = compute_rope(keys, self.cos, self.sin)
+        queries = compute_rope(queries, self.cos, self.sin)
 
-#         ##################### NEW  #####################
-#         # Expand keys and values to match the number of heads
-#         # Shape: (b, num_heads, num_tokens, head_dim)
+        ##################### NEW  #####################
+        # Expand keys and values to match the number of heads
+        # Shape: (b, num_heads, num_tokens, head_dim)
 
-#         keys = keys.repeat_interleave(self.group_size, dim=1)  # Shape: (b, num_heads, num_tokens, head_dim)
-#         values = values.repeat_interleave(self.group_size, dim=1)  # Shape: (b, num_heads, num_tokens, head_dim)
-#         # For example, before repeat_interleave along dim=1 (query groups):
-#         #   [K1, K2]
-#         # After repeat_interleave (each query group is repeated group_size times):
-#         #   [K1, K1, K2, K2]
-#         # If we used regular repeat instead of repeat_interleave, we'd get:
-#         #   [K1, K2, K1, K2]
-#         ################################################
+        keys = keys.repeat_interleave(self.group_size, dim=1)  # Shape: (b, num_heads, num_tokens, head_dim)
+        values = values.repeat_interleave(self.group_size, dim=1)  # Shape: (b, num_heads, num_tokens, head_dim)
+        # For example, before repeat_interleave along dim=1 (query groups):
+        #   [K1, K2]
+        # After repeat_interleave (each query group is repeated group_size times):
+        #   [K1, K1, K2, K2]
+        # If we used regular repeat instead of repeat_interleave, we'd get:
+        #   [K1, K2, K1, K2]
+        ################################################
 
-#         # Compute scaled dot-product attention (aka self-attention) with a causal mask
-#         # Shape: (b, num_heads, num_tokens, num_tokens)
-#         attn_scores = queries @ keys.transpose(2, 3)  # Dot product for each head
+        # Compute scaled dot-product attention (aka self-attention) with a causal mask
+        # Shape: (b, num_heads, num_tokens, num_tokens)
+        attn_scores = queries @ keys.transpose(2, 3)  # Dot product for each head
 
-#         # Original mask truncated to the number of tokens and converted to boolean
-#         mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
+        # Original mask truncated to the number of tokens and converted to boolean
+        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
 
-#         # Use the mask to fill attention scores
-#         attn_scores.masked_fill_(mask_bool, -torch.inf)
+        # Use the mask to fill attention scores
+        attn_scores.masked_fill_(mask_bool, -torch.inf)
 
-#         attn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)
-#         assert keys.shape[-1] == self.head_dim
+        attn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)
+        assert keys.shape[-1] == self.head_dim
 
-#         # Shape: (b, num_tokens, num_heads, head_dim)
-#         context_vec = (attn_weights @ values).transpose(1, 2)
+        # Shape: (b, num_tokens, num_heads, head_dim)
+        context_vec = (attn_weights @ values).transpose(1, 2)
 
-#         # Combine heads, where self.d_out = self.num_heads * self.head_dim
-#         context_vec = context_vec.reshape(b, num_tokens, self.d_out)
-#         context_vec = self.out_proj(context_vec)  # optional projection
+        # Combine heads, where self.d_out = self.num_heads * self.head_dim
+        context_vec = context_vec.reshape(b, num_tokens, self.d_out)
+        context_vec = self.out_proj(context_vec)  # optional projection
 
-#         return context_vec
+        return context_vec
 
-# def grouped_query():
-#     gqa = GroupedQueryAttention(
-#         d_in=emb_dim,
-#         d_out=emb_dim,
-#         context_length=context_length,
-#         num_heads=32,
-#         num_kv_groups=8,
-#         rope_base=llama_3_theta_base
-#     ).to(device)
+def grouped_query():
+    gqa = GroupedQueryAttention(
+        d_in=emb_dim,
+        d_out=emb_dim,
+        context_length=context_length,
+        num_heads=32,
+        num_kv_groups=8,
+        rope_base=llama_3_theta_base
+    ).to(device)
 
-#     out = gqa(embeddings)
-#     print(out.shape)
-    # gqa_total_params = sum(p.numel() for p in gqa.parameters())
-    # print(f"GQA: {gqa_total_params:,}")
+    out = gqa(embeddings)
+    print(out.shape)
+    gqa_total_params = sum(p.numel() for p in gqa.parameters())
+    print(f"GQA: {gqa_total_params:,}")
 
 
 
