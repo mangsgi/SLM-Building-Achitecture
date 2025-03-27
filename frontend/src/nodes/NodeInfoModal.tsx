@@ -1,4 +1,3 @@
-// NodeInfoModal.tsx
 import React from 'react';
 
 interface NodeInfoModalProps {

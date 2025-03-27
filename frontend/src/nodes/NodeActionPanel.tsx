@@ -17,7 +17,7 @@ const NodeActionPanel: React.FC<NodeActionPanelProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="absolute -right-14 -top-4 transform opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+    <div className="absolute -right-14 -top-4 transform opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-30">
       <div className="p-2 rounded-md flex flex-col items-center space-y-1">
         <button
           onClick={onInfo}

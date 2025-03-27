@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { PositionalEmbeddingData } from './NodeData'; //, Option
-import { LayerWrapper } from './NodeWrapper';
 import {
   NodeTitle,
   ReadField,
   EditField,
   EditSelectField,
 } from './NodeComponents';
+import { PositionalEmbeddingData } from './NodeData';
+import { LayerWrapper } from './NodeWrapper';
 import NodeActionPanel from './NodeActionPanel';
 import NodeInfoModal from './NodeInfoModal';
+import { useCommonNodeActions } from './useCommonNodeActions';
 
 const posTypeOptions: string[] = [
   'Learned Positional Embedding',
@@ -39,22 +40,12 @@ export const PositionalEmbeddingLayer: React.FC<{
       : posTypeOptions[0],
   );
 
-  // Edit 버튼 클릭
-  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setEditMode(true);
-  };
-
-  // Save 버튼 클릭
-  const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setEditMode(false);
-
+  // Save 버튼에 들어갈 Custom Save
+  const customSave = () => {
     const newContextLength =
       ctxLengthStr === '' ? initialData.ctxLength : Number(ctxLengthStr);
     const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
 
-    // 노드 데이터 업데이트
     if (initialData.id) {
       setNodes((nds) =>
         nds.map((node) => {
@@ -75,20 +66,18 @@ export const PositionalEmbeddingLayer: React.FC<{
     }
   };
 
-  // Delete 버튼 클릭
-  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    if (initialData.id) {
-      setNodes((nds) => nds.filter((node) => node.id !== initialData.id));
-    }
-  };
-
-  // 정보 아이콘 클릭
-  const handleInfoClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setIsInfoOpen(true);
-    // 여기에 추가 동작을 구현하세요.
-  };
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  const {
+    handleDeleteClick,
+    handleInfoClick,
+    handleEditClick,
+    handleSaveClick,
+  } = useCommonNodeActions<PositionalEmbeddingData>({
+    initialData,
+    setNodes,
+    setEditMode,
+    customSave,
+  });
 
   return (
     <LayerWrapper>
@@ -137,7 +126,6 @@ export const PositionalEmbeddingLayer: React.FC<{
         />
       </div>
 
-      {/* InfoModal은 여기서 렌더링 */}
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">

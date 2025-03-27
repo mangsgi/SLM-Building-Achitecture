@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useReactFlow, Edge } from 'reactflow';
 
-import { NodeWrapper } from './NodeWrapper';
+import { BlockWrapper } from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
 import {
   BaseNodeData,
@@ -248,7 +248,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
   // }, [numLayers, data.id, setNodes]);
 
   return (
-    <NodeWrapper hideHandles={true}>
+    <BlockWrapper hideHandles={true}>
       <NodeTitle>{data.label}</NodeTitle>
       {/* 그림에 나온 순서대로 6개 슬롯 배치 (필요시 CSS로 정렬) */}
       <div className="flex flex-col items-center gap-2 mt-2 w-56">
@@ -300,7 +300,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
           onChange={(nd) => setLayerNorm1(nd as BaseNodeData)}
         />
       </div>
-    </NodeWrapper>
+    </BlockWrapper>
   );
 };
 
