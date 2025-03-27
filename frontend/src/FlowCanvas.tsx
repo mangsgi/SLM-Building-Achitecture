@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useMemo } from 'react';
+import React, { useCallback, useRef, useMemo, useState } from 'react';
 import ReactFlow, {
   addEdge,
   useNodesState,
@@ -20,6 +20,8 @@ import SDPAttentionLayer from './nodes/SDPAttention';
 import MaskedMHABlock from './nodes/MaskedMHABlock';
 import TransformerBlock from './nodes/TransformerBlock';
 import DynamicBlock from './nodes/DynamicBlock';
+import NodeInfoModal from './nodes/NodeInfoModal';
+import { BaseNodeData } from './nodes/NodeData';
 
 function FlowCanvas() {
   // ReactFlow에서 각 노드와 엣지 상태 저장
@@ -28,6 +30,14 @@ function FlowCanvas() {
 
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // 노드 정보 modal을 위한 상태변수 저장
+  const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
+    null,
+  );
+  const showModal = (nodeData: BaseNodeData) => {
+    setGlobalModalData(nodeData);
+  };
 
   // nodeTypes를 한 번만 생성하도록 하여, 렌더링 시 불필요한 재생성을 방지
   const nodeTypes = useMemo(
@@ -88,7 +98,7 @@ function FlowCanvas() {
         id,
         type: nodeType,
         position,
-        data: { id, label, ...props },
+        data: { id, label, openModal: showModal, ...props },
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -112,6 +122,16 @@ function FlowCanvas() {
       >
         <Controls />
       </ReactFlow>
+      {/* 전역 모달: globalModalData가 있으면 전체 화면 모달을 표시 */}
+      {globalModalData && (
+        <NodeInfoModal isOpen={true} onClose={() => setGlobalModalData(null)}>
+          <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
+          <p className="text-sm">
+            {globalModalData.label} 노드에 대한 추가 정보입니다.
+          </p>
+          {/* 노드별 추가 정보 렌더링 */}
+        </NodeInfoModal>
+      )}
     </div>
   );
 }

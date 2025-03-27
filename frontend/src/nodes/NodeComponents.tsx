@@ -57,8 +57,8 @@ export const EditSelectField: React.FC<{
   options: string[];
 }> = ({ label, id, name, value, onChange, options }) => {
   return (
-    <div className="mb-2">
-      <label htmlFor={id} className="text-sm">
+    <div className="mb-2 pt-1">
+      <label htmlFor={id} className="text-base font-medium">
         {label}
       </label>
       <select
@@ -69,27 +69,11 @@ export const EditSelectField: React.FC<{
         className="border rounded p-1 text-sm w-full"
       >
         {options.map((opt) => (
-          <option key={opt} value={opt}>
+          <option key={opt} value={opt} className="text-sm">
             {opt}
           </option>
         ))}
       </select>
     </div>
-  );
-};
-
-// Save와 Edit 버튼
-export const ActionButton: React.FC<{
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  children: React.ReactNode;
-  className?: string;
-}> = ({ onClick, children, className = '' }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={`bg-white p-2 hover:bg-green-100 rounded focus:outline-none focus:ring-0 ${className}`}
-    >
-      {children}
-    </button>
   );
 };

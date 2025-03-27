@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import {
-  NodeTitle,
-  ReadField,
-  EditField,
-  ActionButton,
-} from './NodeComponents';
+import { NodeTitle, ReadField, EditField } from './NodeComponents';
 import { BaseNodeData } from './NodeData';
-import { NodeWrapper } from './NodeWrapper';
+import { LayerWrapper } from './NodeWrapper';
+import NodeActionPanel from './NodeActionPanel';
+import NodeInfoModal from './NodeInfoModal';
+import { useCommonNodeActions } from './useCommonNodeActions';
 
 interface LayerNormLayerProps {
   data: BaseNodeData;
@@ -21,26 +19,17 @@ export const LayerNormLayer: React.FC<LayerNormLayerProps> = ({
 }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
+  // BaseNodeData 상태변수 저장
   const [inDimStr, setInDimStr] = useState<string>(
     initialData.inDim !== undefined ? initialData.inDim.toString() : '',
   );
 
-  // Edit 버튼 클릭
-  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    console.log('Edit button clicked');
-    setEditMode(true);
-  };
-
-  // Save 버튼 클릭
-  const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
+  // Save 버튼에 들어갈 Custom Save
+  const customSave = () => {
     const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
 
-    setEditMode(false);
-
-    // 노드 데이터 업데이트
     if (initialData.id) {
       setNodes((nds) =>
         nds.map((node) => {
@@ -57,7 +46,6 @@ export const LayerNormLayer: React.FC<LayerNormLayerProps> = ({
         }),
       );
     }
-
     // Block 안에 있는 노드 데이터 업데이트
     if (onChange) {
       onChange({
@@ -67,32 +55,55 @@ export const LayerNormLayer: React.FC<LayerNormLayerProps> = ({
     }
   };
 
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  const {
+    handleDeleteClick,
+    handleInfoClick,
+    handleEditClick,
+    handleSaveClick,
+  } = useCommonNodeActions<BaseNodeData>({
+    initialData,
+    setNodes,
+    setEditMode,
+    customSave,
+  });
+
   return (
-    <NodeWrapper>
-      <NodeTitle>{initialData.label}</NodeTitle>
-      {editMode ? (
-        <div>
-          <EditField
-            label="Input Dimension:"
-            id="inDimInput"
-            name="inDim"
-            value={inDimStr}
-            placeholder="Enter Input Dimension"
-            onChange={setInDimStr}
-          />
-          <ActionButton onClick={handleSaveClick} className="bg-green-200">
-            Save
-          </ActionButton>
-        </div>
-      ) : (
-        <div>
-          <ReadField label="Input Dimension:" value={inDimStr} />
-          <ActionButton onClick={handleEditClick} className="bg-blue-200">
-            Edit
-          </ActionButton>
-        </div>
-      )}
-    </NodeWrapper>
+    <LayerWrapper>
+      <div className="relative group">
+        <NodeTitle>{initialData.label}</NodeTitle>
+        {editMode ? (
+          <div>
+            <EditField
+              label="Input Dimension:"
+              id="inDimInput"
+              name="inDim"
+              value={inDimStr}
+              placeholder="Enter Input Dimension"
+              onChange={setInDimStr}
+            />
+          </div>
+        ) : (
+          <div>
+            <ReadField label="Input Dimension:" value={inDimStr} />
+          </div>
+        )}
+        <NodeActionPanel
+          editMode={editMode}
+          onInfo={handleInfoClick}
+          onEdit={handleEditClick}
+          onSave={handleSaveClick}
+          onDelete={handleDeleteClick}
+        />
+      </div>
+
+      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
+        <p className="text-sm">
+          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+        </p>
+      </NodeInfoModal>
+    </LayerWrapper>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
-import { NodeWrapper } from './NodeWrapper';
+import { BlockWrapper } from './NodeWrapper';
 import { NodeTitle } from './NodeComponents';
 
 interface LayerData {
@@ -52,7 +52,7 @@ const DynamicBlock: React.FC<DynamicBlockProps> = ({ data }) => {
       onDragOver={handleDragOver}
       className="w-full h-full"
     >
-      <NodeWrapper>
+      <BlockWrapper>
         <NodeTitle>{data.label || 'Transformer Block'}</NodeTitle>
         <div className="transformer-block-inner flex flex-col items-center mt-2">
           {layers.length === 0 && (
@@ -76,7 +76,7 @@ const DynamicBlock: React.FC<DynamicBlockProps> = ({ data }) => {
             </div>
           ))}
         </div>
-      </NodeWrapper>
+      </BlockWrapper>
     </div>
   );
 };

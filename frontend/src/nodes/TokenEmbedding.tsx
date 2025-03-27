@@ -5,12 +5,15 @@ import { NodeTitle, ReadField, EditField } from './NodeComponents';
 import { TokenEmbeddingData } from './NodeData';
 import { LayerWrapper } from './NodeWrapper';
 import NodeActionPanel from './NodeActionPanel';
+import NodeInfoModal from './NodeInfoModal';
+import { useCommonNodeActions } from './useCommonNodeActions';
 
 export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
   data: initialData,
 }) => {
   const { setNodes } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
   // TokenEmbeddingData 상태변수 저장
   const [vocabSizeStr, setVocabSizeStr] = useState<string>(
@@ -20,23 +23,12 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
     initialData.embDim !== undefined ? initialData.embDim.toString() : '',
   );
 
-  // Edit 버튼 클릭
-  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // 이벤트 버블링을 중단해서 부모 컴포넌트로 전파되지 않도록 함
-    e.stopPropagation();
-    setEditMode(true);
-  };
-
-  // Save 버튼 클릭
-  const handleSaveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setEditMode(false);
-
+  // Save 버튼에 들어갈 Custom Save
+  const customSave = () => {
     const newVocabSize =
       vocabSizeStr === '' ? initialData.vocabSize : Number(vocabSizeStr);
     const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
 
-    // 노드 데이터 업데이트
     if (initialData.id) {
       setNodes((nds) =>
         nds.map((node) => {
@@ -56,20 +48,18 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
     }
   };
 
-  // Delete 버튼 클릭
-  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    if (initialData.id) {
-      setNodes((nds) => nds.filter((node) => node.id !== initialData.id));
-    }
-  };
-
-  // 정보 아이콘 클릭
-  const handleInfoClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    console.log('Info icon clicked');
-    // 여기에 추가 동작을 구현하세요.
-  };
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  const {
+    handleDeleteClick,
+    handleInfoClick,
+    handleEditClick,
+    handleSaveClick,
+  } = useCommonNodeActions<TokenEmbeddingData>({
+    initialData,
+    setNodes,
+    setEditMode,
+    customSave,
+  });
 
   return (
     <LayerWrapper>
@@ -108,6 +98,13 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
           onDelete={handleDeleteClick}
         />
       </div>
+
+      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
+        <p className="text-sm">
+          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+        </p>
+      </NodeInfoModal>
     </LayerWrapper>
   );
 };
