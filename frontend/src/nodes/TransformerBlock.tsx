@@ -1,15 +1,15 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useReactFlow, Edge } from 'reactflow';
 
-import { BlockWrapper } from './NodeWrapper';
-import { NodeTitle } from './NodeComponents';
+import { BlockWrapper } from './components/NodeWrapper';
+import { NodeTitle } from './components/Components';
 import {
   BaseNodeData,
   DropoutData,
   FeedForwardData,
   MaskedMHABlockData,
   TransformerBlockData,
-} from './NodeData';
+} from './components/NodeData';
 import DropoutLayer from './Dropout';
 import FeedForwardLayer from './FeedForward';
 import LayerNormLayer from './LayerNorm';

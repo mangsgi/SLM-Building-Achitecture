@@ -1,13 +1,12 @@
 import { MouseEvent } from 'react';
 import { Node } from 'reactflow';
-import { BaseNodeData } from './NodeData';
+import { BaseNodeData } from './components/NodeData';
 
 // NodaData 템플릿 적용
 interface UseCommonNodeActionsParams<T extends BaseNodeData> {
   initialData: T;
   setNodes: (updater: (nds: Node<T>[]) => Node<T>[]) => void;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
-  customSave: () => void;
 }
 
 // 노드별 공통 로직 Custom Hook으로 구현
@@ -15,13 +14,18 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   initialData,
   setNodes,
   setEditMode,
-  customSave,
 }: UseCommonNodeActionsParams<T>) {
   // Delete 버튼 클릭
   const handleDeleteClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    console.log(initialData.id);
     if (initialData.id) {
-      setNodes((nds) => nds.filter((node) => node.id !== initialData.id));
+      setNodes((nds) =>
+        nds.filter((node) => {
+          console.log(node.id);
+          return node.id !== initialData.id;
+        }),
+      );
     }
   };
 
@@ -44,7 +48,6 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     e.stopPropagation();
     setEditMode(false);
     // Save 관련 데이터 업데이트는 노드별 customSave 콜백에서 처리
-    customSave();
   };
 
   return {

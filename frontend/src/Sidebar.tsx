@@ -1,6 +1,7 @@
 import React from 'react';
 import SidebarNodeItem from './SidebarNodeItem';
 import CanvasHamburgerIcon from './ui-component/CanvasHamburgerIcon';
+import { BaseNodeData } from './nodes/components/NodeData';
 
 interface SidebarProps {
   onToggle: () => void;
@@ -10,9 +11,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   // Drag 이벤트 핸들러 함수
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
-    data: string,
+    nodeType: string,
+    nodeData: BaseNodeData,
   ) => {
-    event.dataTransfer.setData('application/reactflow', data);
+    const id = `${nodeType}-${+new Date()}`;
+    const dataString = JSON.stringify({ nodeType, id, ...nodeData });
+    event.dataTransfer.setData('application/reactflow', dataString);
     event.dataTransfer.effectAllowed = 'move';
   };
 

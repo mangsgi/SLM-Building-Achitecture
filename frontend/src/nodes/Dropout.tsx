@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './NodeComponents';
-import { DropoutData } from './NodeData';
-import { LayerWrapper } from './NodeWrapper';
-import NodeActionPanel from './NodeActionPanel';
-import NodeInfoModal from './NodeInfoModal';
+import { NodeTitle, ReadField, EditField } from './components/Components';
+import { DropoutData } from './components/NodeData';
+import { LayerWrapper } from './components/NodeWrapper';
+import NodeActionPanel from './components/ActionPanel';
+import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 
 interface DropoutLayerProps {

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './NodeComponents';
-import { TokenEmbeddingData } from './NodeData';
-import { LayerWrapper } from './NodeWrapper';
-import NodeActionPanel from './NodeActionPanel';
-import NodeInfoModal from './NodeInfoModal';
+import { NodeTitle, ReadField, EditField } from './components/Components';
+import { TokenEmbeddingData } from './components/NodeData';
+import { LayerWrapper } from './components/NodeWrapper';
+import NodeActionPanel from './components/ActionPanel';
+import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 
 export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
