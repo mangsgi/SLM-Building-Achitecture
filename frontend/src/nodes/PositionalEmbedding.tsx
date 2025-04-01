@@ -6,11 +6,11 @@ import {
   ReadField,
   EditField,
   EditSelectField,
-} from './NodeComponents';
-import { PositionalEmbeddingData } from './NodeData';
-import { LayerWrapper } from './NodeWrapper';
-import NodeActionPanel from './NodeActionPanel';
-import NodeInfoModal from './NodeInfoModal';
+} from './components/Components';
+import { PositionalEmbeddingData } from './components/NodeData';
+import { LayerWrapper } from './components/NodeWrapper';
+import NodeActionPanel from './components/ActionPanel';
+import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 
 const posTypeOptions: string[] = [

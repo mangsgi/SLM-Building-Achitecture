@@ -1,74 +1,50 @@
 import React, { useState } from 'react';
-import { useReactFlow } from 'reactflow';
+import { useReactFlow, NodeProps } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './NodeComponents';
-import { SDPAttentionData } from './NodeData';
-import { LayerWrapper } from './NodeWrapper';
-import NodeActionPanel from './NodeActionPanel';
-import NodeInfoModal from './NodeInfoModal';
+import { NodeTitle, ReadField, EditField } from './components/Components';
+import { SDPAttentionData } from './components/NodeData';
+import { LayerWrapper } from './components/NodeWrapper';
+import NodeActionPanel from './components/ActionPanel';
+import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 
-interface SPDAttentionLayerProps {
-  data: SDPAttentionData;
-  onChange?: (newData: SDPAttentionData) => void;
+interface SDPAttentionLayerProps {
+  id: string;
 }
 
-export const SPDAttentionLayer: React.FC<SPDAttentionLayerProps> = ({
-  data: initialData,
-  onChange,
+export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
+  id,
 }) => {
-  const { setNodes } = useReactFlow();
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false); // ← 추가
 
-  // SDPAttentionData 상태변수 저장
-  const [dropoutRateStr, setDropoutRateStr] = useState<string>(
-    initialData.dropoutRate !== undefined
-      ? initialData.dropoutRate.toString()
-      : '',
-  );
-  const [ctxLengthStr, setCtxLengthStr] = useState<string>(
-    initialData.ctxLength !== undefined ? initialData.ctxLength.toString() : '',
-  );
-  const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
-  );
-  const [outDimStr, setOutDimStr] = useState<string>(
-    initialData.outDim !== undefined ? initialData.outDim.toString() : '',
-  );
+  const handleNodeClick = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
-  // Save 버튼에 들어갈 Custom Save
-  const customSave = () => {
-    const newDropoutRate =
-      dropoutRateStr === '' ? initialData.dropoutRate : Number(dropoutRateStr);
-    const newCtxLength =
-      ctxLengthStr === '' ? initialData.ctxLength : Number(ctxLengthStr);
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as SDPAttentionData;
 
-    if (initialData.id) {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                dropoutRate: newDropoutRate,
-                ctxLength: newCtxLength,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-    // Block 안에 있는 노드 데이터 업데이트
-    if (onChange) {
-      onChange({
-        ...initialData,
-        dropoutRate: newDropoutRate,
-        ctxLength: newCtxLength,
-      });
-    }
+  // input 값 변경 시, 노드의 data에 직접 업데이트
+  const handleFieldChange = (field: keyof SDPAttentionData, value: string) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성
@@ -78,59 +54,18 @@ export const SPDAttentionLayer: React.FC<SPDAttentionLayerProps> = ({
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<SDPAttentionData>({
-    initialData,
+    initialData: currentData,
     setNodes,
     setEditMode,
-    customSave,
   });
 
   return (
-    <LayerWrapper hideHandles={editMode /* 편집 시 핸들 숨김 */}>
+    <LayerWrapper
+      hideHandles={currentData.hideHandles}
+      onClick={handleNodeClick}
+    >
       <div className="relative group">
-        <NodeTitle>{initialData.label}</NodeTitle>
-        {editMode ? (
-          <div>
-            <EditField
-              label="Input Dimension:"
-              id="inDimInput"
-              name="inDim"
-              value={inDimStr}
-              placeholder="Enter input dimension"
-              onChange={setInDimStr}
-            />
-            <EditField
-              label="Output Dimension:"
-              id="outDimInput"
-              name="outDim"
-              value={outDimStr}
-              placeholder="Enter output dimension"
-              onChange={setOutDimStr}
-            />
-            <EditField
-              label="Dropout Rate:"
-              id="dropoutRateInput"
-              name="dropoutRate"
-              value={dropoutRateStr}
-              placeholder="Enter dropout rate"
-              onChange={setDropoutRateStr}
-            />
-            <EditField
-              label="Context Length:"
-              id="ctxLengthInput"
-              name="ctxLength"
-              value={ctxLengthStr}
-              placeholder="Enter context length"
-              onChange={setCtxLengthStr}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField label="Input Dimension:" value={inDimStr} />
-            <ReadField label="Output Dimension:" value={outDimStr} />
-            <ReadField label="Dropout Rate:" value={dropoutRateStr} />
-            <ReadField label="Context Length:" value={ctxLengthStr} />
-          </div>
-        )}
+        <NodeTitle>{currentData.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
           onInfo={handleInfoClick}
@@ -138,16 +73,108 @@ export const SPDAttentionLayer: React.FC<SPDAttentionLayerProps> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        {!isCollapsed && (
+          <>
+            {editMode ? (
+              <div>
+                <EditField
+                  label="Input Dimension:"
+                  id="inDimInput"
+                  name="inDim"
+                  value={
+                    currentData.inDim !== undefined
+                      ? currentData.inDim.toString()
+                      : ''
+                  }
+                  placeholder="Enter input dimension"
+                  onChange={(value) => handleFieldChange('inDim', value)}
+                />
+                <EditField
+                  label="Output Dimension:"
+                  id="outDimInput"
+                  name="outDim"
+                  value={
+                    currentData.outDim !== undefined
+                      ? currentData.outDim.toString()
+                      : ''
+                  }
+                  placeholder="Enter output dimension"
+                  onChange={(value) => handleFieldChange('outDim', value)}
+                />
+                <EditField
+                  label="Dropout Rate:"
+                  id="dropoutRateInput"
+                  name="dropoutRate"
+                  value={
+                    currentData.dropoutRate !== undefined
+                      ? currentData.dropoutRate.toString()
+                      : ''
+                  }
+                  placeholder="Enter dropout rate"
+                  onChange={(value) => handleFieldChange('dropoutRate', value)}
+                />
+                <EditField
+                  label="Context Length:"
+                  id="ctxLengthInput"
+                  name="ctxLength"
+                  value={
+                    currentData.ctxLength !== undefined
+                      ? currentData.ctxLength.toString()
+                      : ''
+                  }
+                  placeholder="Enter context length"
+                  onChange={(value) => handleFieldChange('ctxLength', value)}
+                />
+              </div>
+            ) : (
+              <div>
+                <ReadField
+                  label="Input Dimension:"
+                  value={
+                    currentData.inDim !== undefined
+                      ? currentData.inDim.toString()
+                      : ''
+                  }
+                />
+                <ReadField
+                  label="Output Dimension:"
+                  value={
+                    currentData.outDim !== undefined
+                      ? currentData.outDim.toString()
+                      : ''
+                  }
+                />
+                <ReadField
+                  label="Dropout Rate:"
+                  value={
+                    currentData.dropoutRate !== undefined
+                      ? currentData.dropoutRate.toString()
+                      : ''
+                  }
+                />
+                <ReadField
+                  label="Context Length:"
+                  value={
+                    currentData.ctxLength !== undefined
+                      ? currentData.ctxLength.toString()
+                      : ''
+                  }
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">
-          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
         </p>
       </NodeInfoModal>
     </LayerWrapper>
   );
 };
 
-export default SPDAttentionLayer;
+export default SDPAttentionLayer;
