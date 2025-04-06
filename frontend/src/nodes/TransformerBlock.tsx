@@ -138,7 +138,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<TransformerBlockData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
   });

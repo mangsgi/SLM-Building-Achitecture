@@ -36,10 +36,6 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as BaseNodeData;
@@ -69,10 +65,12 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<BaseNodeData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

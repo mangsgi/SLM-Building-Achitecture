@@ -29,10 +29,6 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as DropoutData;
@@ -62,10 +58,12 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<DropoutData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

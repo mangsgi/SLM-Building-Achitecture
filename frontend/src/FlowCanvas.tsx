@@ -75,6 +75,7 @@ function FlowCanvas() {
     }),
     [],
   );
+  const allowedTypes = ['maskedMHABlock', 'dynamicBlock'];
 
   // Node Click 시
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -98,7 +99,6 @@ function FlowCanvas() {
   //           },
   //         };
   //       }
-
   //       return node;
   //     }),
   //   );
@@ -191,7 +191,7 @@ function FlowCanvas() {
     console.log(node, target);
     setNodes((nodes) =>
       nodes.map((n) => {
-        // target이 존재할 경우 Node의 actions 정의
+        // target이 존재할 경우 Node 부모 설정 여부 결정
         if (n.id === node.id && target) {
           // target의 자식 노드들을 찾아서 total height 계산
           const targetChildren = nodes.filter(
@@ -201,10 +201,11 @@ function FlowCanvas() {
             (sum, child) => 10 + sum + (child.height ?? 0),
             0,
           );
-          // target이 maskedMHABlock일 경우우
+          // target이 Block이고 Node가 Block이 아닐 때
           if (
             !node.type?.includes('Block') &&
-            target.type === 'maskedMHABlock'
+            target.type &&
+            allowedTypes.includes(target.type)
           ) {
             n.data = { ...n.data };
             n.parentNode = target?.id;
@@ -212,13 +213,15 @@ function FlowCanvas() {
             n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
             n.draggable = false; // Node가 Drag 되지 않음
             n.data.hideHandles = true; // Edge Handle 부분 숨기기
-            // target이 trasnformerBlock일 경우
+            // Node도 Block일 경우
           } else if (
-            !node.type?.includes('Block') &&
-            target.type === 'transformerBlock'
+            node.type?.includes('Block') &&
+            target.type &&
+            allowedTypes.includes(target.type)
           ) {
-            console.log('..');
+            console.log("Block can't includes Block Type.");
           }
+          // target과 Node가 같으면 그냥 둠
         } else if (n.id === target?.id) {
           n.data = { ...n.data };
         }
