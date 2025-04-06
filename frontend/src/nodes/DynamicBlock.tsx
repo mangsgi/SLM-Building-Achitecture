@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 
-import { BlockWrapper } from './components/NodeWrapper';
+import { BlockWrapper } from './components/BlockWrapper';
 import { NodeTitle } from './components/Components';
 
 interface LayerData {

@@ -1,50 +1,66 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './components/Components';
+import { NodeTitle } from './components/Components';
 import { BaseNodeData } from './components/NodeData';
-import { LayerWrapper } from './components/NodeWrapper';
+import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 
-export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
-  data: initialData,
-}) => {
-  const { setNodes } = useReactFlow();
+const getFields = (data: BaseNodeData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Input Dimension:',
+    name: 'inDim',
+    value: data.inDim?.toString() || '',
+    placeholder: 'Enter input dimension',
+  },
+  {
+    type: 'number',
+    label: 'Output Dimension:',
+    name: 'outDim',
+    value: data.outDim?.toString() || '',
+    placeholder: 'Enter output dimension',
+  },
+];
+
+interface LinearLayerProps {
+  id: string;
+}
+
+export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  // BaseNodeData 상태변수 저장
-  const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
-  );
-  const [outDimStr, setOutDimStr] = useState<string>(
-    initialData.outDim !== undefined ? initialData.outDim.toString() : '',
-  );
+  const handleNodeClick = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
-  // Save 버튼에 들어갈 Custom Save
-  const customSave = () => {
-    const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
-    const newOutDim = outDimStr === '' ? initialData.outDim : Number(outDimStr);
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as BaseNodeData;
 
-    if (initialData.id) {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inDim: newInDim,
-                outDim: newOutDim,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
+  // input 값 변경 시, 노드의 data에 직접 업데이트
+  const handleFieldChange = (field: keyof BaseNodeData, value: string) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성
@@ -54,41 +70,15 @@ export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<BaseNodeData>({
-    initialData,
+    currentData,
     setNodes,
     setEditMode,
-    customSave,
   });
 
   return (
-    <LayerWrapper>
+    <LayerWrapper hideHandles={currentData.hideHandles}>
       <div className="relative group">
-        <NodeTitle>{initialData.label}</NodeTitle>
-        {editMode ? (
-          <div>
-            <EditField
-              label="Input Dimension:"
-              id="inDimInput"
-              name="inDim"
-              value={inDimStr}
-              placeholder="Enter input dimension"
-              onChange={setInDimStr}
-            />
-            <EditField
-              label="Output Dimension:"
-              id="outDimInput"
-              name="outDim"
-              value={outDimStr}
-              placeholder="Enter output dimension"
-              onChange={setOutDimStr}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField label="Input Dimension:" value={inDimStr} />
-            <ReadField label="Output Dimension:" value={outDimStr} />
-          </div>
-        )}
+        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
           onInfo={handleInfoClick}
@@ -96,12 +86,22 @@ export const LinearLayer: React.FC<{ data: BaseNodeData }> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        {!isCollapsed && (
+          <FieldRenderer
+            fields={getFields(currentData)}
+            editMode={editMode}
+            onChange={(name: string, value: string) =>
+              handleFieldChange(name as keyof BaseNodeData, value)
+            }
+          />
+        )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">
-          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
         </p>
       </NodeInfoModal>
     </LayerWrapper>

@@ -1,51 +1,71 @@
 import React, { useState } from 'react';
-import { useReactFlow } from 'reactflow';
+import { useReactFlow, NodeProps } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './components/Components';
+import { NodeTitle } from './components/Components';
 import { TokenEmbeddingData } from './components/NodeData';
-import { LayerWrapper } from './components/NodeWrapper';
+import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 
-export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
-  data: initialData,
-}) => {
-  const { setNodes } = useReactFlow();
+const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Vocabulary Size:',
+    name: 'vocabSize',
+    value: data.vocabSize?.toString() || '',
+    placeholder: 'Enter vocabulary size',
+  },
+  {
+    type: 'number',
+    label: 'Embedding Dimension Size:',
+    name: 'embDim',
+    value: data.embDim?.toString() || '',
+    placeholder: 'Enter embedding dimension',
+  },
+];
+
+interface TokenEmbeddingLayerProps {
+  id: string;
+}
+
+export const TokenEmbeddingLayer: React.FC<
+  NodeProps<TokenEmbeddingLayerProps>
+> = ({ id }) => {
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  // TokenEmbeddingData 상태변수 저장
-  const [vocabSizeStr, setVocabSizeStr] = useState<string>(
-    initialData.vocabSize !== undefined ? initialData.vocabSize.toString() : '',
-  );
-  const [embDimStr, setEmbDimStr] = useState<string>(
-    initialData.embDim !== undefined ? initialData.embDim.toString() : '',
-  );
+  const handleNodeClick = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
-  // Save 버튼에 들어갈 Custom Save
-  const customSave = () => {
-    const newVocabSize =
-      vocabSizeStr === '' ? initialData.vocabSize : Number(vocabSizeStr);
-    const newEmbDim = embDimStr === '' ? initialData.embDim : Number(embDimStr);
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as TokenEmbeddingData;
 
-    if (initialData.id) {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                vocabSize: newVocabSize,
-                embDim: newEmbDim,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
+  // input 값 변경 시, 노드의 data에 직접 업데이트트
+  const handleFieldChange = (
+    field: keyof TokenEmbeddingData,
+    value: string,
+  ) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성
@@ -55,41 +75,15 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<TokenEmbeddingData>({
-    initialData,
+    currentData,
     setNodes,
     setEditMode,
-    customSave,
   });
 
   return (
-    <LayerWrapper>
+    <LayerWrapper hideHandles={currentData.hideHandles}>
       <div className="relative group">
-        <NodeTitle>{initialData.label}</NodeTitle>
-        {editMode ? (
-          <div>
-            <EditField
-              label="Vocabulary Size:"
-              id="vocabSizeInput"
-              name="vocabSize"
-              value={vocabSizeStr}
-              placeholder="Enter Vocabulary Size"
-              onChange={setVocabSizeStr}
-            />
-            <EditField
-              label="Embedding Dimension Size:"
-              id="embDimSize"
-              name="embDim"
-              value={embDimStr}
-              placeholder="Enter embedding dimension"
-              onChange={setEmbDimStr}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField label="Vocabulary Size:" value={vocabSizeStr} />
-            <ReadField label="Embedding Dimension Size:" value={embDimStr} />
-          </div>
-        )}
+        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
           onInfo={handleInfoClick}
@@ -97,12 +91,22 @@ export const TokenEmbeddingLayer: React.FC<{ data: TokenEmbeddingData }> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        {!isCollapsed && (
+          <FieldRenderer
+            fields={getFields(currentData)}
+            editMode={editMode}
+            onChange={(name: string, value: string) =>
+              handleFieldChange(name as keyof TokenEmbeddingData, value)
+            }
+          />
+        )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">
-          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
         </p>
       </NodeInfoModal>
     </LayerWrapper>
