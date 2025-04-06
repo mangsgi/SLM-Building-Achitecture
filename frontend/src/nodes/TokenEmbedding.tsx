@@ -38,10 +38,6 @@ export const TokenEmbeddingLayer: React.FC<
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as TokenEmbeddingData;
@@ -74,10 +70,12 @@ export const TokenEmbeddingLayer: React.FC<
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<TokenEmbeddingData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

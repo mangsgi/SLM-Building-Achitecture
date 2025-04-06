@@ -16,11 +16,11 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
 
   return (
     <div
-      className="z-10 block-wrapper p-2 bg-white border-2 border-gray-300 rounded shadow hover:border-green-100"
+      className="z-10 p-2 block-wrapper bg-white border-2 border-gray-300 rounded shadow hover:border-green-100"
       style={{
         pointerEvents: 'auto',
         position: 'relative',
-        width: '300px', // 고정 너비
+        width: '300px',
       }}
     >
       {/* 상단 핸들 */}

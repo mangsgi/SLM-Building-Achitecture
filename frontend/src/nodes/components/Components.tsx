@@ -9,7 +9,7 @@ interface NodeTitleProps {
 export const NodeTitle: React.FC<NodeTitleProps> = ({ children, onClick }) => {
   return (
     <div onClick={onClick}>
-      <h3 className="font-bold mb-2">{children}</h3>
+      <h3 className="font-bold">{children}</h3>
     </div>
   );
 };

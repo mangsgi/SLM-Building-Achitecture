@@ -22,7 +22,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
   onChange,
 }) => {
   return (
-    <>
+    <div>
       {fields.map((field) => {
         if (editMode) {
           if (field.type === 'select') {
@@ -60,7 +60,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({
           );
         }
       })}
-    </>
+    </div>
   );
 };
 

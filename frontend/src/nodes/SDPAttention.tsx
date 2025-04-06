@@ -52,10 +52,6 @@ export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as SDPAttentionData;
@@ -85,10 +81,12 @@ export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<SDPAttentionData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

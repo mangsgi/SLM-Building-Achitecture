@@ -45,10 +45,6 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as FeedForwardData;
@@ -78,10 +74,12 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<FeedForwardData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

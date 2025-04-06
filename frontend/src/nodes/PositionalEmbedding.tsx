@@ -52,10 +52,6 @@ export const PositionalEmbeddingLayer: React.FC<
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  const handleNodeClick = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as PositionalEmbeddingData;
@@ -88,10 +84,12 @@ export const PositionalEmbeddingLayer: React.FC<
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
+    handleNodeClick,
   } = useCommonNodeActions<PositionalEmbeddingData>({
-    currentData,
+    id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
   });
 
   return (

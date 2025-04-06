@@ -60,7 +60,7 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<MaskedMHABlockData>({
-    initialData: currentData,
+    id,
     setNodes,
     setEditMode,
   });

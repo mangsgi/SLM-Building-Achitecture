@@ -41,10 +41,9 @@ export interface MaskedMHABlockData extends BaseNodeData {
 
 export interface TransformerBlockData extends BaseNodeData {
   numLayers: number;
-  // dropout1?: DropoutData | null;
-  // feedForward?: FeedForwardData | null;
-  // layerNorm2?: BaseNodeData | null;
-  // dropout2?: DropoutData | null;
-  // maskedMHA?: MaskedMHABlockData | null;
-  // layerNorm1?: BaseNodeData | null;
+  // 레이어 이름별 true/false 값 딕셔너리 추가
+}
+
+export interface DynamicBlockData extends BaseNodeData {
+  numLayers: number;
 }
