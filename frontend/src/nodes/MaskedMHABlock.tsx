@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useReactFlow, NodeProps, useStore } from 'reactflow';
 
 import { NodeTitle, ReadField, EditField } from './components/Components';
-import { BlockWrapper } from './components/NodeWrapper';
+import { BlockWrapper } from './components/BlockWrapper';
 import { MaskedMHABlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
@@ -69,6 +69,13 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
     <BlockWrapper childNodesHeight={childNodesHeight}>
       <div className="relative group">
         <NodeTitle>{currentData.label}</NodeTitle>
+        <NodeActionPanel
+          editMode={editMode}
+          onInfo={handleInfoClick}
+          onEdit={handleEditClick}
+          onSave={handleSaveClick}
+          onDelete={handleDeleteClick}
+        />
         {editMode ? (
           <div>
             <EditField
@@ -96,13 +103,6 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
             />
           </div>
         )}
-        <NodeActionPanel
-          editMode={editMode}
-          onInfo={handleInfoClick}
-          onEdit={handleEditClick}
-          onSave={handleSaveClick}
-          onDelete={handleDeleteClick}
-        />
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>

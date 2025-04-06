@@ -40,11 +40,11 @@ export interface MaskedMHABlockData extends BaseNodeData {
 }
 
 export interface TransformerBlockData extends BaseNodeData {
-  dropout1?: DropoutData | null;
-  feedForward?: FeedForwardData | null;
-  layerNorm2?: BaseNodeData | null;
-  dropout2?: DropoutData | null;
-  maskedMHA?: MaskedMHABlockData | null;
-  layerNorm1?: BaseNodeData | null;
   numLayers: number;
+  // dropout1?: DropoutData | null;
+  // feedForward?: FeedForwardData | null;
+  // layerNorm2?: BaseNodeData | null;
+  // dropout2?: DropoutData | null;
+  // maskedMHA?: MaskedMHABlockData | null;
+  // layerNorm1?: BaseNodeData | null;
 }

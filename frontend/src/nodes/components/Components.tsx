@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { MouseEventHandler } from 'react';
 
 // Node의 Title 컴포넌트
-export const NodeTitle: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  return <h3 className="font-bold mb-2">{children}</h3>;
+interface NodeTitleProps {
+  children: string;
+  onClick?: MouseEventHandler<HTMLDivElement>;
+}
+
+export const NodeTitle: React.FC<NodeTitleProps> = ({ children, onClick }) => {
+  return (
+    <div onClick={onClick}>
+      <h3 className="font-bold mb-2">{children}</h3>
+    </div>
+  );
 };
 
 // 읽기: Node의 각 Data별 렌더링

@@ -169,11 +169,16 @@ function FlowCanvas() {
         centerX < n.position.x + (n.height ?? 0) &&
         centerY > n.position.y &&
         centerY < n.position.y + (n.height ?? 0) &&
-        n.type === 'maskedMHABlock' &&
+        n.type?.includes('Block') &&
         n.id !== node.id,
     );
-
-    console.log(target);
+    console.log(
+      targetNode,
+      centerX,
+      centerY,
+      targetNode?.position.x,
+      targetNode?.position.x,
+    );
     if (targetNode) {
       setTarget(targetNode as Node<BaseNodeData, string>);
     } else {
@@ -186,6 +191,7 @@ function FlowCanvas() {
     console.log(node, target);
     setNodes((nodes) =>
       nodes.map((n) => {
+        // target이 존재할 경우 Node의 actions 정의
         if (n.id === node.id && target) {
           // target의 자식 노드들을 찾아서 total height 계산
           const targetChildren = nodes.filter(
@@ -195,13 +201,23 @@ function FlowCanvas() {
             (sum, child) => 10 + sum + (child.height ?? 0),
             0,
           );
-          if (node.type !== 'maskedMHABlock') {
+          // target이 maskedMHABlock일 경우우
+          if (
+            !node.type?.includes('Block') &&
+            target.type === 'maskedMHABlock'
+          ) {
             n.data = { ...n.data };
             n.parentNode = target?.id;
             n.position = { x: 10, y: 110 + totalHeight }; // 노드의 위치 지정 **in 부모 Node**
             n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
             n.draggable = false; // Node가 Drag 되지 않음
-            n.data.hideHandles = true;
+            n.data.hideHandles = true; // Edge Handle 부분 숨기기
+            // target이 trasnformerBlock일 경우
+          } else if (
+            !node.type?.includes('Block') &&
+            target.type === 'transformerBlock'
+          ) {
+            console.log('..');
           }
         } else if (n.id === target?.id) {
           n.data = { ...n.data };

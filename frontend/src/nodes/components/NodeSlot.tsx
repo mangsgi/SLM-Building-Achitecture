@@ -1,21 +1,11 @@
 import React, { useCallback } from 'react';
-import { BaseNodeData } from './components/NodeData';
 
-interface NodeSlotProps<T extends BaseNodeData> {
+interface NodeSlotProps {
   slotLabel: string;
-  data: T | null;
-  onChange: (newData: T | null) => void;
-  nodeComponent: React.FC<{ data: T; onChange: (data: T | null) => void }>;
-  allowedTypes?: string[];
+  allowedType: string;
 }
 
-function NodeSlot<T extends BaseNodeData>({
-  slotLabel,
-  data,
-  onChange,
-  nodeComponent: NodeComponent,
-  allowedTypes,
-}: NodeSlotProps<T>) {
+const NodeSlot: React.FC<NodeSlotProps> = ({ slotLabel, allowedType }) => {
   // 드래그 오버 시 기본 동작 방지 및 dropEffect 설정
   const handleDragOver = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -41,41 +31,27 @@ function NodeSlot<T extends BaseNodeData>({
         return;
       }
       // allowedTypes가 정의되어 있다면 해당 타입만 허용
-      if (allowedTypes && !allowedTypes.includes(parsedData.nodeType)) {
+      if (allowedType && !allowedType.includes(parsedData.nodeType)) {
         console.warn(
           `드롭된 노드 타입 '${parsedData.nodeType}'은(는) 이 슬롯에서 허용되지 않습니다.`,
         );
         return;
       }
-      // 새로운 노드 데이터를 생성 (ID는 현재 시간 기반으로 생성)
-      const newData: T = {
-        ...parsedData,
-        id: `${parsedData.nodeType}-${Date.now()}`,
-      };
-      onChange(newData);
     },
-    [allowedTypes, onChange],
+    [allowedType],
   );
 
   return (
     <div
-      className="node-slot-container my-2 p-2 w-full bg-transparent border-dashed border-2 border-gray-200 rounded"
+      className="node-slot-container p-2 h-12 w-full bg-transparent border-dashed border-2 border-gray-200 rounded"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      {data ? (
-        <div className="node-slot-inner border rounded shadow">
-          <div className="node-content p-2">
-            <NodeComponent data={data} onChange={onChange} />
-          </div>
-        </div>
-      ) : (
-        <div className="node-slot-placeholder italic text-gray-400 text-sm p-2">
-          {slotLabel} (드래그 앤 드롭)
-        </div>
-      )}
+      <div className="node-slot-placeholder italic text-gray-400 text-sm p-2">
+        {slotLabel} (드래그 앤 드롭)
+      </div>
     </div>
   );
-}
+};
 
 export default NodeSlot;

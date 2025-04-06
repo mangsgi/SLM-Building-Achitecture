@@ -1,304 +1,195 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { useReactFlow, Edge } from 'reactflow';
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from 'react';
+import { useReactFlow, useStore } from 'reactflow';
 
-import { BlockWrapper } from './components/NodeWrapper';
 import { NodeTitle } from './components/Components';
-import {
-  BaseNodeData,
-  DropoutData,
-  FeedForwardData,
-  MaskedMHABlockData,
-  TransformerBlockData,
-} from './components/NodeData';
-import DropoutLayer from './Dropout';
-import FeedForwardLayer from './FeedForward';
-import LayerNormLayer from './LayerNorm';
-import MaskedMHABlock from './MaskedMHABlock';
+import { BlockWrapper } from './components/BlockWrapper';
+import { TransformerBlockData } from './components/NodeData';
+import NodeActionPanel from './components/ActionPanel';
+import NodeInfoModal from './components/NodeInfoModal';
+import { useCommonNodeActions } from './useCommonNodeActions';
+import NodeSlot from './components/NodeSlot';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+
+const getFields = (data: TransformerBlockData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Number of Layers:',
+    name: 'numOfLayers',
+    value: data.numLayers?.toString() || '',
+    placeholder: 'Enter the number of layers',
+  },
+];
 
 interface TransformerBlockProps {
-  data: TransformerBlockData;
+  id: string;
 }
 
-// Slot 컴포넌트: 특정 노드 타입만 드롭받아서 상태를 저장/편집
-interface SlotProps {
-  allowedType: string; // e.g. 'dropout', 'feedForward', 'layerNorm', 'maskedMultiHeadAttention'
-  slotLabel: string;
-  data: BaseNodeData | null;
-  onChange: (newData: BaseNodeData | null) => void;
-}
+const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
+  const { setNodes, getNode } = useReactFlow();
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
-const Slot: React.FC<SlotProps> = ({
-  allowedType,
-  slotLabel,
-  data,
-  onChange,
-}) => {
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation(); // 이벤트 전파 차단 추가
-
-      const raw = e.dataTransfer.getData('application/reactflow');
-      if (!raw) return;
-      const dropped = JSON.parse(raw);
-
-      // dropped.nodeType이 slot이 허용하는 타입인지 확인
-      if (dropped.nodeType !== allowedType) {
-        alert(`이 슬롯에는 ${allowedType} 노드만 드롭 가능합니다!`);
-        return;
-      }
-
-      // 기존 NodeData에서 필요한 필드만 추출
-      // Sidebar에서 넘어오는 nodeData 구조에 맞춰서 필요 시 수정
-      const newData: BaseNodeData = {
-        id: `${dropped.nodeType}-${Date.now()}`,
-        label: dropped.label || dropped.nodeType,
-        ...dropped, // inDim, outDim, dropoutRate 등
-      };
-
-      onChange(newData);
-    },
-    [allowedType, onChange],
-  );
-
-  // 노드가 없으면 "드롭 영역" 표시, 있으면 해당 노드의 Editor를 렌더링
-  let content = (
-    <div className="italic text-gray-400 text-sm">
-      {slotLabel} (드래그 앤 드롭)
-    </div>
-  );
-  if (data) {
-    // allowedType에 따라 Editor를 스위치
-    switch (allowedType) {
-      case 'dropout':
-        content = (
-          <DropoutLayer
-            data={data as DropoutData}
-            onChange={(nd) => onChange(nd)}
-          />
-        );
-        break;
-      case 'feedForward':
-        content = (
-          <FeedForwardLayer
-            data={data as FeedForwardData}
-            onChange={(nd) => onChange(nd)}
-          />
-        );
-        break;
-      case 'layerNorm':
-        content = (
-          <LayerNormLayer
-            data={data as BaseNodeData}
-            onChange={(nd: BaseNodeData) => onChange(nd)}
-          />
-        );
-        break;
-      case 'maskedMHABlock':
-        content = (
-          <MaskedMHABlock
-            data={data as MaskedMHABlockData}
-            onChange={(nd: MaskedMHABlockData) => onChange(nd)}
-          />
-        );
-        break;
-      default:
-        content = <div>Unknown node type</div>;
-        break;
-    }
-  }
-
-  return (
-    <div
-      className="my-2 p-2 w-full bg-transparent border-dashed border-2 border-gray-200 rounded"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
-      {content}
-    </div>
-  );
-};
-
-// 최종 TransformerBlock 컴포넌트
-const TransformerBlock: React.FC<TransformerBlockProps> = ({ data }) => {
-  const { getEdges, setEdges, setNodes, getNode } = useReactFlow();
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as TransformerBlockData;
 
   // 6개 슬롯 useState
-  const [dropout1, setDropout1] = useState<DropoutData | null>(
-    data.dropout1 || null,
-  );
-  const [feedForward, setFeedForward] = useState<FeedForwardData | null>(
-    data.feedForward || null,
-  );
-  const [layerNorm2, setLayerNorm2] = useState<BaseNodeData | null>(
-    data.layerNorm2 || null,
-  );
-  const [dropout2, setDropout2] = useState<DropoutData | null>(
-    data.dropout2 || null,
-  );
-  const [maskedMHA, setMaskedMHA] = useState<MaskedMHABlockData | null>(
-    data.maskedMHA || null,
-  );
-  const [layerNorm1, setLayerNorm1] = useState<BaseNodeData | null>(
-    data.layerNorm1 || null,
-  );
+  // const [residual1, setResidual1] = useState<boolean>(false);
+  // const [dropout1, setDropout1] = useState<boolean>(false);
+  const [feedForward, setFeedForward] = useState<boolean>(false);
+  const [layerNorm2, setLayerNorm2] = useState<boolean>(false);
+  // const [residual2, setResidual2] = useState<boolean>(false);
+  // const [dropout2, setDropout2] = useState<boolean>(false);
+  const [maskedMHA, setMaskedMHA] = useState<boolean>(false);
+  const [layerNorm1, setLayerNorm1] = useState<boolean>(false);
 
-  // const [numLayers, setNumLayers] = useState<number>(data.numLayers);
-
-  // 프로그램적으로 내부 슬롯들을 순서대로 연결하는 Internal Edge 생성
-  // 내부 edge 업데이트: 이전 내부 edge와 비교하여 변경된 경우에만 업데이트
-  useEffect(() => {
-    const newInternalEdges: Edge[] = [];
-    // Top down: Dropout1 ← FeedForward ← LayerNorm2 ← Dropout2 ← MaskedMHA ← LayerNorm1
-    const slotNodes = [
-      dropout1,
-      feedForward,
-      layerNorm2,
-      dropout2,
-      maskedMHA,
-      layerNorm1,
-    ];
-    for (let i = 0; i < slotNodes.length - 1; i++) {
-      const source = slotNodes[i];
-      const target = slotNodes[i + 1];
-      // source/target이 not-null일 때 Edge를 push
-      if (source && target && source.id && target.id) {
-        newInternalEdges.push({
-          id: `internal-${data.id}-${source.id}-${target.id}`,
-          source: source.id,
-          target: target.id,
-          type: 'default',
-          style: { stroke: 'transparent' },
-        });
-      }
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [measuredHeight, setMeasuredHeight] = useState<number>(0);
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      const rect = contentRef.current.getBoundingClientRect();
+      setMeasuredHeight(rect.height);
     }
-
-    // 기존 글로벌 edge 중 이 TransformerBlock에 속하는 internal edge를 제거 후 새로 추가
-    const existingEdges = getEdges();
-    const filteredEdges = existingEdges.filter(
-      (edge) => !edge.id.startsWith(`internal-${data.id}-`),
-    );
-    setEdges([...filteredEdges, ...newInternalEdges]);
+    console.log(measuredHeight);
   }, [
-    dropout1,
+    // residual1,
     feedForward,
     layerNorm2,
-    dropout2,
+    // dropout2,
     maskedMHA,
     layerNorm1,
-    data.id,
-    getEdges,
-    setEdges,
+    editMode,
   ]);
+  // 자식 노드와 자식 노드의 높이 합 저장
+  const getNodes = useStore((state) => state.getNodes);
+  const nodes = getNodes();
 
-  // TransformerBlock 자체의 inDim/outDim 업데이트:
-  // 첫 슬롯(dropout1)의 inDim을 블록의 inDim, 마지막 슬롯(layerNorm1)의 outDim을 블록의 outDim으로 사용
+  const childNodes = useMemo(() => {
+    return nodes.filter((n) => n.parentNode === id);
+  }, [nodes]);
+
+  // const childNodesHeight = useMemo(() => {
+  //   return childNodes.reduce((acc, node) => 10 + acc + (node.height ?? 0), 0);
+  // }, [childNodes]);
+
+  // const SLOT_HEIGHT = 60;
+
+  // const activeSlots = [
+  //   !residual1,
+  //   !feedForward,
+  //   !layerNorm2,
+  //   !dropout2,
+  //   !maskedMHA,
+  //   !layerNorm1,
+  // ].filter(Boolean).length;
+
+  // const computedHeight = childNodes.length
+  //   ? childNodes.reduce((acc, node) => acc + (node.height ?? 0) + 10, 0)
+  //   : activeSlots * SLOT_HEIGHT;
+
   useEffect(() => {
-    if (dropout1 && layerNorm1 && dropout1.inDim !== undefined) {
-      const newInDim = dropout1.inDim;
-      const newOutDim = (layerNorm1 as { outDim: number }).outDim;
-      const currentNode = getNode(data.id!);
-      if (
-        currentNode &&
-        (currentNode.data.inDim !== newInDim ||
-          currentNode.data.outDim !== newOutDim)
-      ) {
-        setNodes((nds) =>
-          nds.map((node) => {
-            if (node.id === data.id) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  inDim: newInDim,
-                  outDim: newOutDim,
-                },
-              };
-            }
-            return node;
-          }),
-        );
+    childNodes.forEach((node) => {
+      if (node.type === 'dropout') {
+        // setDropout1(true);
+      } else if (node.type === 'feedForward') {
+        setFeedForward(true);
+      } else if (node.type === 'layerNorm' && !layerNorm1) {
+        setLayerNorm1(true);
+      } else if (node.type === 'layerNorm' && !layerNorm2) {
+        setLayerNorm2(true);
+      } else if (node.type === 'maskedMHABlock') {
+        setMaskedMHA(true);
       }
-    }
-  }, [dropout1, layerNorm1, data.id, setNodes, getNode]);
+    });
+  }, [childNodes]);
 
-  // numLayers 업데이트
-  // useEffect(() => {
-  //   if (data.id) {
-  //     setNodes((nds) =>
-  //       nds.map((node) => {
-  //         if (node.id === data.id) {
-  //           return {
-  //             ...node,
-  //             data: {
-  //               ...node.data,
-  //               numLayers: numLayers,
-  //             },
-  //           };
-  //         }
-  //         return node;
-  //       }),
-  //     );
-  //   }
-  // }, [numLayers, data.id, setNodes]);
+  // input 값 변경 시, 노드의 data에 직접 업데이트
+  const handleFieldChange = (
+    field: keyof TransformerBlockData,
+    value: string,
+  ) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
+  };
+
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  const {
+    handleDeleteClick,
+    handleInfoClick,
+    handleEditClick,
+    handleSaveClick,
+  } = useCommonNodeActions<TransformerBlockData>({
+    currentData,
+    setNodes,
+    setEditMode,
+  });
 
   return (
-    <BlockWrapper hideHandles={true}>
-      <NodeTitle>{data.label}</NodeTitle>
-      {/* 그림에 나온 순서대로 6개 슬롯 배치 (필요시 CSS로 정렬) */}
-      <div className="flex flex-col items-center gap-2 mt-2 w-56">
-        {/* Dropout 1 */}
-        <Slot
-          allowedType="dropout"
-          slotLabel="Dropout 1"
-          data={dropout1}
-          onChange={(nd) => setDropout1(nd as DropoutData)}
+    <BlockWrapper childNodesHeight={measuredHeight}>
+      <div className="relative group" ref={contentRef}>
+        <NodeTitle>{currentData.label}</NodeTitle>
+        <NodeActionPanel
+          editMode={editMode}
+          onInfo={handleInfoClick}
+          onEdit={handleEditClick}
+          onSave={handleSaveClick}
+          onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        <FieldRenderer
+          fields={getFields(currentData)}
+          editMode={editMode}
+          onChange={(name: string, value: string) =>
+            handleFieldChange(name as keyof TransformerBlockData, value)
+          }
+        />
+        {/* 그림에 나온 순서대로 6개 슬롯 배치 */}
+        <div className="flex flex-col items-center w-56">
+          {/* {!residual1 && (
+            <NodeSlot allowedType="dropout" slotLabel="Dropout 1" />
+          )} */}
+          {!feedForward && (
+            <NodeSlot allowedType="feedForward" slotLabel="FeedForward" />
+          )}
+          {!layerNorm2 && (
+            <NodeSlot allowedType="layerNorm" slotLabel="LayerNorm 2" />
+          )}
+          {/* {!dropout2 && (
+            <NodeSlot allowedType="dropout" slotLabel="Dropout 2" />
+          )} */}
+          {!maskedMHA && (
+            <NodeSlot allowedType="maskedMHABlock" slotLabel="Masked MHA" />
+          )}
+          {!layerNorm1 && (
+            <NodeSlot allowedType="layerNorm" slotLabel="LayerNorm 1" />
+          )}
+        </div>
 
-        {/* FeedForward */}
-        <Slot
-          allowedType="feedForward"
-          slotLabel="FeedForward"
-          data={feedForward}
-          onChange={(nd) => setFeedForward(nd as FeedForwardData)}
-        />
-
-        {/* LayerNorm 2 */}
-        <Slot
-          allowedType="layerNorm"
-          slotLabel="LayerNorm 2"
-          data={layerNorm2}
-          onChange={(nd) => setLayerNorm2(nd as BaseNodeData)}
-        />
-
-        {/* Dropout 2 */}
-        <Slot
-          allowedType="dropout"
-          slotLabel="Dropout 2"
-          data={dropout2}
-          onChange={(nd) => setDropout2(nd as DropoutData)}
-        />
-
-        {/* Masked Multi-Head Attention */}
-        <Slot
-          allowedType="maskedMHABlock"
-          slotLabel="Masked MHA"
-          data={maskedMHA}
-          onChange={(nd) => setMaskedMHA(nd as MaskedMHABlockData)}
-        />
-
-        {/* LayerNorm 1 */}
-        <Slot
-          allowedType="layerNorm"
-          slotLabel="LayerNorm 1"
-          data={layerNorm1}
-          onChange={(nd) => setLayerNorm1(nd as BaseNodeData)}
-        />
+        <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+          <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
+          <p className="text-sm">
+            여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
+          </p>
+        </NodeInfoModal>
       </div>
     </BlockWrapper>
   );

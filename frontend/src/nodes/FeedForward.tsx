@@ -1,82 +1,75 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import {
-  NodeTitle,
-  ReadField,
-  EditField,
-  EditSelectField,
-} from './components/Components';
+import { NodeTitle } from './components/Components';
 import { FeedForwardData } from './components/NodeData';
-import { LayerWrapper } from './components/NodeWrapper';
+import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 
-interface FeedForwardDataProps {
-  data: FeedForwardData;
-  onChange?: (newData: FeedForwardData) => void;
+const getFields = (data: FeedForwardData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Input Dimension:',
+    name: 'inDim',
+    value: data.inDim?.toString() || '',
+    placeholder: 'Enter input dimension',
+  },
+  {
+    type: 'number',
+    label: 'Number of Factor:',
+    name: 'numOfFactor',
+    value: data.numOfFactor?.toString() || '',
+    placeholder: 'Enter number of factor',
+  },
+  {
+    type: 'select',
+    label: 'Activation Function Type:',
+    name: 'actFunc',
+    value: data.actFunc || '',
+    options: actFuncTypeOptions,
+  },
+];
+
+interface FeedForwardLayerProps {
+  id: string;
 }
 
 const actFuncTypeOptions: string[] = ['ReLU', 'GELU', 'SwiGLU'];
 
-export const FeedForwardLayer: React.FC<FeedForwardDataProps> = ({
-  data: initialData,
-  onChange,
-}) => {
-  const { setNodes } = useReactFlow();
+export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  // FeedForwardData 상태변수 저장
-  const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
-  );
-  const [numOfFactorStr, setNumOfFactorStr] = useState<string>(
-    initialData.numOfFactor !== undefined
-      ? initialData.numOfFactor.toString()
-      : '',
-  );
-  const [actFunc, setActFunc] = useState<string>(
-    initialData.actFunc !== undefined
-      ? initialData.actFunc
-      : actFuncTypeOptions[0],
-  );
+  const handleNodeClick = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
-  // Save 버튼에 들어갈 Custom Save
-  const customSave = () => {
-    const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
-    const newActFunc = actFunc === '' ? initialData.actFunc : actFunc;
-    const newNumOfFactor =
-      numOfFactorStr === '' ? initialData.numOfFactor : Number(numOfFactorStr);
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as FeedForwardData;
 
-    if (initialData.id) {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inDim: newInDim,
-                actFunc: newActFunc,
-                numOfFactor: newNumOfFactor,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-    // Block 안에 있는 노드 데이터 업데이트
-    if (onChange) {
-      onChange({
-        ...initialData,
-        inDim: newInDim,
-        actFunc: newActFunc,
-        numOfFactor: newNumOfFactor,
-      });
-    }
+  // input 값 변경 시, 노드의 data에 직접 업데이트
+  const handleFieldChange = (field: keyof FeedForwardData, value: string) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성
@@ -86,50 +79,15 @@ export const FeedForwardLayer: React.FC<FeedForwardDataProps> = ({
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<FeedForwardData>({
-    initialData,
+    currentData,
     setNodes,
     setEditMode,
-    customSave,
   });
 
   return (
-    <LayerWrapper>
+    <LayerWrapper hideHandles={currentData.hideHandles}>
       <div className="relative group">
-        <NodeTitle>{initialData.label}</NodeTitle>
-        {editMode ? (
-          <div>
-            <EditField
-              label="Input Dimension:"
-              id="inDimInput"
-              name="inDim"
-              value={inDimStr}
-              placeholder="Enter input dimension"
-              onChange={setInDimStr}
-            />
-            <EditField
-              label="Number of Factor:"
-              id="numOfFactorInput"
-              name="numOfFactor"
-              value={numOfFactorStr}
-              placeholder="Enter Number of factor"
-              onChange={setNumOfFactorStr}
-            />
-            <EditSelectField
-              label="Activation Function Type:"
-              id="actFuncSelect"
-              name="actFunc"
-              value={actFunc}
-              onChange={setActFunc}
-              options={actFuncTypeOptions}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField label="Input Dimension:" value={inDimStr} />
-            <ReadField label="Number of Factor:" value={numOfFactorStr} />
-            <ReadField label="Activation Function Type:" value={actFunc} />
-          </div>
-        )}
+        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
           onInfo={handleInfoClick}
@@ -137,12 +95,22 @@ export const FeedForwardLayer: React.FC<FeedForwardDataProps> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        {!isCollapsed && (
+          <FieldRenderer
+            fields={getFields(currentData)}
+            editMode={editMode}
+            onChange={(name: string, value: string) =>
+              handleFieldChange(name as keyof FeedForwardData, value)
+            }
+          />
+        )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">
-          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
         </p>
       </NodeInfoModal>
     </LayerWrapper>

@@ -1,106 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './components/Components';
+import { NodeTitle } from './components/Components';
 import { DropoutData } from './components/NodeData';
-import { LayerWrapper } from './components/NodeWrapper';
+import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+
+const getFields = (data: DropoutData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Dropout Rate:',
+    name: 'dropoutRate',
+    value: data.dropoutRate?.toString() || '',
+    placeholder: 'Enter dropout rate',
+  },
+];
 
 interface DropoutLayerProps {
-  data: DropoutData;
-  onChange?: (newData: DropoutData) => void;
+  id: string;
 }
 
-export const DropoutLayer: React.FC<DropoutLayerProps> = ({
-  data: initialData,
-  onChange,
-}) => {
-  const { setNodes, getEdges, getNode } = useReactFlow();
+export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
-  // DropoutData 상태변수 저장
-  const [inDimStr, setInDimStr] = useState<string>(
-    initialData.inDim !== undefined ? initialData.inDim.toString() : '',
-  );
-  const [dropoutRateStr, setDropoutRateStr] = useState<string>(
-    initialData.dropoutRate !== undefined
-      ? initialData.dropoutRate.toString()
-      : '',
-  );
+  const handleNodeClick = () => {
+    setIsCollapsed((prev) => !prev);
+  };
 
-  // Edge가 연결될 때 Source Node의 Input Dimension을 받아오는 useEffect
-  useEffect(() => {
-    // 이 노드로 들어오는 엣지가 있는지 찾는다
-    const edges = getEdges();
-    const incomingEdge = edges.find((edge) => edge.target === initialData.id);
-    if (!incomingEdge) return;
+  const node = getNode(id);
+  if (!node) return null;
+  const currentData = node.data as DropoutData;
 
-    // 소스 노드를 찾는다
-    const sourceNode = getNode(incomingEdge.source);
-    if (!sourceNode || !sourceNode.data) return;
-
-    // 소스 노드가 outDim을 가지고 있으면, 그 값을 inDim에 반영
-    const sourceOutDim = sourceNode.data.inDim;
-    console.log({ sourceOutDim });
-    if (typeof sourceOutDim === 'number') {
-      // 이미 inDim이 동일하면 굳이 업데이트 X
-      if (inDimStr === sourceOutDim.toString()) return;
-
-      // 로컬 state 업데이트
-      setInDimStr(String(sourceOutDim));
-
-      // 글로벌 노드 데이터도 업데이트
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inDim: sourceOutDim,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-  }, [getEdges, getNode, setNodes, inDimStr, initialData.id]);
-
-  // Save 버튼에 들어갈 Custom Save
-  const customSave = () => {
-    const newInDim = inDimStr === '' ? initialData.inDim : Number(inDimStr);
-    const newDropoutRate =
-      dropoutRateStr === '' ? initialData.dropoutRate : Number(dropoutRateStr);
-
-    if (initialData.id) {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === initialData.id) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                inDim: newInDim,
-                dropoutRate: newDropoutRate,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    }
-    // Block 안에 있는 노드 데이터 업데이트
-    if (onChange) {
-      onChange({
-        ...initialData,
-        inDim: newInDim,
-        dropoutRate: newDropoutRate,
-      });
-    }
+  // input 값 변경 시, 노드의 data에 직접 업데이트
+  const handleFieldChange = (field: keyof DropoutData, value: string) => {
+    const newValue = field === 'label' ? value : Number(value);
+    setNodes((nds) =>
+      nds.map((nodeItem) => {
+        if (nodeItem.id === id) {
+          return {
+            ...nodeItem,
+            data: {
+              ...nodeItem.data,
+              [field]: newValue,
+            },
+          };
+        }
+        return nodeItem;
+      }),
+    );
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성
@@ -110,32 +63,15 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
     handleEditClick,
     handleSaveClick,
   } = useCommonNodeActions<DropoutData>({
-    initialData,
+    currentData,
     setNodes,
     setEditMode,
-    customSave,
   });
 
   return (
-    <LayerWrapper>
+    <LayerWrapper hideHandles={currentData.hideHandles}>
       <div className="relative group">
-        <NodeTitle>{initialData.label}</NodeTitle>
-        {editMode ? (
-          <div>
-            <EditField
-              label="Dropout Rate:"
-              id="dropoutRateInput"
-              name="dropoutRate"
-              value={dropoutRateStr}
-              placeholder="Enter dropout rate"
-              onChange={setDropoutRateStr}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField label="Dropout Rate:" value={dropoutRateStr} />
-          </div>
-        )}
+        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
           onInfo={handleInfoClick}
@@ -143,12 +79,22 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
+        {!isCollapsed && (
+          <FieldRenderer
+            fields={getFields(currentData)}
+            editMode={editMode}
+            onChange={(name: string, value: string) =>
+              handleFieldChange(name as keyof DropoutData, value)
+            }
+          />
+        )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
         <p className="text-sm">
-          여기에 {initialData.label} 노드에 대한 추가 정보를 입력하세요.
+          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
         </p>
       </NodeInfoModal>
     </LayerWrapper>

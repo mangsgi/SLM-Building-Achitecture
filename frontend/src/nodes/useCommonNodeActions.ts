@@ -4,26 +4,26 @@ import { BaseNodeData } from './components/NodeData';
 
 // NodaData 템플릿 적용
 interface UseCommonNodeActionsParams<T extends BaseNodeData> {
-  initialData: T;
+  currentData: T;
   setNodes: (updater: (nds: Node<T>[]) => Node<T>[]) => void;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // 노드별 공통 로직 Custom Hook으로 구현
 export function useCommonNodeActions<T extends BaseNodeData>({
-  initialData,
+  currentData,
   setNodes,
   setEditMode,
 }: UseCommonNodeActionsParams<T>) {
   // Delete 버튼 클릭
   const handleDeleteClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    console.log(initialData.id);
-    if (initialData.id) {
+    console.log(currentData.id);
+    if (currentData.id) {
       setNodes((nds) =>
         nds.filter((node) => {
           console.log(node.id);
-          return node.id !== initialData.id;
+          return node.id !== currentData.id;
         }),
       );
     }
@@ -32,8 +32,8 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   // 정보 버튼 클릭 -> Modal 랜더링
   const handleInfoClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (initialData.openModal) {
-      initialData.openModal(initialData);
+    if (currentData.openModal) {
+      currentData.openModal(currentData);
     }
   };
 
