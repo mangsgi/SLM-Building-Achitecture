@@ -11,12 +11,11 @@ import ReactFlow, {
   useEdgesState,
   Controls,
   Connection,
-  Edge,
-  Node,
   NodeDragHandler,
   NodeMouseHandler,
   ReactFlowInstance,
 } from 'reactflow';
+import type { Edge, Node } from 'reactflow';
 
 import 'reactflow/dist/style.css';
 
@@ -86,10 +85,20 @@ function getNodeDataByType(
   }
 }
 
-const FlowCanvas = ({ config }: { config: typeof defaultConfig }) => {
+const FlowCanvas = ({
+  config,
+  flowDataRef,
+}: {
+  config: typeof defaultConfig;
+  flowDataRef: React.MutableRefObject<{ nodes: Node[]; edges: Edge[] }>;
+}) => {
   // ReactFlow에서 각 노드와 엣지 상태 저장
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  useEffect(() => {
+    flowDataRef.current = { nodes, edges };
+  }, [nodes, edges]);
 
   // Config 값이 변경될 때마다 Node의 Data 업데이트
   useEffect(() => {
@@ -229,6 +238,7 @@ const FlowCanvas = ({ config }: { config: typeof defaultConfig }) => {
         n.type?.includes('Block') &&
         n.id !== node.id,
     );
+
     console.log(
       `target: ${targetNode},
       node x좌표: ${centerX},
@@ -236,6 +246,7 @@ const FlowCanvas = ({ config }: { config: typeof defaultConfig }) => {
       target x좌표: ${targetNode?.position.x},
       target y좌표: ${targetNode?.position.y}`,
     );
+
     if (targetNode) {
       setTarget(targetNode as Node<BaseNodeData, string>);
     } else {

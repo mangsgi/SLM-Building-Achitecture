@@ -1,5 +1,5 @@
 import React from 'react';
-import DocumentWithGearIcon from './ui-component/DocumentWithGearIcon';
+import ConfigButton from './ui-component/ConfigButton';
 
 interface ConfigProps {
   onToggle: () => void;
@@ -36,17 +36,13 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   };
 
   return (
-    <aside className="absolute right-0 w-1/5 h-1/2 z-10 bg-white p-4 shadow overflow-auto">
+    <aside className="absolute right-0 w-1/8 h-1/2 z-10 bg-white p-4 shadow overflow-auto">
       {/* Config Header 영역 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">GPT_CONFIG</h2>
-        <button
-          onClick={onToggle}
-          className="p-2 bg-blue-100 rounded focus:outline-none shadow"
-          aria-label="Toggle Config"
-        >
-          <DocumentWithGearIcon />
-        </button>
+        <h2 className="text-lg font-bold">Model Configuration</h2>
+        <div onClick={onToggle} className="z-10" aria-label="Toggle Config">
+          <ConfigButton />
+        </div>
       </div>
 
       {/* 설정 입력 영역 */}

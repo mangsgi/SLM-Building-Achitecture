@@ -1,6 +1,6 @@
 import React from 'react';
 import SidebarNodeItem from './SidebarNodeItem';
-import CanvasHamburgerIcon from './ui-component/CanvasHamburgerIcon';
+import CanvasHamburgerIcon from './ui-component/CanvasHamburgerButton';
 import { BaseNodeData } from './nodes/components/NodeData';
 
 interface SidebarProps {
@@ -21,17 +21,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   };
 
   return (
-    <aside className="w-1/5 h-full shadow z-10 bg-white p-4 overflow-auto">
+    <aside className="w-1/6 h-full shadow z-10 bg-white p-4 overflow-y-auto">
       {/* Sidebar Header 영역 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">레이어 목록</h2>
-        <button
-          onClick={onToggle}
-          className="p-2 bg-green-100 rounded focus:outline-none shadow"
-          aria-label="Toggle Sidebar"
-        >
+        <h2 className="text-xl font-bold">Node 목록</h2>
+        <div onClick={onToggle}>
           <CanvasHamburgerIcon />
-        </button>
+        </div>
       </div>
       {/* 노드 항목 영역 */}
       <SidebarNodeItem

@@ -53,7 +53,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
             background: '#ccc',
             width: '10px',
             height: '10px',
-            position: 'absolute',
+            // position: 'absolute',
             ...handleStyle,
           }}
         />
@@ -68,7 +68,8 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           background: '#ccc',
           width: '10px',
           height: '10px',
-          position: 'absolute',
+          // position: 'absolute',
+          bottom: '-5px',
           transform: 'translate(-50%, 0)',
           ...handleStyle,
         }}

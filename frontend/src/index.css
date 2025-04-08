@@ -54,37 +54,6 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Headings */
-h1 {
-  font-size: 2.5rem;
-  /* margin-bottom: 1rem; */
-  font-weight: 600;
-}
-
-/* Modern Button Styles */
-button {
-  border-radius: 12px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  background-color: var(--color-primary);
-  color: white;
-  cursor: pointer;
-  transition:
-    background-color var(--transition-speed) ease,
-    transform 0.2s ease;
-}
-button:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-2px);
-}
-button:focus,
-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
-}
-
 /* Input 태그의 스피너 제거 ( Chrome, Safari, Edge, Opera / Firefox ) */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
@@ -108,8 +77,8 @@ input[type='number'] {
   a:hover {
     color: var(--color-link-hover);
   }
-  button {
+  /* button {
     background-color: var(--color-primary);
     color: white;
-  }
+  } */
 }
