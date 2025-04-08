@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   };
 
   return (
-    <aside className="w-1/5 h-full bg-white p-4">
+    <aside className="w-1/5 h-full shadow z-10 bg-white p-4 overflow-auto">
       {/* Sidebar Header 영역 */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">레이어 목록</h2>
@@ -56,20 +56,27 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       <SidebarNodeItem
         nodeType="layerNorm"
         nodeData={{
-          label: 'Layer Normalization Layer',
+          label: 'Layer Normalization',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="feedForward"
         nodeData={{
-          label: 'Feed Forward Layer',
+          label: 'Feed Forward',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
         nodeType="dropout"
-        nodeData={{ label: 'Dropout Layer' }}
+        nodeData={{ label: 'Dropout' }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="residual"
+        nodeData={{
+          label: 'Residual',
+        }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
@@ -77,11 +84,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         nodeData={{
           label: 'Scaled Dot-Product Attention',
         }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="maskedMHABlock"
-        nodeData={{ label: 'Masked Multi-Head Attention' }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
@@ -96,6 +98,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         nodeData={{
           label: 'Dynamic Block',
         }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType="testBlock"
+        nodeData={{ label: 'testBlock' }}
         onDragStart={onDragStart}
       />
     </aside>

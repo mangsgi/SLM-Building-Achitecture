@@ -1,25 +1,36 @@
 import React, { useState, useMemo } from 'react';
 import { useReactFlow, NodeProps, useStore } from 'reactflow';
 
-import { NodeTitle, ReadField, EditField } from './components/Components';
+import { NodeTitle } from './components/Components';
 import { BlockWrapper } from './components/BlockWrapper';
-import { MaskedMHABlockData } from './components/NodeData';
+import { TestBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
+import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 
-interface MaskedMHABlockProps {
+interface TestBlockProps {
   id: string;
 }
 
-const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
+const getFields = (data: TestBlockData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Number of Layers:',
+    name: 'numOfLayers',
+    value: data.numLayers?.toString() || '',
+    placeholder: 'Enter the number of layers',
+  },
+];
+
+const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
   const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as MaskedMHABlockData;
+  const currentData = node.data as TestBlockData;
 
   // 자식 노드와 자식 노드의 높이 합 저장
   const getNodes = useStore((state) => state.getNodes);
@@ -32,10 +43,7 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
   }, [childNodes]);
 
   // input 값 변경 시, 노드의 data에 직접 업데이트
-  const handleFieldChange = (
-    field: keyof MaskedMHABlockData,
-    value: string,
-  ) => {
+  const handleFieldChange = (field: keyof TestBlockData, value: string) => {
     const newValue = field === 'label' ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -59,7 +67,7 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
-  } = useCommonNodeActions<MaskedMHABlockData>({
+  } = useCommonNodeActions<TestBlockData>({
     id,
     setNodes,
     setEditMode,
@@ -76,33 +84,13 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
-        {editMode ? (
-          <div>
-            <EditField
-              label="Number of Heads:"
-              id="numOfHeadsInput"
-              name="numOfHeads"
-              value={
-                currentData.numHeads !== undefined
-                  ? currentData.numHeads.toString()
-                  : ''
-              }
-              placeholder="Enter the number of heads"
-              onChange={(value) => handleFieldChange('numHeads', value)}
-            />
-          </div>
-        ) : (
-          <div>
-            <ReadField
-              label="Number of Heads:"
-              value={
-                currentData.numHeads !== undefined
-                  ? currentData.numHeads.toString()
-                  : ''
-              }
-            />
-          </div>
-        )}
+        <FieldRenderer
+          fields={getFields(currentData)}
+          editMode={editMode}
+          onChange={(name: string, value: string) =>
+            handleFieldChange(name as keyof TestBlockData, value)
+          }
+        />
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
@@ -115,4 +103,4 @@ const MaskedMHABlock: React.FC<NodeProps<MaskedMHABlockProps>> = ({ id }) => {
   );
 };
 
-export default MaskedMHABlock;
+export default TestBlock;

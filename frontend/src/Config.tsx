@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import DocumentWithGearIcon from './ui-component/DocumentWithGearIcon';
 
 interface ConfigProps {
   onToggle: () => void;
+  config: typeof defaultConfig;
+  setConfig: React.Dispatch<React.SetStateAction<typeof defaultConfig>>;
 }
 
-const defaultConfig = {
+export const defaultConfig = {
   vocab_size: 50257,
   context_length: 1024,
   emb_dim: 768,
@@ -13,11 +15,10 @@ const defaultConfig = {
   n_layers: 12,
   drop_rate: 0.1,
   qkv_bias: false,
+  batch_size: 8,
 };
 
-const Config: React.FC<ConfigProps> = ({ onToggle }) => {
-  const [config, setConfig] = useState(defaultConfig);
-
+const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   const handleChange = (key: keyof typeof config, value: string | boolean) => {
     let parsedValue: string | boolean | number = value;
 
@@ -35,7 +36,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle }) => {
   };
 
   return (
-    <aside className="absolute right-0 w-1/5 h-1/2 z-10 bg-white p-4 border-l shadow overflow-auto">
+    <aside className="absolute right-0 w-1/5 h-1/2 z-10 bg-white p-4 shadow overflow-auto">
       {/* Config Header 영역 */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">GPT_CONFIG</h2>
@@ -53,7 +54,32 @@ const Config: React.FC<ConfigProps> = ({ onToggle }) => {
         {Object.entries(config).map(([key, value]) => (
           <div key={key} className="flex flex-col">
             <label className="text-sm font-medium mb-1 capitalize">{key}</label>
-            {typeof value === 'boolean' ? (
+            {key === 'drop_rate' ? (
+              <div className="flex items-center border rounded px-2 py-1">
+                <span className="text-gray-500 select-none">0.</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="ex) 123"
+                  value={
+                    typeof value === 'number'
+                      ? value.toString().split('.')[1] || ''
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value
+                      .replace(/\D/g, '')
+                      .slice(0, 3); // 숫자만 최대 3자리
+                    const newValue = digitsOnly
+                      ? parseFloat(`0.${digitsOnly}`)
+                      : 0;
+                    setConfig((prev) => ({ ...prev, drop_rate: newValue }));
+                  }}
+                  className="w-full p-1 outline-none text-sm"
+                />
+              </div>
+            ) : typeof value === 'boolean' ? (
               <select
                 value={value.toString()}
                 onChange={(e) =>

@@ -5,13 +5,14 @@ import { useState } from 'react';
 import CanvasHamburgerIcon from './ui-component/CanvasHamburgerIcon';
 import DocumentWithGearIcon from './ui-component/DocumentWithGearIcon';
 import Sidebar from './Sidebar';
-import Config from './Config';
+import Config, { defaultConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
 
 function App() {
   // Sideber 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
+  const [config, setConfig] = useState(defaultConfig);
 
   // 콜백함수를 인자로 전달하는 Setter를 호출하는 토글 함수 정의
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
@@ -30,10 +31,16 @@ function App() {
         <ReactFlowProvider>
           {/* 사이드바가 열린 경우 Sidebar 랜더링*/}
           {isSidebarOpen && <Sidebar onToggle={toggleSidebar} />}
-          {isConfigOpen && <Config onToggle={toggleConfig} />}
+          {isConfigOpen && (
+            <Config
+              onToggle={toggleConfig}
+              config={config}
+              setConfig={setConfig}
+            />
+          )}
           {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
           <div className="flex-1 h-full">
-            <FlowCanvas />
+            <FlowCanvas config={config} />
           </div>
           {/* 사이드바가 닫힌 경우 Canvas 위에 토글 버튼 오버레이 */}
           {!isSidebarOpen && (

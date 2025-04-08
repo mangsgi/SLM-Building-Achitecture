@@ -5,10 +5,10 @@ export interface BaseNodeData {
   hideHandles?: boolean;
   inDim?: number; // 입력 차원
   outDim?: number; // 출력 차원
-  [key: string]: unknown; // Index Signature, 미리 명시하지 않은 추가 속성들이 있을 수 있음을 나타냄, 서로 다른 추가 데이터를 포함할 수 있도록 유연성을 제공
+  [key: string]: unknown; // Index Signature
 }
 
-//  Layer의 특성에 따라 BaseNodeData를 확장한 interface
+// Layer의 특성에 따라 BaseNodeData를 확장한 interface
 export interface TokenEmbeddingData extends BaseNodeData {
   vocabSize: number;
   embDim: number;
@@ -16,8 +16,9 @@ export interface TokenEmbeddingData extends BaseNodeData {
 
 export interface PositionalEmbeddingData extends BaseNodeData {
   ctxLength: number;
-  embDim: number;
   posEmbeddingType: string;
+  vocabSize: number;
+  embDim: number;
 }
 
 export interface FeedForwardData extends BaseNodeData {
@@ -29,12 +30,18 @@ export interface DropoutData extends BaseNodeData {
   dropoutRate: number;
 }
 
+export interface ResidualData extends BaseNodeData {
+  source: string;
+}
+
 export interface SDPAttentionData extends BaseNodeData {
   dropoutRate: number;
   ctxLength: number;
+  numHeads: number;
+  qkvBias?: false;
 }
 
-export interface MaskedMHABlockData extends BaseNodeData {
+export interface TestBlockData extends BaseNodeData {
   numHeads: number;
   sdpAttention?: SDPAttentionData | null;
 }

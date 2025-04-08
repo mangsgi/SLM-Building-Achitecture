@@ -19,18 +19,18 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 }: UseCommonNodeActionsParams<T>) {
   // Layer Node 별 펼쳐져 있을 때 높이
   const defaultHeightMap: Record<string, number> = {
-    tokenEmbedding: 174,
-    positionalEmbedding: 240,
+    tokenEmbedding: 175,
+    positionalEmbedding: 241,
     layerNorm: 109,
     feedForward: 240,
     dropout: 109,
     linear: 174,
-    sdpAttention: 306,
+    sdpAttention: 371,
   };
 
   // useEffect 사용을 위한 Node별 isCollapsed useState
   const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
-
+  // 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
   useEffect(() => {
     if (collapseTrigger === null) return;
     setNodes((nds) => {
@@ -42,7 +42,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         ? 43
         : defaultHeightMap[targetNode.type];
 
-      // 해당 노드 height 변경
+      // 해당 Node height 변경
       const updatedNodes = nds.map((node) => {
         if (node.id === id) {
           return { ...node, height: newHeight };
@@ -50,7 +50,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         return node;
       });
 
-      // 형제 노드 정렬
+      // 형제 Node 정렬
       const siblings = updatedNodes
         .filter((n) => n.parentNode === parentId)
         .sort((a, b) => a.position.y - b.position.y);
