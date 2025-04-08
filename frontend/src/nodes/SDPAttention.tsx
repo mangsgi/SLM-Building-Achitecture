@@ -38,6 +38,13 @@ const getFields = (data: SDPAttentionData): FieldConfig[] => [
     value: data.ctxLength?.toString() || '',
     placeholder: 'Enter context length',
   },
+  {
+    type: 'number',
+    label: 'Number of Heads:',
+    name: 'numOfHeads',
+    value: data.numHeads?.toString() || '',
+    placeholder: 'Enter the number of heads',
+  },
 ];
 
 interface SDPAttentionLayerProps {

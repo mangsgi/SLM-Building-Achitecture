@@ -23,7 +23,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
     >
       {/* 상단 핸들 */}
       <Handle
-        type="target"
+        type="source"
         position={Position.Top}
         style={{
           background: '#ccc',
@@ -39,7 +39,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
 
       {/* 하단 핸들 */}
       <Handle
-        type="source"
+        type="target"
         position={Position.Bottom}
         style={{
           background: '#ccc',

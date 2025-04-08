@@ -3,7 +3,7 @@ import React, {
   useRef,
   useMemo,
   useState,
-  // useEffect,
+  useEffect,
 } from 'react';
 import ReactFlow, {
   addEdge,
@@ -27,21 +27,84 @@ import FeedForwardLayer from './nodes/FeedForward';
 import DropoutLayer from './nodes/Dropout';
 import LinearLayer from './nodes/Linear';
 import SDPAttentionLayer from './nodes/SDPAttention';
-import MaskedMHABlock from './nodes/MaskedMHABlock';
+import TestBlock from './nodes/TestBlock';
 import TransformerBlock from './nodes/TransformerBlock';
 import DynamicBlock from './nodes/DynamicBlock';
+import ResidualLayer from './nodes/Residual';
 import NodeInfoModal from './nodes/components/NodeInfoModal';
 import { BaseNodeData } from './nodes/components/NodeData';
+import { defaultConfig } from './Config';
 
-function FlowCanvas() {
+function getNodeDataByType(
+  nodeType: string,
+  config: typeof defaultConfig,
+  baseData: BaseNodeData,
+): BaseNodeData {
+  const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
+  switch (nodeType) {
+    case 'tokenEmbedding':
+      return {
+        ...data,
+        vocabSize: config.vocab_size,
+        embDim: config.emb_dim,
+      };
+    case 'positionalEmbedding':
+      return {
+        ...data,
+        ctxLength: config.context_length,
+        embDim: config.emb_dim,
+      };
+    case 'linear':
+      return {
+        ...data,
+        outDim: config.vocab_size,
+      };
+    case 'dropout':
+      return {
+        ...data,
+        dropoutRate: config.drop_rate,
+      };
+    case 'sdpAttention':
+      return {
+        ...data,
+        ctxLength: config.context_length,
+        dropoutRate: config.drop_rate,
+        numHeads: config.n_heads,
+        qkvBias: config.qkv_bias,
+      };
+    case 'transformerBlock':
+      return {
+        ...data,
+      };
+    case 'dynamicBlock':
+      return {
+        ...data,
+        numLayers: config.n_layers,
+      };
+    default:
+      return data;
+  }
+}
+
+const FlowCanvas = ({ config }: { config: typeof defaultConfig }) => {
   // ReactFlow에서 각 노드와 엣지 상태 저장
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  // Config 값이 변경될 때마다 Node의 Data 업데이트
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        return {
+          ...node,
+          data: getNodeDataByType(node.type || '', config, node.data),
+        };
+      }),
+    );
+  }, [config, setNodes]);
+
   // Drag 중인 Node가 목표할 Node 설정
   const [target, setTarget] = useState<Node<BaseNodeData, string> | null>(null);
-  // const [clickedNodeId, setClickedNodeId] = useState<string | null>(null);
-  // const [nodeName, setNodeName] = useState('');
 
   // Drag된 객체 지정
   const dragRef = useRef<Node | null>(null);
@@ -69,13 +132,30 @@ function FlowCanvas() {
       dropout: DropoutLayer,
       linear: LinearLayer,
       sdpAttention: SDPAttentionLayer,
-      maskedMHABlock: MaskedMHABlock,
+      testBlock: TestBlock,
       transformerBlock: TransformerBlock,
       dynamicBlock: DynamicBlock,
+      residual: ResidualLayer,
     }),
     [],
   );
-  const allowedTypes = ['maskedMHABlock', 'dynamicBlock'];
+  const allowedTypes = ['testBlock', 'dynamicBlock'];
+
+  // 노드 간 연결 이벤트 핸들
+  const onConnect = useCallback(
+    // 전달된 params를 기반으로 addEdge 헬퍼 함수를 사용해 현재 edges 상태에 새로운 edge를 추가
+    (params: Edge<unknown> | Connection) => {
+      const newEdge = {
+        ...params,
+        id: `${params.source}-${params.sourceHandle}-${params.target}-${params.targetHandle}`,
+      };
+      console.log('Connecting Node via Handle: ', newEdge);
+      setEdges((eds) => {
+        return addEdge(newEdge, eds);
+      });
+    },
+    [setEdges],
+  );
 
   // Node Click 시
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -85,32 +165,6 @@ function FlowCanvas() {
       console.log(node);
     }
   };
-
-  // 사용자가 특정 노드를 클릭했을 때나 노드 이름을 변경했을 때 해당 노드의 label을 업데이트
-  // useEffect(() => {
-  //   setNodes((nds) =>
-  //     nds.map((node) => {
-  //       if (node.id === clickedNodeId) {
-  //         return {
-  //           ...node,
-  //           data: {
-  //             ...node.data,
-  //             label: nodeName,
-  //           },
-  //         };
-  //       }
-  //       return node;
-  //     }),
-  //   );
-  // }, [clickedNodeId, nodeName, setNodes]);
-
-  // 노드 간 연결 이벤트 핸들
-  const onConnect = useCallback(
-    // 전달된 params를 기반으로 addEdge 헬퍼 함수를 사용해 현재 edges 상태에 새로운 edge를 추가
-    (params: Edge<unknown> | Connection) =>
-      setEdges((eds) => addEdge({ ...params }, eds)),
-    [setEdges],
-  );
 
   // Drag된 요소가 Canvas 위로 올라오는 이벤트 핸들러
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -132,7 +186,7 @@ function FlowCanvas() {
       // Data 파싱
       const dataString = event.dataTransfer.getData('application/reactflow');
       if (!dataString) return;
-      console.log(dataString);
+
       const parsedData = JSON.parse(dataString);
       const { nodeType, id, label, ...props } = parsedData;
 
@@ -142,18 +196,21 @@ function FlowCanvas() {
         x: event.clientX,
         y: event.clientY,
       });
-      console.log(position.x, position.y);
 
       const newNode: Node = {
         id,
         type: nodeType,
         position,
-        data: { id, label, openModal: showModal, ...props },
+        data: getNodeDataByType(nodeType, config, {
+          id,
+          label,
+          openModal: showModal,
+          ...props,
+        }),
       };
-
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance],
+    [reactFlowInstance, config],
   );
 
   // Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
@@ -173,11 +230,11 @@ function FlowCanvas() {
         n.id !== node.id,
     );
     console.log(
-      targetNode,
-      centerX,
-      centerY,
-      targetNode?.position.x,
-      targetNode?.position.x,
+      `target: ${targetNode},
+      node x좌표: ${centerX},
+      node y좌표: ${centerY},
+      target x좌표: ${targetNode?.position.x},
+      target y좌표: ${targetNode?.position.y}`,
     );
     if (targetNode) {
       setTarget(targetNode as Node<BaseNodeData, string>);
@@ -266,6 +323,6 @@ function FlowCanvas() {
       )}
     </div>
   );
-}
+};
 
 export default FlowCanvas;

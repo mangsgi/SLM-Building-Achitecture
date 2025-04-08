@@ -9,7 +9,7 @@ interface NodeTitleProps {
 export const NodeTitle: React.FC<NodeTitleProps> = ({ children, onClick }) => {
   return (
     <div onClick={onClick}>
-      <h3 className="font-bold">{children}</h3>
+      <h3 className="font-bold text-center">{children}</h3>
     </div>
   );
 };
@@ -22,7 +22,9 @@ export const ReadField: React.FC<{ label: string; value: string }> = ({
   return (
     <div className="mb-2 pt-1">
       <label className="text-base">{label}</label>
-      <div className="border rounded p-1 text-sm w-full">{value || '-'}</div>
+      <div className="border rounded p-1 text-sm w-full h-[30px]">
+        {value || '-'}
+      </div>
     </div>
   );
 };
@@ -48,7 +50,7 @@ export const EditField: React.FC<{
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="border rounded p-1 text-sm w-full"
+        className="border rounded p-1 text-sm w-full h-[30px]"
       />
     </div>
   );
@@ -73,7 +75,7 @@ export const EditSelectField: React.FC<{
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border rounded p-1 text-sm w-full"
+        className="border rounded p-1 text-sm w-full h-[30px]"
       >
         {options.map((opt) => (
           <option key={opt} value={opt} className="text-sm">

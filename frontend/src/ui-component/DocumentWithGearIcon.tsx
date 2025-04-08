@@ -3,7 +3,7 @@ import React from 'react';
 const DocumentWithGearIcon: React.FC = () => {
   return (
     <svg
-      className="w-8 h-8"
+      className="w-6 h-6"
       viewBox="0 0 48 48"
       fill="none"
       stroke="currentColor"
