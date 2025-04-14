@@ -24,7 +24,7 @@ const getFields = (data: TestBlockData): FieldConfig[] => [
 ];
 
 const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
@@ -71,6 +71,7 @@ const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
     id,
     setNodes,
     setEditMode,
+    setEdges,
   });
 
   return (

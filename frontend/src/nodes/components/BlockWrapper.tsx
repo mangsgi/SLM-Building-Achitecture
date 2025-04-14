@@ -23,14 +23,14 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
     >
       {/* 상단 핸들 */}
       <Handle
-        type="source"
+        type="target"
         position={Position.Top}
+        id="tgt"
         style={{
           background: '#ccc',
           width: '10px',
           height: '10px',
-          left: '50%',
-          top: '-6px',
+          top: '-5px',
           transform: 'translate(-50%, 0)',
         }}
       />
@@ -39,14 +39,14 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
 
       {/* 하단 핸들 */}
       <Handle
-        type="target"
+        type="source"
         position={Position.Bottom}
+        id="src"
         style={{
           background: '#ccc',
           width: '10px',
           height: '10px',
-          left: '50%',
-          bottom: '-6px',
+          bottom: '-5px',
           transform: 'translate(-50%, 0)',
         }}
       />

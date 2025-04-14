@@ -30,6 +30,10 @@ export interface DropoutData extends BaseNodeData {
   dropoutRate: number;
 }
 
+export interface NormalizationData extends BaseNodeData {
+  normType: string;
+}
+
 export interface ResidualData extends BaseNodeData {
   source: string;
 }
@@ -41,11 +45,6 @@ export interface SDPAttentionData extends BaseNodeData {
   qkvBias?: false;
 }
 
-export interface TestBlockData extends BaseNodeData {
-  numHeads: number;
-  sdpAttention?: SDPAttentionData | null;
-}
-
 export interface TransformerBlockData extends BaseNodeData {
   numLayers: number;
   // 레이어 이름별 true/false 값 딕셔너리 추가
@@ -53,4 +52,9 @@ export interface TransformerBlockData extends BaseNodeData {
 
 export interface DynamicBlockData extends BaseNodeData {
   numLayers: number;
+}
+
+export interface TestBlockData extends BaseNodeData {
+  numHeads: number;
+  sdpAttention?: SDPAttentionData | null;
 }

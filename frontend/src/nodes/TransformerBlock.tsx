@@ -31,7 +31,7 @@ interface TransformerBlockProps {
 }
 
 const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
@@ -141,6 +141,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
     id,
     setNodes,
     setEditMode,
+    setEdges,
   });
 
   return (

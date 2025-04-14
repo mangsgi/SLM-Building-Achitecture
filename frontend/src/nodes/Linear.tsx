@@ -31,7 +31,7 @@ interface LinearLayerProps {
 }
 
 export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -71,6 +71,7 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
     setNodes,
     setEditMode,
     setIsCollapsed,
+    setEdges,
   });
 
   return (

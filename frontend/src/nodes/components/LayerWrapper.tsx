@@ -18,7 +18,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
 
   return (
     <div
-      className="z-10 p-2 block-wrapper bg-white border-2 border-gray-300 rounded shadow hover:border-green-100"
+      className="z-10 p-2 layer-wrapper bg-white border-2 border-gray-300 rounded shadow hover:border-green-100"
       style={{
         pointerEvents: 'auto',
         position: 'relative',
@@ -34,8 +34,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           background: '#ccc',
           width: '10px',
           height: '10px',
-          left: '50%',
-          top: '-6px',
+          top: '-5px',
           transform: 'translate(-50%, 0)',
           ...handleStyle,
         }}
@@ -53,8 +52,6 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
             background: '#ccc',
             width: '10px',
             height: '10px',
-            // position: 'absolute',
-            ...handleStyle,
           }}
         />
       )}

@@ -25,7 +25,7 @@ const getFields = (data: DynamicBlockData): FieldConfig[] => [
 
 // Dynamic Block 컴포넌트는 내부에 노드를 드롭하면 수직으로 정렬하고, 노드 사이에 자동 edge를 표시
 const DynamicBlock: React.FC<NodeProps<DynamicBlockLayerProps>> = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
@@ -72,6 +72,7 @@ const DynamicBlock: React.FC<NodeProps<DynamicBlockLayerProps>> = ({ id }) => {
     id,
     setNodes,
     setEditMode,
+    setEdges,
   });
 
   return (
