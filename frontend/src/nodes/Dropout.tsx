@@ -24,7 +24,7 @@ interface DropoutLayerProps {
 }
 
 export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -64,6 +64,7 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
     setNodes,
     setEditMode,
     setIsCollapsed,
+    setEdges,
   });
 
   return (

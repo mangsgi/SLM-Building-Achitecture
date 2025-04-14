@@ -47,7 +47,7 @@ interface PositionalEmbeddingLayerProps {
 export const PositionalEmbeddingLayer: React.FC<
   PositionalEmbeddingLayerProps
 > = ({ id }) => {
-  const { setNodes, getNode } = useReactFlow();
+  const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -56,12 +56,17 @@ export const PositionalEmbeddingLayer: React.FC<
   if (!node) return null;
   const currentData = node.data as PositionalEmbeddingData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof PositionalEmbeddingData,
     value: string,
   ) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof PositionalEmbeddingData)[] = [
+      'label',
+      'posType',
+    ];
+    const newValue = stringFields.includes(field) ? value : Number(value);
+
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -90,6 +95,7 @@ export const PositionalEmbeddingLayer: React.FC<
     setNodes,
     setEditMode,
     setIsCollapsed,
+    setEdges,
   });
 
   return (

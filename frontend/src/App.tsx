@@ -10,6 +10,121 @@ import Sidebar from './Sidebar';
 import Config, { defaultConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
 
+export interface ModelNode {
+  type?: string;
+  data: {
+    id: string;
+    label: string;
+    [key: string]: unknown; // 필요하다면 더 세부적으로 정의 가능
+  };
+  children?: ModelNode[]; // Block 노드일 경우에만
+}
+
+async function buildModelJSON(
+  nodes: Node[],
+  edges: Edge[],
+): Promise<ModelNode[]> {
+  // 1. 노드 맵 생성
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+
+  // 2. in-degree 계산
+  const inDegree = new Map<string, number>();
+  nodes.forEach((n) => inDegree.set(n.id, 0));
+  edges.forEach((edge) => {
+    inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
+  });
+
+  // 3. 인접 리스트 생성
+  const adj = new Map<string, string[]>();
+  edges.forEach((edge) => {
+    if (!adj.has(edge.source)) adj.set(edge.source, []);
+    adj.get(edge.source)?.push(edge.target);
+  });
+
+  // 4. DFS 수행 함수
+  const visited = new Set<string>();
+
+  function dfs(nodeId: string): ModelNode[] {
+    if (visited.has(nodeId)) return [];
+    visited.add(nodeId);
+
+    const node = nodeMap.get(nodeId);
+    if (!node) return [];
+
+    const { type, data } = node;
+    const result: ModelNode = {
+      type,
+      data: { ...data },
+    };
+
+    // Node에서 필요없는 데이터 제거
+    delete result.data.openModal;
+    delete result.data.hideHandles;
+
+    // Block 노드이면 children도 탐색
+    const isBlock = type?.includes('Block');
+    if (isBlock) {
+      result.children = [];
+      // Block 내부 자식 노드 순서 보장
+      result.children = nodes
+        .filter((n) => n.parentNode === nodeId)
+        .sort((a, b) => (a.position.y || 0) - (b.position.y || 0))
+        .map((child) => {
+          const childData = { ...child.data };
+          delete childData.openModal;
+          delete childData.hideHandles;
+          return {
+            type: child.type,
+            data: childData,
+          };
+        });
+    }
+
+    const results: ModelNode[] = [result];
+
+    // 일반 노드인 경우에도 & Blcok을 다 순회하고 다음 노드 DFS
+    const nextIds = adj.get(nodeId) || [];
+    for (const nextId of nextIds) {
+      results.push(...dfs(nextId));
+    }
+
+    return results;
+  }
+
+  // 5. 진입점에서부터 DFS 실행
+  const model: ModelNode[] = [];
+  for (const [nodeId, deg] of inDegree.entries()) {
+    const node = nodeMap.get(nodeId);
+    if (deg === 0 && !node?.parentNode) {
+      const dfsResult = dfs(nodeId);
+      model.push(...dfsResult);
+    }
+  }
+
+  console.log('📦 Generated Model JSON:', model);
+
+  try {
+    const response = await fetch('/api/model/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`서버 응답 오류: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ 전송 완료:', result);
+  } catch (error) {
+    console.error('❌ 전송 실패:', error);
+  }
+
+  return model;
+}
+
 function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -66,8 +181,7 @@ function App() {
             <SendModelButton
               onClick={() => {
                 const { nodes, edges } = flowDataRef.current;
-                console.log('📤 Nodes:', nodes);
-                console.log('📤 Edges:', edges);
+                buildModelJSON(nodes, edges);
               }}
             />
           </div>

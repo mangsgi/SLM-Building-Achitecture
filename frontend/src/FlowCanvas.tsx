@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from 'react';
 import ReactFlow, {
+  useReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
@@ -21,7 +22,7 @@ import 'reactflow/dist/style.css';
 
 import TokenEmbeddingLayer from './nodes/TokenEmbedding';
 import PositionalEmbeddingLayer from './nodes/PositionalEmbedding';
-import LayerNormLayer from './nodes/LayerNorm';
+import NormalizationLayer from './nodes/Normalization';
 import FeedForwardLayer from './nodes/FeedForward';
 import DropoutLayer from './nodes/Dropout';
 import LinearLayer from './nodes/Linear';
@@ -95,6 +96,7 @@ const FlowCanvas = ({
   // ReactFlow에서 각 노드와 엣지 상태 저장
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { getEdges } = useReactFlow();
 
   useEffect(() => {
     flowDataRef.current = { nodes, edges };
@@ -121,7 +123,6 @@ const FlowCanvas = ({
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
-  // const reactFlowWrapper = useRef(null);
 
   // 노드 정보 modal을 위한 상태변수 저장
   const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
@@ -136,7 +137,7 @@ const FlowCanvas = ({
     () => ({
       tokenEmbedding: TokenEmbeddingLayer,
       positionalEmbedding: PositionalEmbeddingLayer,
-      layerNorm: LayerNormLayer,
+      normalization: NormalizationLayer,
       feedForward: FeedForwardLayer,
       dropout: DropoutLayer,
       linear: LinearLayer,
@@ -159,6 +160,27 @@ const FlowCanvas = ({
         id: `${params.source}-${params.sourceHandle}-${params.target}-${params.targetHandle}`,
       };
       console.log('Connecting Node via Handle: ', newEdge);
+
+      // sourceHandle이 'residual'일 때 residual 노드의 data.source 업데이트
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (
+            node.id === newEdge.source &&
+            newEdge.sourceHandle === 'residual' &&
+            node.type === 'residual'
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                source: newEdge.target, // 연결된 노드를 저장
+              },
+            };
+          }
+          return node;
+        }),
+      );
+
       setEdges((eds) => {
         return addEdge(newEdge, eds);
       });
@@ -166,7 +188,7 @@ const FlowCanvas = ({
     [setEdges],
   );
 
-  // Node Click 시
+  // Node Click 시 이벤트 핸들러
   const onNodeClick: NodeMouseHandler = (_, node) => {
     if (node && node.id) {
       // setClickedNodeId(node.id);
@@ -240,11 +262,7 @@ const FlowCanvas = ({
     );
 
     console.log(
-      `target: ${targetNode},
-      node x좌표: ${centerX},
-      node y좌표: ${centerY},
-      target x좌표: ${targetNode?.position.x},
-      target y좌표: ${targetNode?.position.y}`,
+      `target: ${targetNode},\nnode x좌표: ${centerX},\nnode y좌표: ${centerY},\ntarget x좌표: ${targetNode?.position.x},\ntarget y좌표: ${targetNode?.position.y}`,
     );
 
     if (targetNode) {
@@ -257,6 +275,7 @@ const FlowCanvas = ({
   // Drag를 멈췄을 때 부모 자녀 관계 설정
   const onNodeDragStop: NodeDragHandler = (_, node) => {
     console.log(node, target);
+
     setNodes((nodes) =>
       nodes.map((n) => {
         // target이 존재할 경우 Node 부모 설정 여부 결정
@@ -281,6 +300,18 @@ const FlowCanvas = ({
             n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
             n.draggable = false; // Node가 Drag 되지 않음
             n.data.hideHandles = true; // Edge Handle 부분 숨기기
+
+            // Node의 기존 Edge 모두 삭제
+            const relatedEdges = getEdges().filter(
+              (e) => e.source === node.id || e.target === node.id,
+            );
+            if (relatedEdges.length > 0) {
+              setEdges((edges) =>
+                edges.filter(
+                  (e) => e.source !== node.id && e.target !== node.id,
+                ),
+              );
+            }
             // Node도 Block일 경우
           } else if (
             node.type?.includes('Block') &&

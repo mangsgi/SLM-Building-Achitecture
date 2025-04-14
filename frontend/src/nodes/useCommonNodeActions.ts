@@ -1,5 +1,5 @@
 import { MouseEvent, useState, useEffect } from 'react';
-import { Node } from 'reactflow';
+import type { Node, Edge } from 'reactflow';
 import { BaseNodeData } from './components/NodeData';
 
 // NodaData 템플릿 적용
@@ -8,6 +8,7 @@ interface UseCommonNodeActionsParams<T extends BaseNodeData> {
   setNodes: (updater: (nds: Node<T>[]) => Node<T>[]) => void;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   setIsCollapsed?: React.Dispatch<React.SetStateAction<boolean>>;
+  setEdges: (updater: (eds: Edge[]) => Edge[]) => void;
 }
 
 // 노드별 공통 로직 Custom Hook으로 구현
@@ -16,6 +17,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   setNodes,
   setEditMode,
   setIsCollapsed,
+  setEdges,
 }: UseCommonNodeActionsParams<T>) {
   // Layer Node 별 펼쳐져 있을 때 높이
   const defaultHeightMap: Record<string, number> = {
@@ -134,6 +136,11 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         yOffset += (child.height ?? 40) + 10;
         return updated;
       });
+
+      // Edge 삭제
+      setEdges((eds) =>
+        eds.filter((edge) => edge.source !== id && edge.target !== id),
+      );
 
       return nds
         .filter((n) => n.id !== id && n.parentNode !== parentId)

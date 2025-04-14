@@ -50,9 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="layerNorm"
+        nodeType="normalization"
         nodeData={{
-          label: 'Layer Normalization',
+          label: 'Normalization',
         }}
         onDragStart={onDragStart}
       />
