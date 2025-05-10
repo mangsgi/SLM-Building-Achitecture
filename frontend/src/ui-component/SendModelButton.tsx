@@ -1,7 +1,6 @@
 import React from 'react';
 
 const SendModelButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => {
-  // ml-4 추가
   return (
     <button
       type="submit"
