@@ -9,7 +9,9 @@ import SendModelButton from './ui-component/SendModelButton';
 import Sidebar from './Sidebar';
 import Config, { defaultConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
+import { ReactFlowContext } from './store/ReactFlowContext';
 
+// 모델을 구성하는 노드 타입
 export interface ModelNode {
   type?: string;
   data: {
@@ -20,6 +22,7 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
+// 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
   nodes: Node[],
   edges: Edge[],
@@ -125,6 +128,7 @@ async function buildModelJSON(
   return model;
 }
 
+// 메인 컴포넌트
 function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -146,56 +150,58 @@ function App() {
       {/* Header 영역 */}
       <header className="bg-white p-4 shadow">
         <h1 className="text-2xl font-semibold text-left">
-          나만의 작은 언어 모델 만들기
+          Building Your Own SLM
         </h1>
       </header>
       {/* 메인 컨텐츠 영역 */}
       <div className="flex flex-grow relative min-h-0">
         <ReactFlowProvider>
-          {/* 사이드바가 열린 경우 Sidebar 랜더링*/}
-          {isSidebarOpen && <Sidebar onToggle={toggleSidebar} />}
-          {isConfigOpen && (
-            <Config
-              onToggle={toggleConfig}
-              config={config}
-              setConfig={setConfig}
-            />
-          )}
+          <ReactFlowContext>
+            {/* 사이드바가 열린 경우 Sidebar 랜더링*/}
+            {isSidebarOpen && <Sidebar onToggle={toggleSidebar} />}
+            {isConfigOpen && (
+              <Config
+                onToggle={toggleConfig}
+                config={config}
+                setConfig={setConfig}
+              />
+            )}
 
-          {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
-          <div className="flex-1 h-full">
-            <FlowCanvas config={config} flowDataRef={flowDataRef} />
-          </div>
+            {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
+            <div className="flex-1 h-full">
+              <FlowCanvas config={config} flowDataRef={flowDataRef} />
+            </div>
 
-          {/* 상단 왼쪽 버튼들 */}
-          <div
-            className={`absolute top-4 z-10 flex items-center ${
-              isSidebarOpen ? 'left-[16.6667%]' : 'left-4'
-            }`}
-          >
-            {!isSidebarOpen && (
-              <div onClick={toggleSidebar} aria-label="Open Sidebar">
-                <CanvasHamburgerButton />
+            {/* 상단 왼쪽 버튼들 */}
+            <div
+              className={`absolute top-4 z-10 flex items-center ${
+                isSidebarOpen ? 'left-[16.6667%]' : 'left-4'
+              }`}
+            >
+              {!isSidebarOpen && (
+                <div onClick={toggleSidebar} aria-label="Open Sidebar">
+                  <CanvasHamburgerButton />
+                </div>
+              )}
+              <SendModelButton
+                onClick={() => {
+                  const { nodes, edges } = flowDataRef.current;
+                  buildModelJSON(nodes, edges);
+                }}
+              />
+            </div>
+
+            {/* Config가 닫힌 경우 우측 상단에 토글 버튼 */}
+            {!isConfigOpen && (
+              <div
+                onClick={toggleConfig}
+                className="absolute top-4 right-4 z-10"
+                aria-label="Open Config"
+              >
+                <ConfigButton />
               </div>
             )}
-            <SendModelButton
-              onClick={() => {
-                const { nodes, edges } = flowDataRef.current;
-                buildModelJSON(nodes, edges);
-              }}
-            />
-          </div>
-
-          {/* Config가 닫힌 경우 우측 상단에 토글 버튼 */}
-          {!isConfigOpen && (
-            <div
-              onClick={toggleConfig}
-              className="absolute top-4 right-4 z-10"
-              aria-label="Open Config"
-            >
-              <ConfigButton />
-            </div>
-          )}
+          </ReactFlowContext>
         </ReactFlowProvider>
       </div>
     </div>

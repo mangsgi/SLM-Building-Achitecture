@@ -32,6 +32,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 
   // useEffect 사용을 위한 Node별 isCollapsed useState
   const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
+
   // 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
   useEffect(() => {
     if (collapseTrigger === null) return;

@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   useEffect,
+  useContext,
 } from 'react';
 import ReactFlow, {
   useReactFlow,
@@ -14,7 +15,7 @@ import ReactFlow, {
   Connection,
   NodeDragHandler,
   NodeMouseHandler,
-  ReactFlowInstance,
+  // ReactFlowInstance,
 } from 'reactflow';
 import type { Edge, Node } from 'reactflow';
 
@@ -34,7 +35,12 @@ import ResidualLayer from './nodes/Residual';
 import NodeInfoModal from './nodes/components/NodeInfoModal';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
+import ButtonEdge from './ButtonEdge';
+import { flowContext } from './store/ReactFlowContext';
 
+const edgeTypes = { buttonEdge: ButtonEdge };
+
+// Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
 function getNodeDataByType(
   nodeType: string,
   config: typeof defaultConfig,
@@ -86,6 +92,7 @@ function getNodeDataByType(
   }
 }
 
+// Canvas 메인 함수
 const FlowCanvas = ({
   config,
   flowDataRef,
@@ -97,6 +104,8 @@ const FlowCanvas = ({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { getEdges } = useReactFlow();
+  // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조 & ReactFlowInstance 저장
+  const { reactFlowInstance, setReactFlowInstance } = useContext(flowContext);
 
   useEffect(() => {
     flowDataRef.current = { nodes, edges };
@@ -119,10 +128,6 @@ const FlowCanvas = ({
 
   // Drag된 객체 지정
   const dragRef = useRef<Node | null>(null);
-
-  // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조
-  const [reactFlowInstance, setReactFlowInstance] =
-    useState<ReactFlowInstance | null>(null);
 
   // 노드 정보 modal을 위한 상태변수 저장
   const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
@@ -157,6 +162,7 @@ const FlowCanvas = ({
     (params: Edge<unknown> | Connection) => {
       const newEdge = {
         ...params,
+        type: 'buttonEdge',
         id: `${params.source}-${params.sourceHandle}-${params.target}-${params.targetHandle}`,
       };
       console.log('Connecting Node via Handle: ', newEdge);
@@ -342,6 +348,7 @@ const FlowCanvas = ({
         onInit={setReactFlowInstance} // Viewport가 초기화될 때 콜백 함수
         onDrop={onDrop}
         onDragOver={onDragOver}
+        edgeTypes={edgeTypes}
         snapToGrid={true} // 노드의 부드러운 이동 적용
         snapGrid={[3, 3]}
         nodeTypes={nodeTypes} // 전달된 nodeTypes 매핑 적용
