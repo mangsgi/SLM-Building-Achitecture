@@ -145,7 +145,10 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
   });
 
   return (
-    <BlockWrapper childNodesHeight={measuredHeight}>
+    <BlockWrapper
+      childNodesHeight={measuredHeight}
+      isTarget={currentData.isTarget}
+    >
       <div className="relative group" ref={contentRef}>
         <NodeTitle>{currentData.label}</NodeTitle>
         <NodeActionPanel

@@ -3,6 +3,7 @@ export interface BaseNodeData {
   label: string; // Node 이름
   openModal?: (nodeData: BaseNodeData) => void;
   hideHandles?: boolean;
+  isTarget?: boolean;
   inDim?: number; // 입력 차원
   outDim?: number; // 출력 차원
   [key: string]: unknown; // Index Signature

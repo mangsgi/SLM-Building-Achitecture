@@ -23,6 +23,8 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
         pointerEvents: 'auto',
         position: 'relative',
         width: '300px',
+        zIndex: 11,
+        isolation: 'isolate',
       }}
     >
       {/* 상단 핸들 */}
@@ -36,11 +38,12 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           height: '10px',
           top: '-5px',
           transform: 'translate(-50%, 0)',
+          zIndex: 12,
           ...handleStyle,
         }}
       />
 
-      {children}
+      <div style={{ position: 'relative', zIndex: 11 }}>{children}</div>
 
       {/* 하단 오른쪽 핸들 (Residual용) */}
       {isResidual && (
@@ -52,6 +55,10 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
             background: '#ccc',
             width: '10px',
             height: '10px',
+            right: '-5px',
+            transform: 'translate(0, -50%)',
+            zIndex: 12,
+            ...handleStyle,
           }}
         />
       )}
@@ -65,9 +72,9 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           background: '#ccc',
           width: '10px',
           height: '10px',
-          // position: 'absolute',
           bottom: '-5px',
           transform: 'translate(-50%, 0)',
+          zIndex: 12,
           ...handleStyle,
         }}
       />

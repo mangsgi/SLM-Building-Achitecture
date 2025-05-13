@@ -22,7 +22,7 @@ const initialValue: FlowContextType = {
 // flowContext 생성
 export const flowContext = createContext<FlowContextType>(initialValue);
 
-// flowContext 제공
+// flowContext를 제공하는 컴포넌트
 export const ReactFlowContext = ({
   children,
 }: {

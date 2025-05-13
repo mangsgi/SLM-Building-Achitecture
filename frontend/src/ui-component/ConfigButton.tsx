@@ -2,10 +2,10 @@ import React from 'react';
 
 const ConfigButton: React.FC = () => {
   return (
-    <button className="flex items-center justify-center h-[40px] w-[40px] px-[0px] gap-[10px] bg-[rgb(0,0,0)] rounded-[10px] cursor-pointer transition-all duration-300 hover:bg-[rgb(58,58,94)] active:scale-95 group">
-      <span className="w-[32px] flex flex-col items-center justify-end relative">
+    <button className="flex items-center justify-center h-[33.6px] w-[33.6px] px-[0px] gap-[10px] bg-[rgb(0,0,0)] rounded-[10px] cursor-pointer transition-all duration-300 hover:bg-[rgb(58,58,94)] active:scale-95 group">
+      <span className="w-[28px] flex flex-col items-center justify-end relative">
         <svg
-          className="z-[1] w-[80%] h-auto"
+          className="z-[1] w-[70%] h-auto"
           width="146"
           height="113"
           viewBox="0 0 146 113"
@@ -32,7 +32,7 @@ const ConfigButton: React.FC = () => {
         </svg>
 
         <svg
-          className="w-[50%] h-auto absolute z-[2] transition-all duration-300 ease-out group-hover:-translate-y-[5px]"
+          className="w-[40%] h-auto absolute z-[2] transition-all duration-300 ease-out group-hover:-translate-y-[5px]"
           width="88"
           height="99"
           viewBox="0 0 88 99"
@@ -56,7 +56,7 @@ const ConfigButton: React.FC = () => {
         </svg>
 
         <svg
-          className="w-[85%] h-auto absolute z-[3] opacity-95 transition-all duration-300 ease-out origin-bottom group-hover:rotate-x-[30deg]"
+          className="w-[75%] h-auto absolute z-[3] opacity-95 transition-all duration-300 ease-out origin-bottom group-hover:rotate-x-[30deg]"
           width="160"
           height="79"
           viewBox="0 0 160 79"

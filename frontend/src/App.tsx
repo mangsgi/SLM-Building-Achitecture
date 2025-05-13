@@ -174,12 +174,12 @@ function App() {
 
             {/* 상단 왼쪽 버튼들 */}
             <div
-              className={`absolute top-4 z-10 flex items-center ${
-                isSidebarOpen ? 'left-[16.6667%]' : 'left-4'
+              className={`absolute top-2 z-10 flex items-center gap-2 ${
+                isSidebarOpen ? 'left-[250px] ml-2' : 'left-4'
               }`}
             >
               {!isSidebarOpen && (
-                <div onClick={toggleSidebar} aria-label="Open Sidebar">
+                <div onClick={toggleSidebar}>
                   <CanvasHamburgerButton />
                 </div>
               )}

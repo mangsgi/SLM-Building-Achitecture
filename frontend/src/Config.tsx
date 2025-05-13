@@ -66,7 +66,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   const fractionalKeys: (keyof typeof config)[] = ['drop_rate'];
 
   return (
-    <aside className="absolute right-0 w-1/6 h-1/2 z-10 bg-white p-4 shadow overflow-auto">
+    <aside className="absolute right-0 w-[250px] h-1/2 z-10 bg-white p-4 shadow overflow-auto">
       {/* Config Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Model Configuration</h2>
