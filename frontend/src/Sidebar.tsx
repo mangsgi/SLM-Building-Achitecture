@@ -21,10 +21,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   };
 
   return (
-    <aside className="w-1/6 h-full shadow z-10 bg-white p-4 overflow-y-auto">
+    <aside className="w-[250px] h-full shadow z-10 bg-white px-4 py-2 overflow-y-auto">
       {/* Sidebar Header 영역 */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Node 목록</h2>
+        <h2 className="text-xl font-bold">Node List</h2>
         <div onClick={onToggle}>
           <CanvasHamburgerIcon />
         </div>

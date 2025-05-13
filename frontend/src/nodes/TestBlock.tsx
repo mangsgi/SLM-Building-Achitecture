@@ -75,7 +75,10 @@ const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
   });
 
   return (
-    <BlockWrapper childNodesHeight={childNodesHeight}>
+    <BlockWrapper
+      childNodesHeight={childNodesHeight}
+      isTarget={currentData.isTarget}
+    >
       <div className="relative group">
         <NodeTitle>{currentData.label}</NodeTitle>
         <NodeActionPanel

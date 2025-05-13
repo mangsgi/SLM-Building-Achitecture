@@ -256,6 +256,21 @@ const FlowCanvas = ({
     const centerX = node.position.x + (node.width ?? 0) / 2;
     const centerY = node.position.y + (node.height ?? 0) / 2;
 
+    // 이전 타겟 노드의 isTarget 초기화
+    if (target) {
+      setNodes((nodes) =>
+        nodes.map((n) => {
+          if (n.id === target.id) {
+            return {
+              ...n,
+              data: { ...n.data, isTarget: false },
+            };
+          }
+          return n;
+        }),
+      );
+    }
+
     // Node의 중간 부분이 위치해있는 곳의 Node 찾기
     const targetNode = nodes.find(
       (n) =>
@@ -267,73 +282,110 @@ const FlowCanvas = ({
         n.id !== node.id,
     );
 
-    console.log(
-      `target: ${targetNode},\nnode x좌표: ${centerX},\nnode y좌표: ${centerY},\ntarget x좌표: ${targetNode?.position.x},\ntarget y좌표: ${targetNode?.position.y}`,
-    );
-
     if (targetNode) {
+      // 타겟 노드의 isTarget 설정
+      setNodes((nodes) =>
+        nodes.map((n) => {
+          if (n.id === targetNode.id) {
+            return {
+              ...n,
+              data: { ...n.data, isTarget: true },
+            };
+          }
+          return n;
+        }),
+      );
       setTarget(targetNode as Node<BaseNodeData, string>);
     } else {
       setTarget(null);
     }
   };
 
-  // Drag를 멈췄을 때 부모 자녀 관계 설정
+  // Node 드래그가 끝났을 때
   const onNodeDragStop: NodeDragHandler = (_, node) => {
-    console.log(node, target);
-
-    setNodes((nodes) =>
-      nodes.map((n) => {
-        // target이 존재할 경우 Node 부모 설정 여부 결정
-        if (n.id === node.id && target) {
-          // target의 자식 노드들을 찾아서 total height 계산
-          const targetChildren = nodes.filter(
-            (n) => n.parentNode === target?.id && n.id != node.id,
-          );
-          const totalHeight = targetChildren.reduce(
-            (sum, child) => 10 + sum + (child.height ?? 0),
-            0,
-          );
-          // target이 Block이고 Node가 Block이 아닐 때
-          if (
-            !node.type?.includes('Block') &&
-            target.type &&
-            allowedTypes.includes(target.type)
-          ) {
-            n.data = { ...n.data };
-            n.parentNode = target?.id;
-            n.position = { x: 10, y: 110 + totalHeight }; // 노드의 위치 지정 **in 부모 Node**
-            n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
-            n.draggable = false; // Node가 Drag 되지 않음
-            n.data.hideHandles = true; // Edge Handle 부분 숨기기
-
-            // Node의 기존 Edge 모두 삭제
-            const relatedEdges = getEdges().filter(
-              (e) => e.source === node.id || e.target === node.id,
-            );
-            if (relatedEdges.length > 0) {
-              setEdges((edges) =>
-                edges.filter(
-                  (e) => e.source !== node.id && e.target !== node.id,
-                ),
-              );
-            }
-            // Node도 Block일 경우
-          } else if (
-            node.type?.includes('Block') &&
-            target.type &&
-            allowedTypes.includes(target.type)
-          ) {
-            console.log("Block can't includes Block Type.");
+    // 이전 타겟 노드의 isTarget 초기화
+    if (target) {
+      setNodes((nodes) =>
+        nodes.map((n) => {
+          if (n.id === target.id) {
+            return {
+              ...n,
+              data: { ...n.data, isTarget: false },
+            };
           }
-          // target과 Node가 같으면 그냥 둠
-        } else if (n.id === target?.id) {
-          n.data = { ...n.data };
-        }
-        return n;
-      }),
+          return n;
+        }),
+      );
+    }
+
+    // Node의 X 중심 좌표와 Y 중심 좌표 계산
+    const centerX = node.position.x + (node.width ?? 0) / 2;
+    const centerY = node.position.y + (node.height ?? 0) / 2;
+
+    // Node의 중간 부분이 위치해있는 곳의 Node 찾기
+    const targetNode = nodes.find(
+      (n) =>
+        centerX > n.position.x &&
+        centerX < n.position.x + (n.height ?? 0) &&
+        centerY > n.position.y &&
+        centerY < n.position.y + (n.height ?? 0) &&
+        n.type?.includes('Block') &&
+        n.id !== node.id,
     );
-    setTarget(null);
+
+    if (targetNode) {
+      setTarget(targetNode as Node<BaseNodeData, string>);
+
+      // target이 존재할 경우 Node 부모 설정 여부 결정
+      setNodes((nodes) =>
+        nodes.map((n) => {
+          if (n.id === node.id) {
+            // target의 자식 노드들을 찾아서 total height 계산
+            const targetChildren = nodes.filter(
+              (n) => n.parentNode === targetNode?.id && n.id != node.id,
+            );
+            const totalHeight = targetChildren.reduce(
+              (sum, child) => 10 + sum + (child.height ?? 0),
+              0,
+            );
+            // target이 Block이고 Node가 Block이 아닐 때
+            if (
+              !node.type?.includes('Block') &&
+              targetNode.type &&
+              allowedTypes.includes(targetNode.type)
+            ) {
+              n.data = { ...n.data };
+              n.parentNode = targetNode?.id;
+              n.position = { x: 10, y: 110 + totalHeight }; // 노드의 위치 지정 **in 부모 Node**
+              n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
+              n.draggable = false; // Node가 Drag 되지 않음
+              n.data.hideHandles = true; // Edge Handle 부분 숨기기
+
+              // Node의 기존 Edge 모두 삭제
+              const relatedEdges = getEdges().filter(
+                (e) => e.source === node.id || e.target === node.id,
+              );
+              if (relatedEdges.length > 0) {
+                setEdges((edges) =>
+                  edges.filter(
+                    (e) => e.source !== node.id && e.target !== node.id,
+                  ),
+                );
+              }
+            } else if (
+              node.type?.includes('Block') &&
+              targetNode.type &&
+              allowedTypes.includes(targetNode.type)
+            ) {
+              console.log("Block can't includes Block Type.");
+            }
+          }
+          return n;
+        }),
+      );
+    } else {
+      setTarget(null);
+    }
     dragRef.current = null;
   };
 

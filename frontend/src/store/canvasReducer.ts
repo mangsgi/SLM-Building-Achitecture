@@ -4,7 +4,7 @@ export const initialState = {
   isDirty: false,
 };
 
-// canvasReducer
+// canvas의 상태를 관리하는 reducer
 const canvasReducer = (state = initialState, action: any) => {
   switch (action.type) {
     case actionTypes.SET_DIRTY:
