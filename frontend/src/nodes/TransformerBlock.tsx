@@ -15,14 +15,16 @@ import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import NodeSlot from './components/NodeSlot';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const getFields = (data: TransformerBlockData): FieldConfig[] => [
   {
     type: 'number',
     label: 'Number of Layers:',
-    name: 'numOfLayers',
+    name: 'numLayers',
     value: data.numLayers?.toString() || '',
-    placeholder: 'Enter the number of layers',
+    placeholder: 'Enter number of layers',
+    info: nodeFieldInfo.transformerBlock.numLayers,
   },
 ];
 
@@ -34,6 +36,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
@@ -114,7 +117,8 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
     field: keyof TransformerBlockData,
     value: string,
   ) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof TransformerBlockData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -141,6 +145,7 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
     id,
     setNodes,
     setEditMode,
+    setIsCollapsed,
     setEdges,
   });
 
@@ -158,14 +163,19 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
-        {/* Collapse가 아닐 때만 필드 보여줌 */}
-        <FieldRenderer
-          fields={getFields(currentData)}
-          editMode={editMode}
-          onChange={(name: string, value: string) =>
-            handleFieldChange(name as keyof TransformerBlockData, value)
-          }
-        />
+        {!isCollapsed && (
+          <FieldRenderer
+            fields={getFields(currentData)}
+            editMode={editMode}
+            onChange={(name: string, value: string) =>
+              handleFieldChange(name as keyof TransformerBlockData, value)
+            }
+            onInfoClick={(info) => {
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
+          />
+        )}
         {/* 그림에 나온 순서대로 6개 슬롯 배치 */}
         <div className="flex flex-col items-center w-56">
           {/* {!residual1 && (
@@ -187,14 +197,14 @@ const TransformerBlock: React.FC<TransformerBlockProps> = ({ id }) => {
             <NodeSlot allowedType="layerNorm" slotLabel="LayerNorm 1" />
           )}
         </div>
-
-        <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-          <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-          <p className="text-sm">
-            여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-          </p>
-        </NodeInfoModal>
       </div>
+
+      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.transformerBlock.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.transformerBlock.description}</p>
+      </NodeInfoModal>
     </BlockWrapper>
   );
 };

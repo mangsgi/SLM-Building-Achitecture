@@ -8,36 +8,33 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+
+const actFuncOptions: string[] = ['ReLU', 'GELU', 'SiLU', 'Mish'];
+const feedForwardTypeOptions: string[] = ['Standard', 'Gated'];
 
 const getFields = (data: FeedForwardData): FieldConfig[] => [
   {
-    type: 'number',
-    label: 'Input Dimension:',
-    name: 'inDim',
-    value: data.inDim?.toString() || '',
-    placeholder: 'Enter input dimension',
-  },
-  {
-    type: 'number',
-    label: 'Number of Factor:',
-    name: 'numOfFactor',
-    value: data.numOfFactor?.toString() || '',
-    placeholder: 'Enter number of factor',
+    type: 'select',
+    label: 'Activation Function:',
+    name: 'actFunc',
+    value: data.actFunc || 'GELU',
+    options: actFuncOptions,
+    info: nodeFieldInfo.feedForward.actFunc,
   },
   {
     type: 'select',
-    label: 'Activation Function Type:',
-    name: 'actFunc',
-    value: data.actFunc || '',
-    options: actFuncTypeOptions,
+    label: 'Feed Forward Type:',
+    name: 'feedForwardType',
+    value: data.feedForwardType || 'Standard',
+    options: feedForwardTypeOptions,
+    info: nodeFieldInfo.feedForward.feedForwardType,
   },
 ];
 
 interface FeedForwardLayerProps {
   id: string;
 }
-
-const actFuncTypeOptions: string[] = ['ReLU', 'GELU', 'SwiGLU'];
 
 export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
@@ -49,9 +46,14 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
   if (!node) return null;
   const currentData = node.data as FeedForwardData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof FeedForwardData, value: string) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof FeedForwardData)[] = [
+      'label',
+      'actFunc',
+      'feedForwardType',
+    ];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -102,15 +104,20 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof FeedForwardData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.feedForward.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.feedForward.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );

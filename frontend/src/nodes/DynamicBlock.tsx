@@ -8,6 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 interface DynamicBlockLayerProps {
   id: string;
@@ -20,6 +21,7 @@ const getFields = (data: DynamicBlockData): FieldConfig[] => [
     name: 'numOfLayers',
     value: data.numLayers?.toString() || '',
     placeholder: 'Enter the number of layers',
+    info: nodeFieldInfo.dynamicBlock.numLayers,
   },
 ];
 
@@ -45,7 +47,8 @@ const DynamicBlock: React.FC<NodeProps<DynamicBlockLayerProps>> = ({ id }) => {
 
   // input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof DynamicBlockData, value: string) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof DynamicBlockData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -95,6 +98,10 @@ const DynamicBlock: React.FC<NodeProps<DynamicBlockLayerProps>> = ({ id }) => {
           onChange={(name: string, value: string) =>
             handleFieldChange(name as keyof DynamicBlockData, value)
           }
+          onInfoClick={(info) => {
+            const event = new CustomEvent('fieldInfo', { detail: info });
+            window.dispatchEvent(event);
+          }}
         />
         {childNodesHeight === 20 && (
           <div className="border-dashed border-2 text-center text-gray-500 italic">
@@ -104,10 +111,10 @@ const DynamicBlock: React.FC<NodeProps<DynamicBlockLayerProps>> = ({ id }) => {
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.dynamicBlock.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.dynamicBlock.description}</p>
       </NodeInfoModal>
     </BlockWrapper>
   );

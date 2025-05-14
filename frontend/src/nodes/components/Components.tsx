@@ -1,4 +1,5 @@
 import React, { MouseEventHandler } from 'react';
+import { FiInfo } from 'react-icons/fi';
 
 // Node의 Title 컴포넌트
 interface NodeTitleProps {
@@ -15,13 +16,28 @@ export const NodeTitle: React.FC<NodeTitleProps> = ({ children, onClick }) => {
 };
 
 // 읽기: Node의 각 Data별 렌더링
-export const ReadField: React.FC<{ label: string; value: string }> = ({
-  label,
-  value,
-}) => {
+export const ReadField: React.FC<{
+  label: string;
+  value: string;
+  info?: {
+    title: string;
+    description: string;
+  };
+  onInfoClick?: (info: { title: string; description: string }) => void;
+}> = ({ label, value, info, onInfoClick }) => {
   return (
     <div className="mb-2 pt-1">
-      <label className="text-base">{label}</label>
+      <div className="flex items-center gap-2">
+        <label className="text-base">{label}</label>
+        {info && onInfoClick && (
+          <button
+            className="text-gray-400 hover:text-gray-600"
+            onClick={() => onInfoClick(info)}
+          >
+            <FiInfo size={16} />
+          </button>
+        )}
+      </div>
       <div className="border rounded p-1 text-sm w-full h-[30px]">
         {value || '-'}
       </div>
@@ -37,12 +53,27 @@ export const EditField: React.FC<{
   value: string;
   placeholder?: string;
   onChange: (value: string) => void;
-}> = ({ label, id, name, value, placeholder, onChange }) => {
+  info?: {
+    title: string;
+    description: string;
+  };
+  onInfoClick?: (info: { title: string; description: string }) => void;
+}> = ({ label, id, name, value, placeholder, onChange, info, onInfoClick }) => {
   return (
     <div className="mb-2 pt-1">
-      <label htmlFor={id} className="text-base font-medium">
-        {label}
-      </label>
+      <div className="flex items-center gap-2">
+        <label htmlFor={id} className="text-base font-medium">
+          {label}
+        </label>
+        {info && onInfoClick && (
+          <button
+            className="text-gray-400 hover:text-gray-600"
+            onClick={() => onInfoClick(info)}
+          >
+            <FiInfo size={16} />
+          </button>
+        )}
+      </div>
       <input
         id={id}
         name={name}
@@ -64,12 +95,27 @@ export const EditSelectField: React.FC<{
   value: string;
   onChange: (value: string) => void;
   options: string[];
-}> = ({ label, id, name, value, onChange, options }) => {
+  info?: {
+    title: string;
+    description: string;
+  };
+  onInfoClick?: (info: { title: string; description: string }) => void;
+}> = ({ label, id, name, value, onChange, options, info, onInfoClick }) => {
   return (
     <div className="mb-2 pt-1">
-      <label htmlFor={id} className="text-base font-medium">
-        {label}
-      </label>
+      <div className="flex items-center gap-2">
+        <label htmlFor={id} className="text-base font-medium">
+          {label}
+        </label>
+        {info && onInfoClick && (
+          <button
+            className="text-gray-400 hover:text-gray-600"
+            onClick={() => onInfoClick(info)}
+          >
+            <FiInfo size={16} />
+          </button>
+        )}
+      </div>
       <select
         id={id}
         name={name}

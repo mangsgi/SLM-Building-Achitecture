@@ -8,21 +8,16 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const getFields = (data: BaseNodeData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Input Dimension:',
-    name: 'inDim',
-    value: data.inDim?.toString() || '',
-    placeholder: 'Enter input dimension',
-  },
   {
     type: 'number',
     label: 'Output Dimension:',
     name: 'outDim',
     value: data.outDim?.toString() || '',
     placeholder: 'Enter output dimension',
+    info: nodeFieldInfo.linear.outDim,
   },
 ];
 
@@ -40,9 +35,10 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
   if (!node) return null;
   const currentData = node.data as BaseNodeData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof BaseNodeData, value: string) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof BaseNodeData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -93,15 +89,18 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof BaseNodeData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">{nodeInfo.linear.title}</h3>
+        <p className="text-sm">{nodeInfo.linear.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );

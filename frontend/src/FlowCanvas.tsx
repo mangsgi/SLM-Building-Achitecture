@@ -92,14 +92,16 @@ function getNodeDataByType(
   }
 }
 
-// Canvas 메인 함수
-const FlowCanvas = ({
-  config,
-  flowDataRef,
-}: {
+interface FlowCanvasProps {
   config: typeof defaultConfig;
   flowDataRef: React.MutableRefObject<{ nodes: Node[]; edges: Edge[] }>;
-}) => {
+}
+
+// Canvas 메인 함수
+export const FlowCanvas: React.FC<FlowCanvasProps> = ({
+  config,
+  flowDataRef,
+}: FlowCanvasProps) => {
   // ReactFlow에서 각 노드와 엣지 상태 저장
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -389,8 +391,33 @@ const FlowCanvas = ({
     dragRef.current = null;
   };
 
+  // 필드 정보 모달 상태 관리
+  const [fieldInfoModal, setFieldInfoModal] = useState<{
+    isOpen: boolean;
+    info: { title: string; description: string } | null;
+  }>({
+    isOpen: false,
+    info: null,
+  });
+
+  // 필드 정보 모달을 열기 위한 이벤트 리스너
+  useEffect(() => {
+    const handleFieldInfo = (event: CustomEvent) => {
+      setFieldInfoModal({
+        isOpen: true,
+        info: event.detail,
+      });
+    };
+
+    window.addEventListener('fieldInfo', handleFieldInfo as EventListener);
+    return () => {
+      window.removeEventListener('fieldInfo', handleFieldInfo as EventListener);
+    };
+  }, []);
+
   return (
-    <div className="w-full h-full bg-gray-50">
+    // w-full
+    <div className="relative h-full bg-gray-50">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -422,6 +449,21 @@ const FlowCanvas = ({
           {/* 노드별 추가 정보 렌더링 */}
         </NodeInfoModal>
       )}
+
+      {/* 필드 정보 모달 */}
+      <NodeInfoModal
+        isOpen={fieldInfoModal.isOpen}
+        onClose={() => setFieldInfoModal({ isOpen: false, info: null })}
+      >
+        {fieldInfoModal.info && (
+          <>
+            <h3 className="text-lg font-semibold mb-2">
+              {fieldInfoModal.info.title}
+            </h3>
+            <p className="text-sm">{fieldInfoModal.info.description}</p>
+          </>
+        )}
+      </NodeInfoModal>
     </div>
   );
 };

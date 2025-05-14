@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useReactFlow, NodeProps } from 'reactflow';
+import { useReactFlow } from 'reactflow';
 
 import { NodeTitle } from './components/Components';
 import { SDPAttentionData } from './components/NodeData';
@@ -8,21 +8,16 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const getFields = (data: SDPAttentionData): FieldConfig[] => [
   {
     type: 'number',
-    label: 'Input Dimension:',
-    name: 'inDim',
-    value: data.inDim?.toString() || '',
-    placeholder: 'Enter input dimension',
-  },
-  {
-    type: 'number',
-    label: 'Output Dimension:',
-    name: 'outDim',
-    value: data.outDim?.toString() || '',
-    placeholder: 'Enter output dimension',
+    label: 'Number of Heads:',
+    name: 'numHeads',
+    value: data.numHeads?.toString() || '',
+    placeholder: 'Enter number of heads',
+    info: nodeFieldInfo.sdpAttention.numHeads,
   },
   {
     type: 'number',
@@ -30,20 +25,15 @@ const getFields = (data: SDPAttentionData): FieldConfig[] => [
     name: 'dropoutRate',
     value: data.dropoutRate?.toString() || '',
     placeholder: 'Enter dropout rate',
+    info: nodeFieldInfo.sdpAttention.dropoutRate,
   },
   {
-    type: 'number',
-    label: 'Context Length:',
-    name: 'ctxLength',
-    value: data.ctxLength?.toString() || '',
-    placeholder: 'Enter context length',
-  },
-  {
-    type: 'number',
-    label: 'Number of Heads:',
-    name: 'numOfHeads',
-    value: data.numHeads?.toString() || '',
-    placeholder: 'Enter the number of heads',
+    type: 'select',
+    label: 'QKV Bias:',
+    name: 'qkvBias',
+    value: data.qkvBias ? 'true' : 'false',
+    options: ['true', 'false'],
+    info: nodeFieldInfo.sdpAttention.qkvBias,
   },
 ];
 
@@ -51,9 +41,7 @@ interface SDPAttentionLayerProps {
   id: string;
 }
 
-export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
-  id,
-}) => {
+export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -63,9 +51,10 @@ export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
   if (!node) return null;
   const currentData = node.data as SDPAttentionData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof SDPAttentionData, value: string) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof SDPAttentionData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -116,15 +105,20 @@ export const SDPAttentionLayer: React.FC<NodeProps<SDPAttentionLayerProps>> = ({
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof SDPAttentionData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.sdpAttention.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.sdpAttention.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );

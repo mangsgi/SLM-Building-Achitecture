@@ -63,6 +63,7 @@ async function buildModelJSON(
     // Node에서 필요없는 데이터 제거
     delete result.data.openModal;
     delete result.data.hideHandles;
+    delete result.data.isTarget;
 
     // Block 노드이면 children도 탐색
     const isBlock = type?.includes('Block');
