@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useReactFlow, NodeProps } from 'reactflow';
+import { useReactFlow } from 'reactflow';
 
 import { NodeTitle } from './components/Components';
 import { TokenEmbeddingData } from './components/NodeData';
@@ -8,6 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
   {
@@ -16,6 +17,7 @@ const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
     name: 'vocabSize',
     value: data.vocabSize?.toString() || '',
     placeholder: 'Enter vocabulary size',
+    info: nodeFieldInfo.tokenEmbedding.vocabSize,
   },
   {
     type: 'number',
@@ -23,6 +25,7 @@ const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
     name: 'embDim',
     value: data.embDim?.toString() || '',
     placeholder: 'Enter embedding dimension',
+    info: nodeFieldInfo.tokenEmbedding.embDim,
   },
 ];
 
@@ -30,9 +33,9 @@ interface TokenEmbeddingLayerProps {
   id: string;
 }
 
-export const TokenEmbeddingLayer: React.FC<
-  NodeProps<TokenEmbeddingLayerProps>
-> = ({ id }) => {
+export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
+  id,
+}) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -42,12 +45,13 @@ export const TokenEmbeddingLayer: React.FC<
   if (!node) return null;
   const currentData = node.data as TokenEmbeddingData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트트
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof TokenEmbeddingData,
     value: string,
   ) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof TokenEmbeddingData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -98,15 +102,20 @@ export const TokenEmbeddingLayer: React.FC<
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof TokenEmbeddingData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.tokenEmbedding.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.tokenEmbedding.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );

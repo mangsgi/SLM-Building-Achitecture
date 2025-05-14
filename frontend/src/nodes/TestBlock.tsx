@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useReactFlow, NodeProps, useStore } from 'reactflow';
+import { useReactFlow, useStore } from 'reactflow';
 
 import { NodeTitle } from './components/Components';
 import { BlockWrapper } from './components/BlockWrapper';
@@ -8,22 +8,24 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+
+const getFields = (data: TestBlockData): FieldConfig[] => [
+  {
+    type: 'number',
+    label: 'Test Type:',
+    name: 'testType',
+    value: data.testType?.toString() || '',
+    options: ['default', 'custom'],
+    info: nodeFieldInfo.testBlock.testType,
+  },
+];
 
 interface TestBlockProps {
   id: string;
 }
 
-const getFields = (data: TestBlockData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Number of Layers:',
-    name: 'numOfLayers',
-    value: data.numLayers?.toString() || '',
-    placeholder: 'Enter the number of layers',
-  },
-];
-
-const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
+export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -44,7 +46,8 @@ const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
 
   // input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof TestBlockData, value: string) => {
-    const newValue = field === 'label' ? value : Number(value);
+    const stringFields: (keyof TestBlockData)[] = ['label'];
+    const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -94,14 +97,18 @@ const TestBlock: React.FC<NodeProps<TestBlockProps>> = ({ id }) => {
           onChange={(name: string, value: string) =>
             handleFieldChange(name as keyof TestBlockData, value)
           }
+          onInfoClick={(info) => {
+            const event = new CustomEvent('fieldInfo', { detail: info });
+            window.dispatchEvent(event);
+          }}
         />
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.testBlock.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.testBlock.description}</p>
       </NodeInfoModal>
     </BlockWrapper>
   );

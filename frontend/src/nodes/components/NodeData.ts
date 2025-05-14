@@ -17,13 +17,14 @@ export interface TokenEmbeddingData extends BaseNodeData {
 
 export interface PositionalEmbeddingData extends BaseNodeData {
   ctxLength: number;
-  posEmbeddingType: string;
+  posType: string;
   vocabSize: number;
   embDim: number;
 }
 
 export interface FeedForwardData extends BaseNodeData {
   numOfFactor: number;
+  feedForwardType: string;
   actFunc: string;
 }
 
@@ -56,6 +57,6 @@ export interface DynamicBlockData extends BaseNodeData {
 }
 
 export interface TestBlockData extends BaseNodeData {
-  numHeads: number;
-  sdpAttention?: SDPAttentionData | null;
+  testType: number;
+  // sdpAttention?: SDPAttentionData | null;
 }

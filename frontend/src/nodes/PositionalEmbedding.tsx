@@ -8,6 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const posTypeOptions: string[] = [
   'Learned Positional Embedding',
@@ -23,6 +24,7 @@ const getFields = (data: PositionalEmbeddingData): FieldConfig[] => [
     name: 'ctxLength',
     value: data.ctxLength?.toString() || '',
     placeholder: 'Enter context length',
+    info: nodeFieldInfo.positionalEmbedding.ctxLength,
   },
   {
     type: 'number',
@@ -30,13 +32,15 @@ const getFields = (data: PositionalEmbeddingData): FieldConfig[] => [
     name: 'embDim',
     value: data.embDim?.toString() || '',
     placeholder: 'Enter embedding dimension',
+    info: nodeFieldInfo.positionalEmbedding.embDim,
   },
   {
     type: 'select',
     label: 'Positional Embedding Type:',
     name: 'posType',
-    value: (data.posType || '') as string,
+    value: data.posType || 'Learned Positional Embedding',
     options: posTypeOptions,
+    info: nodeFieldInfo.positionalEmbedding.posType,
   },
 ];
 
@@ -66,7 +70,6 @@ export const PositionalEmbeddingLayer: React.FC<
       'posType',
     ];
     const newValue = stringFields.includes(field) ? value : Number(value);
-
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -117,15 +120,20 @@ export const PositionalEmbeddingLayer: React.FC<
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof PositionalEmbeddingData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.positionalEmbedding.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.positionalEmbedding.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );

@@ -23,7 +23,7 @@ const getFields = (data: NormalizationData): FieldConfig[] => [
     type: 'select',
     label: 'Normalization Type:',
     name: 'normType',
-    value: (data.normType || '') as string,
+    value: data.normType || 'Layer Normalization',
     options: normTypeOptions,
   },
 ];
@@ -99,6 +99,11 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof NormalizationData, value)
             }
+            onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
+              const event = new CustomEvent('fieldInfo', { detail: info });
+              window.dispatchEvent(event);
+            }}
           />
         )}
       </div>
