@@ -4,7 +4,6 @@ import numpy as np
 
 
 class LearnedPositionalEmbedding(nn.Module):
-    """GPT2-style 학습 가능한 포지셔널 임베딩"""
     def __init__(self, max_len, d_model):
         super().__init__()
         self.position_embeddings = nn.Embedding(max_len, d_model)
@@ -16,7 +15,6 @@ class LearnedPositionalEmbedding(nn.Module):
 
 
 class SinusoidalPositionalEmbedding(nn.Module):
-    """Transformer-style 사인/코사인 임베딩"""
     def __init__(self, max_len, d_model):
         super().__init__()
         self.pe = self._generate_sinusoidal_embeddings(max_len, d_model)
@@ -24,11 +22,9 @@ class SinusoidalPositionalEmbedding(nn.Module):
     def _generate_sinusoidal_embeddings(self, seq_length, d_model):
         position = np.arange(seq_length)[:, np.newaxis]
         div_term = np.exp(np.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))
-
         pe = np.zeros((seq_length, d_model))
         pe[:, 0::2] = np.sin(position * div_term)
         pe[:, 1::2] = np.cos(position * div_term)
-
         return torch.tensor(pe, dtype=torch.float32).unsqueeze(0)
 
     def forward(self, x):
@@ -36,7 +32,6 @@ class SinusoidalPositionalEmbedding(nn.Module):
 
 
 class RelativePositionalEmbedding(nn.Module):
-    """Transformer-XL / T5-style 상대 포지셔널 임베딩"""
     def __init__(self, max_len, d_model):
         super().__init__()
         self.max_len = max_len
@@ -51,19 +46,16 @@ class RelativePositionalEmbedding(nn.Module):
 
 
 class RotaryPositionalEmbedding(nn.Module):
-    """RoPE (Rotary) 포지셔널 인코딩: LLaMA, GPT-NeoX 등"""
     def __init__(self, d_model, max_len):
         super().__init__()
         position = torch.arange(max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))
-
         self.theta = torch.zeros(max_len, d_model)
         self.theta[:, 0::2] = torch.cos(position * div_term)
         self.theta[:, 1::2] = torch.sin(position * div_term)
 
     def forward(self, x, pos):
         theta = self.theta[pos]
-
         x_even = x[..., 0::2]
         x_odd = x[..., 1::2]
 
