@@ -22,7 +22,7 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
-// 백엔드에 보낼 모델 JSON 파일 구성 함수
+// ✅ 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
   nodes: Node[],
   edges: Edge[],
@@ -86,7 +86,7 @@ async function buildModelJSON(
 
     const results: ModelNode[] = [result];
 
-    // 일반 노드인 경우에도 & Blcok을 다 순회하고 다음 노드 DFS
+    // 일반 노드인 경우에도 & Block을 다 순회하고 다음 노드 DFS
     const nextIds = adj.get(nodeId) || [];
     for (const nextId of nextIds) {
       results.push(...dfs(nextId));
@@ -129,20 +129,20 @@ async function buildModelJSON(
   return model;
 }
 
-// 메인 컴포넌트
+// ✅ 메인 컴포넌트
 function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  // 모델 Config 변수
   const [config, setConfig] = useState(defaultConfig);
 
+  // ✅ FlowCanvas에 전달할 데이터 참조 객체
   const flowDataRef = useRef<{ nodes: Node[]; edges: Edge[] }>({
     nodes: [],
     edges: [],
   });
 
-  // 콜백함수를 인자로 전달하는 Setter를 호출하는 토글 함수 정의
+  // ✅ 콜백함수를 인자로 전달하는 Setter를 호출하는 토글 함수 정의
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 

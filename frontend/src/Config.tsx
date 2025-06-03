@@ -19,7 +19,7 @@ export const defaultConfig = {
 };
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
-  // Config 값이 바뀔 때 이벤트 핸들러
+  // ✅ Config 값이 바뀔 때 이벤트 핸들러
   const handleChange = (key: keyof typeof config, value: string | boolean) => {
     let parsedValue: string | boolean | number = value;
 
@@ -36,7 +36,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     }));
   };
 
-  // 입력 범위가 1 이하 소수인 경우 렌더링 및 입력 처리
+  // ✅ 입력 범위가 1 이하 소수인 경우 렌더링 및 입력 처리 for Dropout Rate
   const renderFractionInput = (
     key: keyof typeof config,
     value: number,

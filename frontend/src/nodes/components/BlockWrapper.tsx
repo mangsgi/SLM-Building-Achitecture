@@ -4,13 +4,13 @@ import { Handle, Position } from 'reactflow';
 interface BlockWrapperProps {
   children: ReactNode;
   hideHandles?: boolean;
-  childNodesHeight?: number;
+  childNodesHeight: number;
   isTarget?: boolean;
 }
 
 export const BlockWrapper: FC<BlockWrapperProps> = ({
   children,
-  childNodesHeight = 0,
+  childNodesHeight,
   isTarget = false,
 }) => {
   return (
@@ -22,7 +22,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
         pointerEvents: 'auto',
         position: 'relative',
         width: '320px',
-        height: `${130 + childNodesHeight}px`,
+        height: `${100 + childNodesHeight}px`,
         zIndex: 1,
         isolation: 'isolate',
       }}
@@ -42,7 +42,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
+      <div style={{ position: 'relative', zIndex: 10 }}>{children}</div>
 
       {/* 하단 핸들 */}
       <Handle

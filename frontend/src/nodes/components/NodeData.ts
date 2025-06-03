@@ -47,13 +47,20 @@ export interface SDPAttentionData extends BaseNodeData {
   qkvBias?: false;
 }
 
-export interface TransformerBlockData extends BaseNodeData {
+export interface GQAttentionData extends BaseNodeData {
+  dropoutRate: number;
+  ctxLength: number;
+  numHeads: number;
+  qkvBias?: false;
+}
+
+export interface GPT2TransformerBlockData extends BaseNodeData {
   numLayers: number;
   // 레이어 이름별 true/false 값 딕셔너리 추가
 }
 
-export interface DynamicBlockData extends BaseNodeData {
-  numLayers: number;
+export interface TransformerBlockData extends BaseNodeData {
+  numOfBlocks: number;
 }
 
 export interface TestBlockData extends BaseNodeData {

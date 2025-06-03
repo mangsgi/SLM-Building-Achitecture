@@ -72,6 +72,11 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
     description:
       '노드 테스트를 위한 부모 노드입니다. 다양한 노드 타입을 테스트하고 구성할 수 있습니다.',
   },
+  gqAttention: {
+    title: 'Grouped Query Attention',
+    description:
+      '쿼리, 키, 값 벡터를 그룹화하여 처리하는 어텐션 메커니즘입니다. 메모리 효율성을 높이면서도 성능을 유지합니다.',
+  },
 };
 
 // 노드별 필드 정보 저장소
@@ -116,6 +121,11 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       description:
         '수치적 안정성을 위한 작은 상수입니다. 분모가 0이 되는 것을 방지합니다.',
     },
+    inDim: {
+      title: 'Input Dimension',
+      description:
+        '정규화할 입력 텐서의 차원을 지정합니다. 이는 이전 레이어의 출력 차원과 일치해야 합니다.',
+    },
   },
   feedForward: {
     actFunc: {
@@ -127,6 +137,11 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       title: 'Feed Forward Type',
       description:
         '피드포워드 네트워크의 구조를 선택합니다. Standard, Gated 등이 있습니다.',
+    },
+    numOfFactor: {
+      title: 'Number of Factors',
+      description:
+        '피드포워드 네트워크의 확장 비율을 지정합니다. 입력 차원에 이 값을 곱하여 내부 차원을 결정합니다.',
     },
   },
   dropout: {
@@ -158,6 +173,26 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       description: '쿼리, 키, 값 변환에 편향을 사용할지 여부를 결정합니다.',
     },
   },
+  gqAttention: {
+    numHeads: {
+      title: 'Number of Heads',
+      description:
+        '병렬로 처리할 어텐션 헤드의 수를 정의합니다. 각 헤드는 서로 다른 표현을 학습합니다.',
+    },
+    ctxLength: {
+      title: 'Context Length',
+      description:
+        '처리할 수 있는 최대 시퀀스 길이를 정의합니다. 이는 모델의 메모리 사용량과 계산 복잡도에 영향을 미칩니다.',
+    },
+    dropoutRate: {
+      title: 'Attention Dropout Rate',
+      description: '어텐션 가중치에 적용할 드롭아웃 비율을 정의합니다.',
+    },
+    qkvBias: {
+      title: 'QKV Bias',
+      description: '쿼리, 키, 값 변환에 편향을 사용할지 여부를 결정합니다.',
+    },
+  },
   transformerBlock: {
     numLayers: {
       title: 'Number of Layers',
@@ -166,10 +201,10 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
     },
   },
   dynamicBlock: {
-    numLayers: {
-      title: 'Number of Layers',
+    numOfBlocks: {
+      title: 'Number of Blocks',
       description:
-        '트랜스포머 블록 내의 레이어 수를 지정합니다. 각 레이어는 멀티헤드 어텐션과 피드포워드 네트워크를 포함합니다.',
+        '동적 블록 내에 포함될 블록의 수를 지정합니다. 각 블록은 독립적으로 구성될 수 있습니다.',
     },
   },
   testBlock: {
