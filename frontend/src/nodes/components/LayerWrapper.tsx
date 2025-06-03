@@ -14,7 +14,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
 }) => {
   const handleStyle: React.CSSProperties = hideHandles
     ? { opacity: 0, pointerEvents: 'none' as const }
-    : { pointerEvents: 'auto' as const, zIndex: 1 };
+    : { pointerEvents: 'auto' as const, zIndex: 12 };
 
   return (
     <div
@@ -45,23 +45,20 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
 
       <div style={{ position: 'relative', zIndex: 11 }}>{children}</div>
 
-      {/* 하단 오른쪽 핸들 (Residual용) */}
-      {isResidual && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="residual"
-          style={{
-            background: '#ccc',
-            width: '10px',
-            height: '10px',
-            right: '-5px',
-            transform: 'translate(0, -50%)',
-            zIndex: 12,
-            ...handleStyle,
-          }}
-        />
-      )}
+      {/* 오른쪽 핸들 (Residual용) */}
+      <Handle
+        type={isResidual ? 'source' : 'target'}
+        position={Position.Right}
+        id="residual"
+        style={{
+          background: '#ccc',
+          width: '10px',
+          height: '10px',
+          right: '-5px',
+          transform: 'translate(0, -50%)',
+          zIndex: 12,
+        }}
+      />
 
       {/* 하단 핸들 */}
       <Handle

@@ -32,6 +32,7 @@ const ButtonEdge = ({
 
   const dispatch = useDispatch();
 
+  // ✅ Edge 클릭 시 삭제
   const onEdgeClick = (
     evt: React.MouseEvent<HTMLButtonElement>,
     edgeId: string,
@@ -67,7 +68,7 @@ const ButtonEdge = ({
         height={foreignObjectSize}
         x={edgeCenterX - foreignObjectSize / 2}
         y={edgeCenterY - foreignObjectSize / 2}
-        className="flex items-center justify-center bg-transparent"
+        className="flex items-center justify-center bg-transparent z-12"
         requiredExtensions="http://www.w3.org/1999/xhtml"
       >
         <div className="w-full h-full flex items-center justify-center">

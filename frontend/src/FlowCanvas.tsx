@@ -18,7 +18,6 @@ import ReactFlow, {
   // ReactFlowInstance,
 } from 'reactflow';
 import type { Edge, Node } from 'reactflow';
-
 import 'reactflow/dist/style.css';
 
 import TokenEmbeddingLayer from './nodes/TokenEmbedding';
@@ -28,19 +27,21 @@ import FeedForwardLayer from './nodes/FeedForward';
 import DropoutLayer from './nodes/Dropout';
 import LinearLayer from './nodes/Linear';
 import SDPAttentionLayer from './nodes/SDPAttention';
-import TestBlock from './nodes/TestBlock';
+import GQAttentionLayer from './nodes/GQAttention';
+// import TestBlock from './nodes/TestBlock';
+import GPT2TransformerBlock from './nodes/GPT2TransformerBlock';
 import TransformerBlock from './nodes/TransformerBlock';
-import DynamicBlock from './nodes/DynamicBlock';
 import ResidualLayer from './nodes/Residual';
 import NodeInfoModal from './nodes/components/NodeInfoModal';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
 import { flowContext } from './store/ReactFlowContext';
+import { getNodeComponent } from './store/nodeRegistry';
 
 const edgeTypes = { buttonEdge: ButtonEdge };
 
-// Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
+// ✅ Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
 function getNodeDataByType(
   nodeType: string,
   config: typeof defaultConfig,
@@ -78,11 +79,11 @@ function getNodeDataByType(
         numHeads: config.n_heads,
         qkvBias: config.qkv_bias,
       };
-    case 'transformerBlock':
+    case 'gpt2TransformerBlock':
       return {
         ...data,
       };
-    case 'dynamicBlock':
+    case 'transformerBlock':
       return {
         ...data,
         numLayers: config.n_layers,
@@ -97,12 +98,12 @@ interface FlowCanvasProps {
   flowDataRef: React.MutableRefObject<{ nodes: Node[]; edges: Edge[] }>;
 }
 
-// Canvas 메인 함수
+// ✅ Canvas 메인 함수
 export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   config,
   flowDataRef,
 }: FlowCanvasProps) => {
-  // ReactFlow에서 각 노드와 엣지 상태 저장
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { getEdges } = useReactFlow();
@@ -113,7 +114,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     flowDataRef.current = { nodes, edges };
   }, [nodes, edges]);
 
-  // Config 값이 변경될 때마다 Node의 Data 업데이트
+  // ✅ Config 값이 변경될 때마다 Node의 Data 업데이트
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -131,14 +132,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   // Drag된 객체 지정
   const dragRef = useRef<Node | null>(null);
 
-  // 노드 정보 modal을 위한 상태변수 저장
-  const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
-    null,
-  );
-  const showModal = (nodeData: BaseNodeData) => {
-    setGlobalModalData(nodeData);
-  };
-
   // nodeTypes 매핑
   const nodeTypes = useMemo(
     () => ({
@@ -149,16 +142,21 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       dropout: DropoutLayer,
       linear: LinearLayer,
       sdpAttention: SDPAttentionLayer,
-      testBlock: TestBlock,
+      gqAttention: GQAttentionLayer,
+      testBlock: getNodeComponent('testBlock'),
+      gpt2TransformerBlock: GPT2TransformerBlock,
       transformerBlock: TransformerBlock,
-      dynamicBlock: DynamicBlock,
       residual: ResidualLayer,
     }),
     [],
   );
-  const allowedTypes = ['testBlock', 'dynamicBlock'];
+  const allowedTypes = [
+    'testBlock',
+    'transformerBlock',
+    'gpt2TransformerBlock',
+  ];
 
-  // 노드 간 연결 이벤트 핸들
+  // ✅ 노드 간 연결 이벤트 핸들
   const onConnect = useCallback(
     // 전달된 params를 기반으로 addEdge 헬퍼 함수를 사용해 현재 edges 상태에 새로운 edge를 추가
     (params: Edge<unknown> | Connection) => {
@@ -196,7 +194,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     [setEdges],
   );
 
-  // Node Click 시 이벤트 핸들러
+  // ✅ Node Click 시 이벤트 핸들러
   const onNodeClick: NodeMouseHandler = (_, node) => {
     if (node && node.id) {
       // setClickedNodeId(node.id);
@@ -205,19 +203,19 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     }
   };
 
-  // Drag된 요소가 Canvas 위로 올라오는 이벤트 핸들러
+  // ✅ Drag된 요소가 Canvas 위로 올라오는 이벤트 핸들러
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     // 사용자에게 이동 동작임을 시각적으로 표시
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Node Drag가 시작되었을 때, Drag된 객체를 지정
+  // ✅ Node Drag가 시작되었을 때, Drag된 객체를 지정
   const onNodeDragStart: NodeDragHandler = (_, node) => {
     dragRef.current = node;
   };
 
-  // Sidebar의 Node가 Canvas에 Drop되는 이벤트 처리
+  // ✅ Sidebar의 Node가 Canvas에 Drop되는 이벤트 처리
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -231,9 +229,12 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
 
       // Node 위치 지정
       if (!reactFlowInstance) return;
+      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+      if (!reactFlowBounds) return;
+
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top - 200,
       });
 
       const newNode: Node = {
@@ -252,11 +253,11 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     [reactFlowInstance, config],
   );
 
-  // Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
+  // ✅ Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
   const onNodeDrag: NodeDragHandler = (_, node) => {
     // Node의 X 중심 좌표와 Y 중심 좌표 계산
-    const centerX = node.position.x + (node.width ?? 0) / 2;
-    const centerY = node.position.y + (node.height ?? 0) / 2;
+    const centerX = (node.position.x + (node.width ?? 0)) / 2;
+    const centerY = (node.position.y + (node.height ?? 0)) / 2;
 
     // 이전 타겟 노드의 isTarget 초기화
     if (target) {
@@ -277,7 +278,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     const targetNode = nodes.find(
       (n) =>
         centerX > n.position.x &&
-        centerX < n.position.x + (n.height ?? 0) &&
+        centerX < n.position.x + (n.width ?? 0) &&
         centerY > n.position.y &&
         centerY < n.position.y + (n.height ?? 0) &&
         n.type?.includes('Block') &&
@@ -303,7 +304,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     }
   };
 
-  // Node 드래그가 끝났을 때
+  // ✅ Node 드래그가 끝났을 때
   const onNodeDragStop: NodeDragHandler = (_, node) => {
     // 이전 타겟 노드의 isTarget 초기화
     if (target) {
@@ -320,44 +321,27 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       );
     }
 
-    // Node의 X 중심 좌표와 Y 중심 좌표 계산
-    const centerX = node.position.x + (node.width ?? 0) / 2;
-    const centerY = node.position.y + (node.height ?? 0) / 2;
-
-    // Node의 중간 부분이 위치해있는 곳의 Node 찾기
-    const targetNode = nodes.find(
-      (n) =>
-        centerX > n.position.x &&
-        centerX < n.position.x + (n.height ?? 0) &&
-        centerY > n.position.y &&
-        centerY < n.position.y + (n.height ?? 0) &&
-        n.type?.includes('Block') &&
-        n.id !== node.id,
-    );
-
-    if (targetNode) {
-      setTarget(targetNode as Node<BaseNodeData, string>);
-
-      // target이 존재할 경우 Node 부모 설정 여부 결정
+    // target이 존재할 경우에만 부모-자식 관계 설정
+    if (target) {
+      // Node의 부모 설정 여부 결정
       setNodes((nodes) =>
         nodes.map((n) => {
           if (n.id === node.id) {
-            // target의 자식 노드들을 찾아서 total height 계산
-            const targetChildren = nodes.filter(
-              (n) => n.parentNode === targetNode?.id && n.id != node.id,
-            );
-            const totalHeight = targetChildren.reduce(
-              (sum, child) => 10 + sum + (child.height ?? 0),
-              0,
-            );
-            // target이 Block이고 Node가 Block이 아닐 때
+            // target이 Block이고 Node가 Block이 아닐 때 자식으로 처리하고 위치 지정
             if (
               !node.type?.includes('Block') &&
-              targetNode.type &&
-              allowedTypes.includes(targetNode.type)
+              target.type &&
+              allowedTypes.includes(target.type)
             ) {
+              // target의 자식 노드들을 찾아서 total height 계산
+              const totalHeight = nodes.reduce((sum, child) => {
+                if (child.parentNode === target?.id && child.id !== node.id) {
+                  return sum + (child.height ?? 0) + 10;
+                }
+                return sum;
+              }, 0);
               n.data = { ...n.data };
-              n.parentNode = targetNode?.id;
+              n.parentNode = target?.id;
               n.position = { x: 10, y: 110 + totalHeight }; // 노드의 위치 지정 **in 부모 Node**
               n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
               n.draggable = false; // Node가 Drag 되지 않음
@@ -376,8 +360,8 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
               }
             } else if (
               node.type?.includes('Block') &&
-              targetNode.type &&
-              allowedTypes.includes(targetNode.type)
+              target.type &&
+              allowedTypes.includes(target.type)
             ) {
               console.log("Block can't includes Block Type.");
             }
@@ -385,13 +369,21 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
           return n;
         }),
       );
-    } else {
-      setTarget(null);
     }
+
+    setTarget(null);
     dragRef.current = null;
   };
 
-  // 필드 정보 모달 상태 관리
+  // ✅ 노드 정보 modal을 위한 상태변수 저장
+  const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
+    null,
+  );
+  const showModal = (nodeData: BaseNodeData) => {
+    setGlobalModalData(nodeData);
+  };
+
+  // ✅ 필드 정보 모달 상태 관리
   const [fieldInfoModal, setFieldInfoModal] = useState<{
     isOpen: boolean;
     info: { title: string; description: string } | null;
@@ -400,7 +392,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     info: null,
   });
 
-  // 필드 정보 모달을 열기 위한 이벤트 리스너
+  // ✅ 필드 정보 모달을 열기 위한 이벤트 리스너
   useEffect(() => {
     const handleFieldInfo = (event: CustomEvent) => {
       setFieldInfoModal({
@@ -416,8 +408,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   }, []);
 
   return (
-    // w-full
-    <div className="relative h-full bg-gray-50">
+    <div className="relative h-full bg-gray-50" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

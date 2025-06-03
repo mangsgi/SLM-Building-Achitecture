@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { NodeTitle } from './components/Components';
-import { FeedForwardData } from './components/NodeData';
+import { GQAttentionData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
@@ -10,41 +10,46 @@ import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
-const actFuncOptions: string[] = ['ReLU', 'GELU', 'SiLU', 'Mish'];
-const feedForwardTypeOptions: string[] = ['Standard', 'Gated'];
-
-const getFields = (data: FeedForwardData): FieldConfig[] => [
+const getFields = (data: GQAttentionData): FieldConfig[] => [
   {
     type: 'number',
-    label: 'Number of Factors:',
-    name: 'numOfFactor',
-    value: data.numOfFactor?.toString() || '',
-    placeholder: 'Enter number of factors',
-    info: nodeFieldInfo.feedForward.numOfFactor,
+    label: 'Number of Heads:',
+    name: 'numHeads',
+    value: data.numHeads?.toString() || '',
+    placeholder: 'Enter number of heads',
+    info: nodeFieldInfo.gqAttention.numHeads,
+  },
+  {
+    type: 'number',
+    label: 'Context Length:',
+    name: 'ctxLength',
+    value: data.ctxLength?.toString() || '',
+    placeholder: 'Enter context length',
+    info: nodeFieldInfo.gqAttention.ctxLength,
+  },
+  {
+    type: 'number',
+    label: 'Dropout Rate:',
+    name: 'dropoutRate',
+    value: data.dropoutRate?.toString() || '',
+    placeholder: 'Enter dropout rate',
+    info: nodeFieldInfo.gqAttention.dropoutRate,
   },
   {
     type: 'select',
-    label: 'Activation Function:',
-    name: 'actFunc',
-    value: data.actFunc || 'GELU',
-    options: actFuncOptions,
-    info: nodeFieldInfo.feedForward.actFunc,
-  },
-  {
-    type: 'select',
-    label: 'Feed Forward Type:',
-    name: 'feedForwardType',
-    value: data.feedForwardType || 'Standard',
-    options: feedForwardTypeOptions,
-    info: nodeFieldInfo.feedForward.feedForwardType,
+    label: 'QKV Bias:',
+    name: 'qkvBias',
+    value: data.qkvBias?.toString() || 'false',
+    options: ['true', 'false'],
+    info: nodeFieldInfo.gqAttention.qkvBias,
   },
 ];
 
-interface FeedForwardLayerProps {
+interface GQAttentionLayerProps {
   id: string;
 }
 
-export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
+export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -52,15 +57,10 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as FeedForwardData;
+  const currentData = node.data as GQAttentionData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
-  const handleFieldChange = (field: keyof FeedForwardData, value: string) => {
-    const stringFields: (keyof FeedForwardData)[] = [
-      'label',
-      'actFunc',
-      'feedForwardType',
-    ];
+  const handleFieldChange = (field: keyof GQAttentionData, value: string) => {
+    const stringFields: (keyof GQAttentionData)[] = ['label'];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -78,14 +78,13 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
     );
   };
 
-  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
-  } = useCommonNodeActions<FeedForwardData>({
+  } = useCommonNodeActions<GQAttentionData>({
     id,
     setNodes,
     setEditMode,
@@ -104,16 +103,14 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
-        {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
             fields={getFields(currentData)}
             editMode={editMode}
             onChange={(name: string, value: string) =>
-              handleFieldChange(name as keyof FeedForwardData, value)
+              handleFieldChange(name as keyof GQAttentionData, value)
             }
             onInfoClick={(info) => {
-              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
               const event = new CustomEvent('fieldInfo', { detail: info });
               window.dispatchEvent(event);
             }}
@@ -123,12 +120,12 @@ export const FeedForwardLayer: React.FC<FeedForwardLayerProps> = ({ id }) => {
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">
-          {nodeInfo.feedForward.title}
+          {nodeInfo.gqAttention.title}
         </h3>
-        <p className="text-sm">{nodeInfo.feedForward.description}</p>
+        <p className="text-sm">{nodeInfo.gqAttention.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );
 };
 
-export default FeedForwardLayer;
+export default GQAttentionLayer;

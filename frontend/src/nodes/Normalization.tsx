@@ -8,6 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
+import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
 
 const normTypeOptions: string[] = ['Layer Normalization', 'RMS Normalization'];
 
@@ -18,6 +19,7 @@ const getFields = (data: NormalizationData): FieldConfig[] => [
     name: 'inDim',
     value: data.inDim?.toString() || '',
     placeholder: 'Enter input dimension',
+    info: nodeFieldInfo.normalization.inDim,
   },
   {
     type: 'select',
@@ -25,6 +27,7 @@ const getFields = (data: NormalizationData): FieldConfig[] => [
     name: 'normType',
     value: data.normType || 'Layer Normalization',
     options: normTypeOptions,
+    info: nodeFieldInfo.normalization.normType,
   },
 ];
 
@@ -109,10 +112,10 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
       </div>
 
       <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-        <p className="text-sm">
-          여기에 {currentData.label} 노드에 대한 추가 정보를 입력하세요.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">
+          {nodeInfo.normalization.title}
+        </h3>
+        <p className="text-sm">{nodeInfo.normalization.description}</p>
       </NodeInfoModal>
     </LayerWrapper>
   );
