@@ -22,6 +22,20 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
+function downloadModelFile(model: any) {
+  const blob = new Blob([JSON.stringify(model, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'model.json';
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
 // ✅ 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
   nodes: Node[],
@@ -64,6 +78,7 @@ async function buildModelJSON(
     delete result.data.openModal;
     delete result.data.hideHandles;
     delete result.data.isTarget;
+    delete (result.data as any).label;
 
     // Block 노드이면 children도 탐색
     const isBlock = type?.includes('Block');
@@ -106,7 +121,9 @@ async function buildModelJSON(
   }
 
   console.log('📦 Generated Model JSON:', model);
+  downloadModelFile(model);
 
+  // 백엔드에 전송
   try {
     const response = await fetch('/api/model/save', {
       method: 'POST',

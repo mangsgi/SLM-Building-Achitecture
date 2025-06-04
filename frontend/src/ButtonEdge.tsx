@@ -29,7 +29,6 @@ const ButtonEdge = ({
   });
 
   const { deleteEdge } = useContext(flowContext);
-
   const dispatch = useDispatch();
 
   // ✅ Edge 클릭 시 삭제
@@ -48,7 +47,7 @@ const ButtonEdge = ({
       <path
         id={id}
         style={style}
-        className="react-flow__edge-path"
+        className="z-20 react-flow__edge-path"
         d={edgePath}
         markerEnd={markerEnd}
       />

@@ -77,8 +77,4 @@ input[type='number'] {
   a:hover {
     color: var(--color-link-hover);
   }
-  /* button {
-    background-color: var(--color-primary);
-    color: white;
-  } */
 }

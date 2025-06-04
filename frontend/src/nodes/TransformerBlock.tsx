@@ -9,6 +9,7 @@ import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
 import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { NODE_GAP, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
 
 interface TransformerBlockLayerProps {
   id: string;
@@ -44,7 +45,10 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
     return nodes.filter((n) => n.parentNode === id);
   }, [nodes]);
   const childNodesHeight = useMemo(() => {
-    return childNodes.reduce((acc, node) => 10 + acc + (node.height ?? 20), 20);
+    return childNodes.reduce(
+      (acc, node) => NODE_GAP + acc + (node.height ?? DEFAULT_NODE_HEIGHT),
+      DEFAULT_NODE_HEIGHT,
+    );
   }, [childNodes]);
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
@@ -108,7 +112,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
             window.dispatchEvent(event);
           }}
         />
-        {childNodesHeight === 20 && (
+        {childNodesHeight === 40 && (
           <div className="border-dashed border-2 text-center text-gray-500 italic">
             여기에 노드를 드롭하세요
           </div>

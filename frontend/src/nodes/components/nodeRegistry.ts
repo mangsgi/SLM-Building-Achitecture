@@ -1,7 +1,7 @@
 import React from 'react';
-import { BaseNodeData } from '../nodes/components/NodeData';
-import TestBlock from '../nodes/TestBlock';
-import SidebarNodeItem from '../SidebarNodeItem';
+import { BaseNodeData } from './NodeData';
+import TestBlock from '../TestBlock';
+import SidebarNodeItem from '../../SidebarNodeItem';
 
 interface NodeDefinition {
   // 1. 기본 정보

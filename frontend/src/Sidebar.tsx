@@ -2,7 +2,7 @@ import React from 'react';
 import SidebarNodeItem from './SidebarNodeItem';
 import CanvasHamburgerIcon from './ui-component/CanvasHamburgerButton';
 import { BaseNodeData } from './nodes/components/NodeData';
-import { getSidebarItems } from './store/nodeRegistry';
+import { getSidebarItems } from './nodes/components/nodeRegistry';
 
 interface SidebarProps {
   onToggle: () => void;

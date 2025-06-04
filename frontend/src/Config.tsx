@@ -12,7 +12,7 @@ export const defaultConfig = {
   context_length: 1024,
   emb_dim: 768,
   n_heads: 12,
-  n_layers: 12,
+  n_blocks: 12,
   drop_rate: 0.1,
   qkv_bias: false,
   batch_size: 8,
