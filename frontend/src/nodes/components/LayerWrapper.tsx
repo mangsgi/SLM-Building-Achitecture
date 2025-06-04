@@ -46,15 +46,32 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
       <div style={{ position: 'relative', zIndex: 11 }}>{children}</div>
 
       {/* 오른쪽 핸들 (Residual용) */}
+      {isResidual && (
+        <Handle
+          type="source"
+          position={Position.Left}
+          id="residual-source"
+          style={{
+            background: '#ccc',
+            width: '10px',
+            height: '10px',
+            left: '-5px',
+            top: '25%',
+            transform: 'translate(0, -50%)',
+            zIndex: 12,
+          }}
+        />
+      )}
       <Handle
-        type={isResidual ? 'source' : 'target'}
-        position={Position.Right}
-        id="residual"
+        type={'target'}
+        position={Position.Left}
+        id="residual-target"
         style={{
           background: '#ccc',
           width: '10px',
           height: '10px',
-          right: '-5px',
+          left: '-5px',
+          top: isResidual ? '75%' : '50%',
           transform: 'translate(0, -50%)',
           zIndex: 12,
         }}

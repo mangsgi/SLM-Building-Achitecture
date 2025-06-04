@@ -37,7 +37,7 @@ import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
 import { flowContext } from './store/ReactFlowContext';
-import { getNodeComponent } from './store/nodeRegistry';
+import { getNodeComponent } from './nodes/components/nodeRegistry';
 
 const edgeTypes = { buttonEdge: ButtonEdge };
 
@@ -86,7 +86,7 @@ function getNodeDataByType(
     case 'transformerBlock':
       return {
         ...data,
-        numLayers: config.n_layers,
+        numOfBlocks: config.n_blocks,
       };
     default:
       return data;
@@ -172,14 +172,14 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         nodes.map((node) => {
           if (
             node.id === newEdge.source &&
-            newEdge.sourceHandle === 'residual' &&
+            newEdge.sourceHandle === 'residual-source' &&
             node.type === 'residual'
           ) {
             return {
               ...node,
               data: {
                 ...node.data,
-                source: newEdge.target, // 연결된 노드를 저장
+                source: newEdge.target,
               },
             };
           }
@@ -233,8 +233,8 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       if (!reactFlowBounds) return;
 
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top - 200,
+        x: event.clientX - reactFlowBounds.left + 160,
+        y: event.clientY - reactFlowBounds.top + 50,
       });
 
       const newNode: Node = {
@@ -274,7 +274,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       );
     }
 
-    // Node의 중간 부분이 위치해있는 곳의 Node 찾기
+    // Node의 중간 부분이 위치해있는 곳의 부모 Node 찾기
     const targetNode = nodes.find(
       (n) =>
         centerX > n.position.x &&
@@ -284,6 +284,15 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         n.type?.includes('Block') &&
         n.id !== node.id,
     );
+
+    console.log('node.position.x: ', node.position.x);
+    console.log('node.position.y: ', node.position.y);
+    console.log('node.width: ', node.width);
+    console.log('node.height: ', node.height);
+    console.log('targetNode.position.x: ', targetNode?.position.x);
+    console.log('targetNode.position.y: ', targetNode?.position.y);
+    console.log('targetNode.width: ', targetNode?.width);
+    console.log('targetNode.height: ', targetNode?.height);
 
     if (targetNode) {
       // 타겟 노드의 isTarget 설정
@@ -342,7 +351,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
               }, 0);
               n.data = { ...n.data };
               n.parentNode = target?.id;
-              n.position = { x: 10, y: 110 + totalHeight }; // 노드의 위치 지정 **in 부모 Node**
+              n.position = { x: 10, y: 110 + totalHeight }; // Node의 위치 지정 in 부모 Node
               n.extent = 'parent'; // Node의 이동반경을 부모 Node 안으로 제한
               n.draggable = false; // Node가 Drag 되지 않음
               n.data.hideHandles = true; // Edge Handle 부분 숨기기
@@ -426,6 +435,9 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
+        defaultEdgeOptions={{
+          zIndex: 20, // 모든 edge에 zIndex 높게 부여
+        }}
       >
         <Controls />
       </ReactFlow>

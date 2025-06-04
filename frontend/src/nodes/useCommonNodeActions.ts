@@ -1,6 +1,7 @@
 import { MouseEvent, useState, useEffect } from 'react';
 import type { Node, Edge } from 'reactflow';
 import { BaseNodeData } from './components/NodeData';
+import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
 
 // NodaData 템플릿 적용
 interface UseCommonNodeActionsParams<T extends BaseNodeData> {
@@ -20,15 +21,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   setEdges,
 }: UseCommonNodeActionsParams<T>) {
   // Layer Node 별 펼쳐져 있을 때 높이
-  const defaultHeightMap: Record<string, number> = {
-    tokenEmbedding: 175,
-    positionalEmbedding: 241,
-    layerNorm: 109,
-    feedForward: 240,
-    dropout: 109,
-    linear: 174,
-    sdpAttention: 371,
-  };
+  const defaultHeightMap = NODE_HEIGHTS;
 
   // useEffect 사용을 위한 Node별 isCollapsed useState
   const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
@@ -43,7 +36,8 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 
       const newHeight = collapseTrigger
         ? 43
-        : defaultHeightMap[targetNode.type];
+        : (defaultHeightMap[targetNode.type as keyof typeof defaultHeightMap] ??
+          DEFAULT_NODE_HEIGHT);
 
       // 해당 Node height 변경
       const updatedNodes = nds.map((node) => {
