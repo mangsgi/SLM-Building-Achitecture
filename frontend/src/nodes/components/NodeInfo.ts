@@ -15,7 +15,7 @@ export interface NodeFieldInfo {
   [key: string]: FieldInfo;
 }
 
-// 노드 정보 저장소
+// ✅ 노드 정보 저장소
 export const nodeInfo: { [key: string]: NodeInfo } = {
   positionalEmbedding: {
     title: 'Positional Embedding',
@@ -68,7 +68,7 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
       '입력을 출력에 더하여 그래디언트 소실 문제를 완화하고 학습을 안정화하는 연결입니다.',
   },
   testBlock: {
-    title: '테스트 블록',
+    title: 'Test Block',
     description:
       '노드 테스트를 위한 부모 노드입니다. 다양한 노드 타입을 테스트하고 구성할 수 있습니다.',
   },
@@ -79,7 +79,7 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
   },
 };
 
-// 노드별 필드 정보 저장소
+// ✅ 노드별 필드 정보 저장소
 export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
   positionalEmbedding: {
     ctxLength: {

@@ -5,10 +5,9 @@ import { BlockWrapper } from './components/BlockWrapper';
 import { NodeTitle } from './components/Components';
 import { TransformerBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
-import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
 import { NODE_GAP, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
 
 interface TransformerBlockLayerProps {
@@ -32,7 +31,6 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
 }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
@@ -47,7 +45,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   const childNodesHeight = useMemo(() => {
     return childNodes.reduce(
       (acc, node) => NODE_GAP + acc + (node.height ?? DEFAULT_NODE_HEIGHT),
-      DEFAULT_NODE_HEIGHT,
+      20,
     );
   }, [childNodes]);
 
@@ -75,17 +73,21 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   };
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
-  const {
-    handleDeleteClick,
-    handleInfoClick,
-    handleEditClick,
-    handleSaveClick,
-  } = useCommonNodeActions<TransformerBlockData>({
-    id,
-    setNodes,
-    setEditMode,
-    setEdges,
-  });
+  const { handleDeleteClick, handleEditClick, handleSaveClick } =
+    useCommonNodeActions<TransformerBlockData>({
+      id,
+      setNodes,
+      setEditMode,
+      setEdges,
+    });
+
+  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  const handleInfoClick = () => {
+    const event = new CustomEvent('nodeInfo', {
+      detail: nodeInfo.transformerBlock,
+    });
+    window.dispatchEvent(event);
+  };
 
   return (
     <BlockWrapper
@@ -118,13 +120,6 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
           </div>
         )}
       </div>
-
-      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">
-          {nodeInfo.dynamicBlock.title}
-        </h3>
-        <p className="text-sm">{nodeInfo.dynamicBlock.description}</p>
-      </NodeInfoModal>
     </BlockWrapper>
   );
 };

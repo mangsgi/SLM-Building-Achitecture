@@ -5,10 +5,9 @@ import { NodeTitle } from './components/Components';
 import { SDPAttentionData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
-import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
 
 const getFields = (data: SDPAttentionData): FieldConfig[] => [
   {
@@ -44,14 +43,13 @@ interface SDPAttentionLayerProps {
 export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as SDPAttentionData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
+  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof SDPAttentionData, value: string) => {
     const stringFields: (keyof SDPAttentionData)[] = ['label'];
     const newValue = stringFields.includes(field) ? value : Number(value);
@@ -71,10 +69,9 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
     );
   };
 
-  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
-    handleInfoClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
@@ -85,6 +82,14 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
     setIsCollapsed,
     setEdges,
   });
+
+  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  const handleInfoClick = () => {
+    const event = new CustomEvent('nodeInfo', {
+      detail: nodeInfo.sdpAttention,
+    });
+    window.dispatchEvent(event);
+  };
 
   return (
     <LayerWrapper hideHandles={currentData.hideHandles}>
@@ -113,13 +118,6 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
           />
         )}
       </div>
-
-      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">
-          {nodeInfo.sdpAttention.title}
-        </h3>
-        <p className="text-sm">{nodeInfo.sdpAttention.description}</p>
-      </NodeInfoModal>
     </LayerWrapper>
   );
 };

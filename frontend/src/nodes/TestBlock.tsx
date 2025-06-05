@@ -8,7 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
 
 const getFields = (data: TestBlockData): FieldConfig[] => [
   {
@@ -44,7 +44,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
     return childNodes.reduce((acc, node) => 10 + acc + (node.height ?? 0), 0);
   }, [childNodes]);
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트
+  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof TestBlockData, value: string) => {
     const stringFields: (keyof TestBlockData)[] = ['label'];
     const newValue = stringFields.includes(field) ? value : Number(value);
@@ -64,18 +64,22 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
     );
   };
 
-  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
-  const {
-    handleDeleteClick,
-    handleInfoClick,
-    handleEditClick,
-    handleSaveClick,
-  } = useCommonNodeActions<TestBlockData>({
-    id,
-    setNodes,
-    setEditMode,
-    setEdges,
-  });
+  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  const { handleDeleteClick, handleEditClick, handleSaveClick } =
+    useCommonNodeActions<TestBlockData>({
+      id,
+      setNodes,
+      setEditMode,
+      setEdges,
+    });
+
+  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  const handleInfoClick = () => {
+    const event = new CustomEvent('nodeInfo', {
+      detail: nodeInfo.testBlock,
+    });
+    window.dispatchEvent(event);
+  };
 
   return (
     <BlockWrapper
