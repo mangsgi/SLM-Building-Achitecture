@@ -2,10 +2,11 @@ import { ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useState, useRef } from 'react';
 import type { Edge, Node } from 'reactflow';
+import { useNavigate } from 'react-router-dom';
 
 import CanvasHamburgerButton from './ui-component/CanvasHamburgerButton';
 import ConfigButton from './ui-component/ConfigButton';
-import SendModelButton from './ui-component/SendModelButton';
+import NextButton from './ui-component/NextButton';
 import Sidebar from './Sidebar';
 import Config, { defaultConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
@@ -22,19 +23,17 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
-function downloadModelFile(model: any) {
-  const blob = new Blob([JSON.stringify(model, null, 2)], {
-    type: 'application/json',
-  });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'model.json';
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
+// function downloadModelFile(model: any) {
+//   const blob = new Blob([JSON.stringify(model, null, 2)], {
+//     type: 'application/json',
+//   });
+//   const url = URL.createObjectURL(blob);
+//   const link = document.createElement('a');
+//   link.href = url;
+//   link.download = 'model.json';
+//   link.click();
+//   URL.revokeObjectURL(url);
+// }
 
 // ✅ 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
@@ -121,7 +120,7 @@ async function buildModelJSON(
   }
 
   console.log('📦 Generated Model JSON:', model);
-  downloadModelFile(model);
+  // downloadModelFile(model);
 
   // 백엔드에 전송
   try {
@@ -152,6 +151,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [config, setConfig] = useState(defaultConfig);
+  const navigate = useNavigate();
 
   // ✅ FlowCanvas에 전달할 데이터 참조 객체
   const flowDataRef = useRef<{ nodes: Node[]; edges: Edge[] }>({
@@ -163,13 +163,20 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
+  const handleSendModel = async () => {
+    const { nodes, edges } = flowDataRef.current;
+    await buildModelJSON(nodes, edges);
+    navigate('/canvas/dataset');
+  };
+
   return (
     <div className="flex flex-col w-full h-screen">
       {/* Header 영역 */}
-      <header className="bg-white p-4 shadow">
+      <header className="bg-white p-4 shadow flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-left">
           Building Your Own SLM
         </h1>
+        <NextButton onClick={handleSendModel} text="Select Dataset" />
       </header>
       {/* 메인 컨텐츠 영역 */}
       <div className="flex flex-grow relative min-h-0">
@@ -201,12 +208,6 @@ function App() {
                   <CanvasHamburgerButton />
                 </div>
               )}
-              <SendModelButton
-                onClick={() => {
-                  const { nodes, edges } = flowDataRef.current;
-                  buildModelJSON(nodes, edges);
-                }}
-              />
             </div>
 
             {/* Config가 닫힌 경우 우측 상단에 토글 버튼 */}
