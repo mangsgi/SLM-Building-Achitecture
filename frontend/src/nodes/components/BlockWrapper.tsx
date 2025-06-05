@@ -16,7 +16,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
   return (
     <div
       className={`block-wrapper p-2 bg-white border-2 rounded shadow ${
-        isTarget ? 'border-blue-200' : 'border-gray-300 hover:border-green-100'
+        isTarget ? 'border-blue-400' : 'border-gray-300 hover:border-green-300'
       }`}
       style={{
         pointerEvents: 'auto',
