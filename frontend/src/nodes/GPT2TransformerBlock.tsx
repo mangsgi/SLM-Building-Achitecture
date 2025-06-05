@@ -15,7 +15,7 @@ import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import NodeSlot from './components/NodeSlot';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
 
 const getFields = (data: TransformerBlockData): FieldConfig[] => [
   {

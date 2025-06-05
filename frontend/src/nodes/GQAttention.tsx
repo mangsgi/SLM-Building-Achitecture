@@ -8,7 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
 
 const getFields = (data: GQAttentionData): FieldConfig[] => [
   {

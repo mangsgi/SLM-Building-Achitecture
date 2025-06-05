@@ -1,9 +1,8 @@
 // 모든 노드에 공통으로 필요한 속성을 포함하는 Base interface
 export interface BaseNodeData {
   label: string; // Node 이름
-  openModal?: (nodeData: BaseNodeData) => void;
-  hideHandles?: boolean;
-  isTarget?: boolean;
+  hideHandles?: boolean; // 노드 핸들 숨김 여부
+  isTarget?: boolean; // 모델 타겟 노드 여부
   inDim?: number; // 입력 차원
   outDim?: number; // 출력 차원
   [key: string]: unknown; // Index Signature

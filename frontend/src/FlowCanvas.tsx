@@ -28,7 +28,7 @@ import DropoutLayer from './nodes/Dropout';
 import LinearLayer from './nodes/Linear';
 import SDPAttentionLayer from './nodes/SDPAttention';
 import GQAttentionLayer from './nodes/GQAttention';
-// import TestBlock from './nodes/TestBlock';
+import TestBlock from './nodes/TestBlock';
 import GPT2TransformerBlock from './nodes/GPT2TransformerBlock';
 import TransformerBlock from './nodes/TransformerBlock';
 import ResidualLayer from './nodes/Residual';
@@ -37,7 +37,6 @@ import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
 import { flowContext } from './store/ReactFlowContext';
-import { getNodeComponent } from './nodes/components/nodeRegistry';
 
 const edgeTypes = { buttonEdge: ButtonEdge };
 
@@ -143,7 +142,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       linear: LinearLayer,
       sdpAttention: SDPAttentionLayer,
       gqAttention: GQAttentionLayer,
-      testBlock: getNodeComponent('testBlock'),
+      testBlock: TestBlock,
       gpt2TransformerBlock: GPT2TransformerBlock,
       transformerBlock: TransformerBlock,
       residual: ResidualLayer,
@@ -244,7 +243,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         data: getNodeDataByType(nodeType, config, {
           id,
           label,
-          openModal: showModal,
           ...props,
         }),
       };
@@ -385,34 +383,40 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   };
 
   // ✅ 노드 정보 modal을 위한 상태변수 저장
-  const [globalModalData, setGlobalModalData] = useState<BaseNodeData | null>(
-    null,
-  );
-  const showModal = (nodeData: BaseNodeData) => {
-    setGlobalModalData(nodeData);
-  };
-
-  // ✅ 필드 정보 모달 상태 관리
-  const [fieldInfoModal, setFieldInfoModal] = useState<{
+  const [modalData, setModalData] = useState<{
     isOpen: boolean;
-    info: { title: string; description: string } | null;
+    type: 'node' | 'field';
+    data: any;
   }>({
     isOpen: false,
-    info: null,
+    type: 'node',
+    data: null,
   });
 
-  // ✅ 필드 정보 모달을 열기 위한 이벤트 리스너
+  // ✅ 정보 모달을 열기 위한 이벤트 리스너
   useEffect(() => {
     const handleFieldInfo = (event: CustomEvent) => {
-      setFieldInfoModal({
+      setModalData({
         isOpen: true,
-        info: event.detail,
+        type: 'field',
+        data: event.detail,
+      });
+    };
+
+    const handleNodeInfo = (event: CustomEvent) => {
+      setModalData({
+        isOpen: true,
+        type: 'node',
+        data: event.detail,
       });
     };
 
     window.addEventListener('fieldInfo', handleFieldInfo as EventListener);
+    window.addEventListener('nodeInfo', handleNodeInfo as EventListener);
+
     return () => {
       window.removeEventListener('fieldInfo', handleFieldInfo as EventListener);
+      window.removeEventListener('nodeInfo', handleNodeInfo as EventListener);
     };
   }, []);
 
@@ -442,28 +446,19 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         <Controls />
       </ReactFlow>
 
-      {/* 전역 모달: globalModalData가 있으면 전체 화면 모달을 표시 */}
-      {globalModalData && (
-        <NodeInfoModal isOpen={true} onClose={() => setGlobalModalData(null)}>
-          <h3 className="text-lg font-semibold mb-2">Node 정보</h3>
-          <p className="text-sm">
-            {globalModalData.label} 노드에 대한 추가 정보입니다.
-          </p>
-          {/* 노드별 추가 정보 렌더링 */}
-        </NodeInfoModal>
-      )}
-
-      {/* 필드 정보 모달 */}
+      {/* 통합된 정보 모달 */}
       <NodeInfoModal
-        isOpen={fieldInfoModal.isOpen}
-        onClose={() => setFieldInfoModal({ isOpen: false, info: null })}
+        isOpen={modalData.isOpen}
+        onClose={() =>
+          setModalData({ isOpen: false, type: 'node', data: null })
+        }
       >
-        {fieldInfoModal.info && (
+        {modalData.data && (
           <>
             <h3 className="text-lg font-semibold mb-2">
-              {fieldInfoModal.info.title}
+              {modalData.data.title}
             </h3>
-            <p className="text-sm">{fieldInfoModal.info.description}</p>
+            <p className="text-sm">{modalData.data.description}</p>
           </>
         )}
       </NodeInfoModal>

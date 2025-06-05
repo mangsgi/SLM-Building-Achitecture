@@ -19,7 +19,7 @@ const SidebarNodeItem: React.FC<SidebarNodeItemProps> = ({
 }) => {
   return (
     <div
-      className="my-2 p-2 rounded cursor-grab hover:bg-green-100"
+      className="my-2 p-2 rounded cursor-grab hover:bg-gray-100"
       draggable
       onDragStart={(event) => onDragStart(event, nodeType, nodeData)}
     >

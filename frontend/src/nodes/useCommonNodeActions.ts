@@ -22,11 +22,9 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 }: UseCommonNodeActionsParams<T>) {
   // Layer Node 별 펼쳐져 있을 때 높이
   const defaultHeightMap = NODE_HEIGHTS;
-
-  // useEffect 사용을 위한 Node별 isCollapsed useState
   const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
 
-  // 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
+  // ✅ 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
   useEffect(() => {
     if (collapseTrigger === null) return;
     setNodes((nds) => {
@@ -70,7 +68,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     // Node id별로 collapseTrigger 구분
   }, [collapseTrigger, id, setNodes]);
 
-  // Node Click 시 !isCollapsed 후, 자식 노드 위치 변경을 위한 useEffect 실행
+  // ✅ Node Click 시 !isCollapsed 후, 자식 노드 위치 변경을 위한 useEffect 실행
   const handleNodeClick = () => {
     if (!setIsCollapsed) return;
     setIsCollapsed((prev) => {
@@ -80,7 +78,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     });
   };
 
-  // Delete 버튼 클릭 시 노드 삭제 및 부모 존재 시 남은 노드들 위치 조정
+  // ✅ Delete 버튼 클릭 시 노드 삭제 및 부모 존재 시 남은 노드들 위치 조정
   const handleDeleteClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
 
@@ -143,26 +141,13 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     });
   };
 
-  // 정보 버튼 클릭 -> Modal 랜더링
-  const handleInfoClick = (e: MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    setNodes((nds) => {
-      const targetNode = nds.find((node) => node.id === id);
-      const data = targetNode?.data as BaseNodeData;
-      if (data?.openModal) {
-        data.openModal(data);
-      }
-      return nds;
-    });
-  };
-
-  // Edit 버튼 클릭
+  // ✅ Edit 버튼 클릭
   const handleEditClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setEditMode(true);
   };
 
-  // Save 버튼 클릭
+  // ✅ Save 버튼 클릭
   const handleSaveClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setEditMode(false);
@@ -171,7 +156,6 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 
   return {
     handleDeleteClick,
-    handleInfoClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,

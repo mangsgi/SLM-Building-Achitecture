@@ -5,10 +5,9 @@ import { NodeTitle } from './components/Components';
 import { TokenEmbeddingData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
-import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
 import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/NodeInfo';
+import { nodeFieldInfo, nodeInfo } from './components/nodeInfo';
 
 const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
   {
@@ -38,14 +37,13 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
 }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
   const currentData = node.data as TokenEmbeddingData;
 
-  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
+  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof TokenEmbeddingData,
     value: string,
@@ -68,10 +66,9 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
     );
   };
 
-  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
-    handleInfoClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
@@ -82,6 +79,14 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
     setIsCollapsed,
     setEdges,
   });
+
+  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  const handleInfoClick = () => {
+    const event = new CustomEvent('nodeInfo', {
+      detail: nodeInfo.tokenEmbedding,
+    });
+    window.dispatchEvent(event);
+  };
 
   return (
     <LayerWrapper hideHandles={currentData.hideHandles}>
@@ -94,7 +99,6 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
-        {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
             fields={getFields(currentData)}
@@ -103,20 +107,12 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
               handleFieldChange(name as keyof TokenEmbeddingData, value)
             }
             onInfoClick={(info) => {
-              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
               const event = new CustomEvent('fieldInfo', { detail: info });
               window.dispatchEvent(event);
             }}
           />
         )}
       </div>
-
-      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">
-          {nodeInfo.tokenEmbedding.title}
-        </h3>
-        <p className="text-sm">{nodeInfo.tokenEmbedding.description}</p>
-      </NodeInfoModal>
     </LayerWrapper>
   );
 };
