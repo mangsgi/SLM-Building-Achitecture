@@ -299,11 +299,11 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
         return [
           {
             type: 'number',
-            label: 'Number of Factors:',
-            name: 'numOfFactor',
-            value: typed.numOfFactor?.toString() || '',
-            placeholder: 'Enter number of factors',
-            info: nodeFieldInfo.feedForward.numOfFactor,
+            label: 'Hidden Dimension Size:',
+            name: 'hiddenDim',
+            value: typed.hiddenDim?.toString() || '',
+            placeholder: 'Enter hidden dimension size',
+            info: nodeFieldInfo.feedForward.hiddenDim,
           },
           {
             type: 'select',

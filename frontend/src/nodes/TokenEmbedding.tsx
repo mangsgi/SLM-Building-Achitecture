@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle } from './components/Components';
+import { NodeTitle } from './components/FieldComponents';
 import { TokenEmbeddingData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
-import { useCommonNodeActions } from './useCommonNodeActions';
+import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/nodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';

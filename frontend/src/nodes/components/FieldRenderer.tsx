@@ -1,5 +1,5 @@
 import React from 'react';
-import { EditField, ReadField, EditSelectField } from './Components';
+import { EditField, ReadField, EditSelectField } from './FieldComponents';
 
 export interface FieldConfig {
   type: 'text' | 'number' | 'select';

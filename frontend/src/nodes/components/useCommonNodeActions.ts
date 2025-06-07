@@ -1,8 +1,8 @@
 import { MouseEvent, useState, useEffect } from 'react';
 import type { Node, Edge } from 'reactflow';
-import { BaseNodeData } from './components/NodeData';
-import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
-import { NodeInfo } from './components/nodeInfo';
+import { BaseNodeData } from './NodeData';
+import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../../constants/nodeHeights';
+import { NodeInfo } from './nodeInfo';
 
 // NodaData 템플릿 적용
 interface UseCommonNodeActionsParams<T extends BaseNodeData> {

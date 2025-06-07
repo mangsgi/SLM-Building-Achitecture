@@ -22,7 +22,7 @@ export interface PositionalEmbeddingData extends BaseNodeData {
 }
 
 export interface FeedForwardData extends BaseNodeData {
-  numOfFactor: number;
+  hiddenDim: number;
   feedForwardType: string;
   actFunc: string;
 }

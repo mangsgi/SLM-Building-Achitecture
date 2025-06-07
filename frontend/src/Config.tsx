@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ConfigButton from './ui-component/ConfigButton';
+import InfoModal from './ui-component/InfoModal';
 
 interface ConfigProps {
   onToggle: () => void;
@@ -7,7 +8,36 @@ interface ConfigProps {
   setConfig: React.Dispatch<React.SetStateAction<typeof defaultConfig>>;
 }
 
+const configMap: Record<keyof typeof defaultConfig, string> = {
+  epochs: 'Epochs',
+  batch_size: 'Batch Size',
+  dtype: 'Data Type',
+  vocab_size: 'Vocabulary Size',
+  context_length: 'Context Length',
+  emb_dim: 'Embedding Dimension',
+  n_heads: 'Number of Heads',
+  n_blocks: 'Number of Blocks',
+  drop_rate: 'Dropout Rate',
+  qkv_bias: 'QKV Bias',
+};
+
+const configDescriptions: Record<keyof typeof defaultConfig, string> = {
+  epochs: '모델 학습을 반복할 횟수입니다.',
+  batch_size: '한 번에 처리할 데이터의 크기입니다.',
+  dtype: '모델의 데이터 타입을 지정합니다. (bf16, fp16, fp32)',
+  vocab_size: '어휘 사전의 크기입니다.',
+  context_length: '입력 시퀀스의 최대 길이입니다.',
+  emb_dim: '임베딩 벡터의 차원입니다.',
+  n_heads: '어텐션 헤드의 개수입니다.',
+  n_blocks: '트랜스포머 블록의 개수입니다.',
+  drop_rate: '드롭아웃 비율입니다. (0~1 사이의 값)',
+  qkv_bias: 'Query, Key, Value 행렬에 편향을 추가할지 여부입니다.',
+};
+
 export const defaultConfig = {
+  epochs: 10,
+  batch_size: 8,
+  dtype: 'bf16',
   vocab_size: 50257,
   context_length: 1024,
   emb_dim: 768,
@@ -15,18 +45,20 @@ export const defaultConfig = {
   n_blocks: 12,
   drop_rate: 0.1,
   qkv_bias: false,
-  batch_size: 8,
 };
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
-  // ✅ Config 값이 바뀔 때 이벤트 핸들러
+  const [showModal, setShowModal] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<
+    keyof typeof defaultConfig | null
+  >(null);
+  const dtypeOptions = ['bf16', 'fp16', 'fp32'];
+
   const handleChange = (key: keyof typeof config, value: string | boolean) => {
     let parsedValue: string | boolean | number = value;
 
-    // boolean 처리
     if (value === 'true') parsedValue = true;
     else if (value === 'false') parsedValue = false;
-    // 숫자 처리
     else if (!isNaN(Number(value)) && key !== 'qkv_bias')
       parsedValue = Number(value);
 
@@ -63,6 +95,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     );
   };
 
+  // ✅ 소수점 입력 처리를 위한 키 목록
   const fractionalKeys: (keyof typeof config)[] = ['drop_rate'];
 
   return (
@@ -82,18 +115,39 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
 
           return (
             <div key={key} className="flex flex-col">
-              <label className="text-sm font-medium mb-1 capitalize">
-                {key}
-              </label>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="text-sm font-medium capitalize">
+                  {configMap[typedKey]}
+                </label>
+                <button
+                  onClick={() => {
+                    setSelectedConfig(typedKey);
+                    setShowModal(true);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <i className="fas fa-info-circle"></i>
+                </button>
+              </div>
 
-              {fractionalKeys.includes(typedKey) &&
-              typeof value === 'number' ? (
-                // 소수점 입력일 때때
+              {typedKey === 'dtype' ? (
+                <select
+                  value={value.toString()}
+                  onChange={(e) => handleChange(typedKey, e.target.value)}
+                  className="border p-2 rounded"
+                >
+                  {dtypeOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              ) : fractionalKeys.includes(typedKey) &&
+                typeof value === 'number' ? (
                 renderFractionInput(typedKey, value, (k, v) =>
                   setConfig((prev) => ({ ...prev, [k]: v })),
                 )
               ) : typeof value === 'boolean' ? (
-                // boolean 입력일 때
                 <select
                   value={value.toString()}
                   onChange={(e) => handleChange(typedKey, e.target.value)}
@@ -102,19 +156,26 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
                   <option value="true">true</option>
                   <option value="false">false</option>
                 </select>
-              ) : (
-                // 기본 숫자(정수) 입력일 때
+              ) : typeof value === 'number' ? (
                 <input
                   type="text"
                   value={value}
                   onChange={(e) => handleChange(typedKey, e.target.value)}
                   className="border p-2 rounded"
                 />
-              )}
+              ) : null}
             </div>
           );
         })}
       </div>
+
+      {showModal && selectedConfig && (
+        <InfoModal
+          title={configMap[selectedConfig]}
+          description={configDescriptions[selectedConfig]}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </aside>
   );
 };

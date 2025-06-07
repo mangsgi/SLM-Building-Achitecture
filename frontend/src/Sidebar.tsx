@@ -108,13 +108,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         }}
         onDragStart={onDragStart}
       />
-      <SidebarNodeItem
+      {/* <SidebarNodeItem
         nodeType="gpt2TransformerBlock"
         nodeData={{
           label: 'GPT-2 Transformer Block',
         }}
         onDragStart={onDragStart}
-      />
+      /> */}
     </aside>
   );
 };
