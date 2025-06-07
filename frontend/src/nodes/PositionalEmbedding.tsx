@@ -6,42 +6,9 @@ import { PositionalEmbeddingData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
-
-const posTypeOptions: string[] = [
-  'Learned Positional Embedding',
-  'Sinusoidal Positional Embedding',
-  'Relative Positional Embedding',
-  'Rotary Positional Embedding',
-];
-
-const getFields = (data: PositionalEmbeddingData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Context Length:',
-    name: 'ctxLength',
-    value: data.ctxLength?.toString() || '',
-    placeholder: 'Enter context length',
-    info: nodeFieldInfo.positionalEmbedding.ctxLength,
-  },
-  {
-    type: 'number',
-    label: 'Embedding Dimension Size:',
-    name: 'embDim',
-    value: data.embDim?.toString() || '',
-    placeholder: 'Enter embedding dimension',
-    info: nodeFieldInfo.positionalEmbedding.embDim,
-  },
-  {
-    type: 'select',
-    label: 'Positional Embedding Type:',
-    name: 'posType',
-    value: data.posType || 'Learned Positional Embedding',
-    options: posTypeOptions,
-    info: nodeFieldInfo.positionalEmbedding.posType,
-  },
-];
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
 interface PositionalEmbeddingLayerProps {
   id: string;
@@ -56,17 +23,14 @@ export const PositionalEmbeddingLayer: React.FC<
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as PositionalEmbeddingData;
+  const typedData = node.type as string;
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof PositionalEmbeddingData,
     value: string,
   ) => {
-    const stringFields: (keyof PositionalEmbeddingData)[] = [
-      'label',
-      'posType',
-    ];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -90,6 +54,7 @@ export const PositionalEmbeddingLayer: React.FC<
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleInfoClick,
   } = useCommonNodeActions<PositionalEmbeddingData>({
     id,
     setNodes,
@@ -98,21 +63,13 @@ export const PositionalEmbeddingLayer: React.FC<
     setEdges,
   });
 
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.positionalEmbedding,
-    });
-    window.dispatchEvent(event);
-  };
-
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles}>
+    <LayerWrapper hideHandles={node.data.hideHandles}>
       <div className="relative group">
-        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
+        <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.positionalEmbedding)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
@@ -120,7 +77,7 @@ export const PositionalEmbeddingLayer: React.FC<
         {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
-            fields={getFields(currentData)}
+            fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof PositionalEmbeddingData, value)

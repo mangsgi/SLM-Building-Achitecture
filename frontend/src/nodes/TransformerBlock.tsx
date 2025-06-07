@@ -6,26 +6,15 @@ import { NodeTitle } from './components/Components';
 import { TransformerBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 import { NODE_GAP, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
 
 interface TransformerBlockLayerProps {
   id: string;
 }
 
-const getFields = (data: TransformerBlockData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Number of Blocks:',
-    name: 'numOfBlocks',
-    value: data.numOfBlocks?.toString() || '',
-    placeholder: 'Enter the number of blocks',
-    info: nodeFieldInfo.dynamicBlock.numOfBlocks,
-  },
-];
-
-// Dynamic Block 컴포넌트는 내부에 노드를 드롭하면 수직으로 정렬하고, 노드 사이에 자동 edge를 표시
 const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   id,
 }) => {
@@ -34,7 +23,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as TransformerBlockData;
+  const typedData = node.type as string;
 
   // 자식 노드와 자식 노드의 높이 합 저장
   const getNodes = useStore((state) => state.getNodes);
@@ -45,7 +34,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   const childNodesHeight = useMemo(() => {
     return childNodes.reduce(
       (acc, node) => NODE_GAP + acc + (node.height ?? DEFAULT_NODE_HEIGHT),
-      20,
+      40,
     );
   }, [childNodes]);
 
@@ -54,7 +43,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
     field: keyof TransformerBlockData,
     value: string,
   ) => {
-    const stringFields: (keyof TransformerBlockData)[] = ['label'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -73,38 +62,34 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   };
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
-  const { handleDeleteClick, handleEditClick, handleSaveClick } =
-    useCommonNodeActions<TransformerBlockData>({
-      id,
-      setNodes,
-      setEditMode,
-      setEdges,
-    });
-
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.transformerBlock,
-    });
-    window.dispatchEvent(event);
-  };
+  const {
+    handleDeleteClick,
+    handleEditClick,
+    handleSaveClick,
+    handleInfoClick,
+  } = useCommonNodeActions<TransformerBlockData>({
+    id,
+    setNodes,
+    setEditMode,
+    setEdges,
+  });
 
   return (
     <BlockWrapper
       childNodesHeight={childNodesHeight}
-      isTarget={currentData.isTarget}
+      isTarget={node.data.isTarget}
     >
       <div className="relative group">
-        <NodeTitle>{currentData.label}</NodeTitle>
+        <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.transformerBlock)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
         <FieldRenderer
-          fields={getFields(currentData)}
+          fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
           editMode={editMode}
           onChange={(name: string, value: string) =>
             handleFieldChange(name as keyof TransformerBlockData, value)

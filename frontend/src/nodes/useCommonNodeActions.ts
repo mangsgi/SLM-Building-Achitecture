@@ -2,6 +2,7 @@ import { MouseEvent, useState, useEffect } from 'react';
 import type { Node, Edge } from 'reactflow';
 import { BaseNodeData } from './components/NodeData';
 import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
+import { NodeInfo } from './components/nodeInfo';
 
 // NodaData 템플릿 적용
 interface UseCommonNodeActionsParams<T extends BaseNodeData> {
@@ -67,6 +68,14 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     setCollapseTrigger(null);
     // Node id별로 collapseTrigger 구분
   }, [collapseTrigger, id, setNodes]);
+
+  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  const handleInfoClick = (info: NodeInfo) => {
+    const event = new CustomEvent('nodeInfo', {
+      detail: info,
+    });
+    window.dispatchEvent(event);
+  };
 
   // ✅ Node Click 시 !isCollapsed 후, 자식 노드 위치 변경을 위한 useEffect 실행
   const handleNodeClick = () => {
@@ -159,5 +168,6 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleInfoClick,
   };
 }

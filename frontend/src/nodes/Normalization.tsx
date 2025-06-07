@@ -6,29 +6,9 @@ import { NormalizationData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
-
-const normTypeOptions: string[] = ['Layer Normalization', 'RMS Normalization'];
-
-const getFields = (data: NormalizationData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Input Dimension:',
-    name: 'inDim',
-    value: data.inDim?.toString() || '',
-    placeholder: 'Enter input dimension',
-    info: nodeFieldInfo.normalization.inDim,
-  },
-  {
-    type: 'select',
-    label: 'Normalization Type:',
-    name: 'normType',
-    value: data.normType || 'Layer Normalization',
-    options: normTypeOptions,
-    info: nodeFieldInfo.normalization.normType,
-  },
-];
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
 interface NormalizationLayerProps {
   id: string;
@@ -43,11 +23,11 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as NormalizationData;
+  const typedData = node.type as string;
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof NormalizationData, value: string) => {
-    const stringFields: (keyof NormalizationData)[] = ['label', 'normType'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
 
     setNodes((nds) =>
@@ -72,6 +52,7 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleInfoClick,
   } = useCommonNodeActions<NormalizationData>({
     id,
     setNodes,
@@ -80,21 +61,13 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
     setEdges,
   });
 
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.normalization,
-    });
-    window.dispatchEvent(event);
-  };
-
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles}>
+    <LayerWrapper hideHandles={node.data.hideHandles}>
       <div className="relative group">
-        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
+        <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.normalization)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
@@ -102,7 +75,7 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
         {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
-            fields={getFields(currentData)}
+            fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof NormalizationData, value)

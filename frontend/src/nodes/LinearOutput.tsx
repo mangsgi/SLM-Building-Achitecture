@@ -6,36 +6,26 @@ import { BaseNodeData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
-const getFields = (data: BaseNodeData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Output Dimension:',
-    name: 'outDim',
-    value: data.outDim?.toString() || '',
-    placeholder: 'Enter output dimension',
-    info: nodeFieldInfo.linear.outDim,
-  },
-];
-
-interface LinearLayerProps {
+interface LinearOutputLayerProps {
   id: string;
 }
 
-export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
+export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as BaseNodeData;
+  const typedData = node.type as string;
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof BaseNodeData, value: string) => {
-    const stringFields: (keyof BaseNodeData)[] = ['label'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -59,6 +49,7 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleInfoClick,
   } = useCommonNodeActions<BaseNodeData>({
     id,
     setNodes,
@@ -67,21 +58,13 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
     setEdges,
   });
 
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.linear,
-    });
-    window.dispatchEvent(event);
-  };
-
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles}>
+    <LayerWrapper hideHandles={node.data.hideHandles}>
       <div className="relative group">
-        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
+        <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.linearOutput)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
@@ -89,7 +72,7 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
         {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
-            fields={getFields(currentData)}
+            fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof BaseNodeData, value)
@@ -106,4 +89,4 @@ export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
   );
 };
 
-export default LinearLayer;
+export default LinearOutputLayer;

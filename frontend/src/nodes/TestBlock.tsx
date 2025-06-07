@@ -7,19 +7,9 @@ import { TestBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
-
-const getFields = (data: TestBlockData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Test Type:',
-    name: 'testType',
-    value: data.testType?.toString() || '',
-    options: ['default', 'custom'],
-    info: nodeFieldInfo.testBlock.testType,
-  },
-];
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
 interface TestBlockProps {
   id: string;
@@ -32,9 +22,9 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as TestBlockData;
+  const typedData = node.type as string;
 
-  // 자식 노드와 자식 노드의 높이 합 저장
+  // ✅ 자식 노드와 자식 노드의 높이 합 저장
   const getNodes = useStore((state) => state.getNodes);
   const nodes = getNodes();
   const childNodes = useMemo(() => {
@@ -46,7 +36,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof TestBlockData, value: string) => {
-    const stringFields: (keyof TestBlockData)[] = ['label'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -65,38 +55,34 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
   };
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
-  const { handleDeleteClick, handleEditClick, handleSaveClick } =
-    useCommonNodeActions<TestBlockData>({
-      id,
-      setNodes,
-      setEditMode,
-      setEdges,
-    });
-
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.testBlock,
-    });
-    window.dispatchEvent(event);
-  };
+  const {
+    handleDeleteClick,
+    handleEditClick,
+    handleSaveClick,
+    handleInfoClick,
+  } = useCommonNodeActions<TestBlockData>({
+    id,
+    setNodes,
+    setEditMode,
+    setEdges,
+  });
 
   return (
     <BlockWrapper
       childNodesHeight={childNodesHeight}
-      isTarget={currentData.isTarget}
+      isTarget={node.data.isTarget}
     >
       <div className="relative group">
-        <NodeTitle>{currentData.label}</NodeTitle>
+        <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.testBlock)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
         <FieldRenderer
-          fields={getFields(currentData)}
+          fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
           editMode={editMode}
           onChange={(name: string, value: string) =>
             handleFieldChange(name as keyof TestBlockData, value)

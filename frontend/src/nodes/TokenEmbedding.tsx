@@ -6,27 +6,9 @@ import { TokenEmbeddingData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeFieldInfo, nodeInfo } from './components/nodeInfo';
-
-const getFields = (data: TokenEmbeddingData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Vocabulary Size:',
-    name: 'vocabSize',
-    value: data.vocabSize?.toString() || '',
-    placeholder: 'Enter vocabulary size',
-    info: nodeFieldInfo.tokenEmbedding.vocabSize,
-  },
-  {
-    type: 'number',
-    label: 'Embedding Dimension Size:',
-    name: 'embDim',
-    value: data.embDim?.toString() || '',
-    placeholder: 'Enter embedding dimension',
-    info: nodeFieldInfo.tokenEmbedding.embDim,
-  },
-];
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
 interface TokenEmbeddingLayerProps {
   id: string;
@@ -41,14 +23,14 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as TokenEmbeddingData;
+  const typedData = node.type as string;
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof TokenEmbeddingData,
     value: string,
   ) => {
-    const stringFields: (keyof TokenEmbeddingData)[] = ['label'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -72,6 +54,7 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleInfoClick,
   } = useCommonNodeActions<TokenEmbeddingData>({
     id,
     setNodes,
@@ -80,28 +63,20 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
     setEdges,
   });
 
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.tokenEmbedding,
-    });
-    window.dispatchEvent(event);
-  };
-
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles}>
+    <LayerWrapper hideHandles={node.data.hideHandles}>
       <div className="relative group">
-        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
+        <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.tokenEmbedding)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
         {!isCollapsed && (
           <FieldRenderer
-            fields={getFields(currentData)}
+            fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof TokenEmbeddingData, value)

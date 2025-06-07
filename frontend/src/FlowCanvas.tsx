@@ -20,77 +20,18 @@ import ReactFlow, {
 import type { Edge, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import TokenEmbeddingLayer from './nodes/TokenEmbedding';
-import PositionalEmbeddingLayer from './nodes/PositionalEmbedding';
-import NormalizationLayer from './nodes/Normalization';
-import FeedForwardLayer from './nodes/FeedForward';
-import DropoutLayer from './nodes/Dropout';
-import LinearLayer from './nodes/Linear';
-import SDPAttentionLayer from './nodes/SDPAttention';
-import GQAttentionLayer from './nodes/GQAttention';
-import TestBlock from './nodes/TestBlock';
-import GPT2TransformerBlock from './nodes/GPT2TransformerBlock';
-import TransformerBlock from './nodes/TransformerBlock';
-import ResidualLayer from './nodes/Residual';
 import NodeInfoModal from './nodes/components/NodeInfoModal';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
 import { flowContext } from './store/ReactFlowContext';
+import {
+  getAllowedParentBlocks,
+  getNodeTypes,
+} from './nodes/components/nodeRegistry';
+import { getNodeDataByType } from './nodes/components/nodeRegistry';
 
 const edgeTypes = { buttonEdge: ButtonEdge };
-
-// ✅ Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
-function getNodeDataByType(
-  nodeType: string,
-  config: typeof defaultConfig,
-  baseData: BaseNodeData,
-): BaseNodeData {
-  const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
-  switch (nodeType) {
-    case 'tokenEmbedding':
-      return {
-        ...data,
-        vocabSize: config.vocab_size,
-        embDim: config.emb_dim,
-      };
-    case 'positionalEmbedding':
-      return {
-        ...data,
-        ctxLength: config.context_length,
-        embDim: config.emb_dim,
-      };
-    case 'linear':
-      return {
-        ...data,
-        outDim: config.vocab_size,
-      };
-    case 'dropout':
-      return {
-        ...data,
-        dropoutRate: config.drop_rate,
-      };
-    case 'sdpAttention':
-      return {
-        ...data,
-        ctxLength: config.context_length,
-        dropoutRate: config.drop_rate,
-        numHeads: config.n_heads,
-        qkvBias: config.qkv_bias,
-      };
-    case 'gpt2TransformerBlock':
-      return {
-        ...data,
-      };
-    case 'transformerBlock':
-      return {
-        ...data,
-        numOfBlocks: config.n_blocks,
-      };
-    default:
-      return data;
-  }
-}
 
 interface FlowCanvasProps {
   config: typeof defaultConfig;
@@ -109,6 +50,17 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조 & ReactFlowInstance 저장
   const { reactFlowInstance, setReactFlowInstance } = useContext(flowContext);
 
+  // Drag 중인 Node가 목표할 Node 설정
+  const [target, setTarget] = useState<Node<BaseNodeData, string> | null>(null);
+
+  // Drag된 객체 지정
+  const dragRef = useRef<Node | null>(null);
+
+  // nodeTypes 매핑
+  const nodeTypes = useMemo(() => getNodeTypes(), []);
+  const allowedTypes = useMemo(() => getAllowedParentBlocks(), []);
+
+  // ✅ 노드와 엣지 데이터 저장
   useEffect(() => {
     flowDataRef.current = { nodes, edges };
   }, [nodes, edges]);
@@ -124,36 +76,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       }),
     );
   }, [config, setNodes]);
-
-  // Drag 중인 Node가 목표할 Node 설정
-  const [target, setTarget] = useState<Node<BaseNodeData, string> | null>(null);
-
-  // Drag된 객체 지정
-  const dragRef = useRef<Node | null>(null);
-
-  // nodeTypes 매핑
-  const nodeTypes = useMemo(
-    () => ({
-      tokenEmbedding: TokenEmbeddingLayer,
-      positionalEmbedding: PositionalEmbeddingLayer,
-      normalization: NormalizationLayer,
-      feedForward: FeedForwardLayer,
-      dropout: DropoutLayer,
-      linear: LinearLayer,
-      sdpAttention: SDPAttentionLayer,
-      gqAttention: GQAttentionLayer,
-      testBlock: TestBlock,
-      gpt2TransformerBlock: GPT2TransformerBlock,
-      transformerBlock: TransformerBlock,
-      residual: ResidualLayer,
-    }),
-    [],
-  );
-  const allowedTypes = [
-    'testBlock',
-    'transformerBlock',
-    'gpt2TransformerBlock',
-  ];
 
   // ✅ 노드 간 연결 이벤트 핸들
   const onConnect = useCallback(
@@ -196,8 +118,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   // ✅ Node Click 시 이벤트 핸들러
   const onNodeClick: NodeMouseHandler = (_, node) => {
     if (node && node.id) {
-      // setClickedNodeId(node.id);
-      // setNodeName(node.data.label);
       console.log(node);
     }
   };
@@ -446,7 +366,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         <Controls />
       </ReactFlow>
 
-      {/* 통합된 정보 모달 */}
       <NodeInfoModal
         isOpen={modalData.isOpen}
         onClose={() =>

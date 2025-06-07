@@ -2,6 +2,7 @@ import React from 'react';
 import SidebarNodeItem from './SidebarNodeItem';
 import CanvasHamburgerIcon from './ui-component/CanvasHamburgerButton';
 import { BaseNodeData } from './nodes/components/NodeData';
+import { nodeRegistry } from './nodes/components/nodeRegistry';
 
 interface SidebarProps {
   onToggle: () => void;
@@ -31,61 +32,79 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       </div>
       {/* 노드 항목 영역 */}
       <SidebarNodeItem
-        nodeType="tokenEmbedding"
+        nodeType={nodeRegistry.get('tokenEmbedding')?.type ?? ''}
         nodeData={{
-          label: 'Token Embedding Layer',
+          label: nodeRegistry.get('tokenEmbedding')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="positionalEmbedding"
+        nodeType={nodeRegistry.get('positionalEmbedding')?.type ?? ''}
         nodeData={{
-          label: 'Positional Embedding Layer',
+          label: nodeRegistry.get('positionalEmbedding')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="linear"
-        nodeData={{ label: 'Linear Layer' }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="normalization"
+        nodeType={nodeRegistry.get('linearOutput')?.type ?? ''}
         nodeData={{
-          label: 'Normalization',
+          label: nodeRegistry.get('linearOutput')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="feedForward"
+        nodeType={nodeRegistry.get('feedForward')?.type ?? ''}
         nodeData={{
-          label: 'Feed Forward',
+          label: nodeRegistry.get('feedForward')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="dropout"
-        nodeData={{ label: 'Dropout' }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="residual"
+        nodeType={nodeRegistry.get('normalization')?.type ?? ''}
         nodeData={{
-          label: 'Residual',
+          label: nodeRegistry.get('normalization')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="sdpAttention"
+        nodeType={nodeRegistry.get('dropout')?.type ?? ''}
         nodeData={{
-          label: 'Scaled Dot-Product Attention',
+          label: nodeRegistry.get('dropout')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType="gqAttention"
+        nodeType={nodeRegistry.get('residual')?.type ?? ''}
         nodeData={{
-          label: 'Grouped Query Attention',
+          label: nodeRegistry.get('residual')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('sdpAttention')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('sdpAttention')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('gqAttention')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('gqAttention')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('transformerBlock')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('transformerBlock')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('testBlock')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('testBlock')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
@@ -93,20 +112,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         nodeType="gpt2TransformerBlock"
         nodeData={{
           label: 'GPT-2 Transformer Block',
-        }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="transformerBlock"
-        nodeData={{
-          label: 'Transformer Block',
-        }}
-        onDragStart={onDragStart}
-      />
-      <SidebarNodeItem
-        nodeType="testBlock"
-        nodeData={{
-          label: 'Test Block',
         }}
         onDragStart={onDragStart}
       />
