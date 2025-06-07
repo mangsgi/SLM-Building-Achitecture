@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-import { NodeTitle } from './components/Components';
+import { NodeTitle } from './components/FieldComponents';
 import { ResidualData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
-import { useCommonNodeActions } from './useCommonNodeActions';
+import { useCommonNodeActions } from './components/useCommonNodeActions';
 import { nodeInfo } from './components/nodeInfo';
 
 interface ResidualLayerProps {

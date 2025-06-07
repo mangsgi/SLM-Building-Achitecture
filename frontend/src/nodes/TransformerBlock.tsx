@@ -2,10 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useReactFlow, NodeProps, useStore } from 'reactflow';
 
 import { BlockWrapper } from './components/BlockWrapper';
-import { NodeTitle } from './components/Components';
+import { NodeTitle } from './components/FieldComponents';
 import { TransformerBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
-import { useCommonNodeActions } from './useCommonNodeActions';
+import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/nodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';

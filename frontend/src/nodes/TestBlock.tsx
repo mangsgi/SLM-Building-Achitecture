@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useReactFlow, useStore } from 'reactflow';
 
-import { NodeTitle } from './components/Components';
+import { NodeTitle } from './components/FieldComponents';
 import { BlockWrapper } from './components/BlockWrapper';
 import { TestBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import NodeInfoModal from './components/NodeInfoModal';
-import { useCommonNodeActions } from './useCommonNodeActions';
+import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/nodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
