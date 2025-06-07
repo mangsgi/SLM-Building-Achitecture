@@ -5,45 +5,10 @@ import { NodeTitle } from './components/Components';
 import { GQAttentionData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
-import NodeInfoModal from './components/NodeInfoModal';
 import { useCommonNodeActions } from './useCommonNodeActions';
-import FieldRenderer, { FieldConfig } from './components/FieldRenderer';
-import { nodeInfo, nodeFieldInfo } from './components/nodeInfo';
-
-const getFields = (data: GQAttentionData): FieldConfig[] => [
-  {
-    type: 'number',
-    label: 'Number of Heads:',
-    name: 'numHeads',
-    value: data.numHeads?.toString() || '',
-    placeholder: 'Enter number of heads',
-    info: nodeFieldInfo.gqAttention.numHeads,
-  },
-  {
-    type: 'number',
-    label: 'Context Length:',
-    name: 'ctxLength',
-    value: data.ctxLength?.toString() || '',
-    placeholder: 'Enter context length',
-    info: nodeFieldInfo.gqAttention.ctxLength,
-  },
-  {
-    type: 'number',
-    label: 'Dropout Rate:',
-    name: 'dropoutRate',
-    value: data.dropoutRate?.toString() || '',
-    placeholder: 'Enter dropout rate',
-    info: nodeFieldInfo.gqAttention.dropoutRate,
-  },
-  {
-    type: 'select',
-    label: 'QKV Bias:',
-    name: 'qkvBias',
-    value: data.qkvBias?.toString() || 'false',
-    options: ['true', 'false'],
-    info: nodeFieldInfo.gqAttention.qkvBias,
-  },
-];
+import FieldRenderer from './components/FieldRenderer';
+import { nodeInfo } from './components/nodeInfo';
+import { nodeRegistry } from './components/nodeRegistry';
 
 interface GQAttentionLayerProps {
   id: string;
@@ -52,15 +17,15 @@ interface GQAttentionLayerProps {
 export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as GQAttentionData;
+  const typedData = node.type as string;
 
+  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof GQAttentionData, value: string) => {
-    const stringFields: (keyof GQAttentionData)[] = ['label'];
+    const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
       nds.map((nodeItem) => {
@@ -78,6 +43,7 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
     );
   };
 
+  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleInfoClick,
@@ -93,37 +59,32 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
   });
 
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles}>
+    <LayerWrapper hideHandles={node.data.hideHandles}>
       <div className="relative group">
-        <NodeTitle onClick={handleNodeClick}>{currentData.label}</NodeTitle>
+        <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.gqAttention)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
         />
+        {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (
           <FieldRenderer
-            fields={getFields(currentData)}
+            fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
               handleFieldChange(name as keyof GQAttentionData, value)
             }
             onInfoClick={(info) => {
+              // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
               const event = new CustomEvent('fieldInfo', { detail: info });
               window.dispatchEvent(event);
             }}
           />
         )}
       </div>
-
-      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
-        <h3 className="text-lg font-semibold mb-2">
-          {nodeInfo.gqAttention.title}
-        </h3>
-        <p className="text-sm">{nodeInfo.gqAttention.description}</p>
-      </NodeInfoModal>
     </LayerWrapper>
   );
 };

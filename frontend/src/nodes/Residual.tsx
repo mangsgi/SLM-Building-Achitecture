@@ -18,32 +18,27 @@ export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
 
   const node = getNode(id);
   if (!node) return null;
-  const currentData = node.data as ResidualData;
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
-  const { handleDeleteClick, handleEditClick, handleSaveClick } =
-    useCommonNodeActions<ResidualData>({
-      id,
-      setNodes,
-      setEditMode,
-      setEdges,
-    });
-
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
-  const handleInfoClick = () => {
-    const event = new CustomEvent('nodeInfo', {
-      detail: nodeInfo.residual,
-    });
-    window.dispatchEvent(event);
-  };
+  const {
+    handleDeleteClick,
+    handleEditClick,
+    handleSaveClick,
+    handleInfoClick,
+  } = useCommonNodeActions<ResidualData>({
+    id,
+    setNodes,
+    setEditMode,
+    setEdges,
+  });
 
   return (
-    <LayerWrapper hideHandles={currentData.hideHandles} isResidual={true}>
+    <LayerWrapper hideHandles={node.data.hideHandles} isResidual={true}>
       <div className="relative group">
-        <NodeTitle>{currentData.label}</NodeTitle>
+        <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={handleInfoClick}
+          onInfo={() => handleInfoClick(nodeInfo.residual)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}

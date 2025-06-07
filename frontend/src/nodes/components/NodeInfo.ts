@@ -42,8 +42,8 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
     description:
       '학습 시 일부 뉴런을 무작위로 비활성화하여 과적합을 방지하는 레이어입니다. 테스트 시에는 모든 뉴런을 사용합니다.',
   },
-  linear: {
-    title: 'Linear',
+  linearOutput: {
+    title: 'Linear Output',
     description:
       '입력을 선형 변환하는 레이어입니다. 가중치 행렬과 편향을 사용하여 입력을 출력 차원으로 변환합니다.',
   },
@@ -151,11 +151,11 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
         '비활성화할 뉴런의 비율을 정의합니다. 0에서 1 사이의 값을 가집니다.',
     },
   },
-  linear: {
+  linearOutput: {
     outDim: {
       title: 'Output Dimension',
       description:
-        '출력 벡터의 차원을 정의합니다. 이는 다음 레이어의 입력 차원과 일치해야 합니다.',
+        '출력 벡터의 차원을 정의합니다. 이는 다음 레이어의 입력 차원과 일치해야 합니다. 마지막 레이어로 사용되는 경우 모델의 출력 차원(사전 크기)과 일치해야 합니다.',
     },
   },
   sdpAttention: {

@@ -15,7 +15,7 @@ export const NODE_HEIGHTS = {
 } as const;
 
 // 기본 높이값 (노드 타입이 정의되지 않은 경우 사용)
-export const DEFAULT_NODE_HEIGHT = 40;
+export const DEFAULT_NODE_HEIGHT = 43;
 
 // 노드 간 간격
 export const NODE_GAP = 10;
