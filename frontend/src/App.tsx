@@ -42,6 +42,8 @@ async function buildModelJSON(
 ): Promise<ModelNode[]> {
   // 1. 노드 맵 생성
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  console.log('🔍 Nodes:', nodes);
+  console.log('🔍 Edges:', edges);
 
   // 2. in-degree 계산
   const inDegree = new Map<string, number>();
@@ -110,13 +112,24 @@ async function buildModelJSON(
   }
 
   // 5. 진입점에서부터 DFS 실행
+  // 5-1. 루트 노드 찾기
+  const rootNodes = Array.from(inDegree.entries()).filter(
+    ([id, deg]) => deg === 0 && !nodeMap.get(id)?.parentNode,
+  );
+
+  // 5-2. 예외 처리
+  if (rootNodes.length !== 1) {
+    alert(
+      `❗ 모델 구성 오류: 시작 노드가 ${rootNodes.length}개 존재합니다. 하나의 루트 노드만 있어야 합니다.`,
+    );
+    return [];
+  }
+
+  // 5-3. DFS 실행
   const model: ModelNode[] = [];
-  for (const [nodeId, deg] of inDegree.entries()) {
-    const node = nodeMap.get(nodeId);
-    if (deg === 0 && !node?.parentNode) {
-      const dfsResult = dfs(nodeId);
-      model.push(...dfsResult);
-    }
+  for (const [nodeId] of rootNodes) {
+    const dfsResult = dfs(nodeId);
+    model.push(...dfsResult);
   }
 
   console.log('📦 Generated Model JSON:', model);
@@ -163,9 +176,16 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
+  // ✅ 모델 전송 함수
   const handleSendModel = async () => {
     const { nodes, edges } = flowDataRef.current;
-    await buildModelJSON(nodes, edges);
+    const model = await buildModelJSON(nodes, edges);
+
+    if (!model.length) {
+      console.warn('모델 생성 실패 또는 구성 오류로 인해 이동 중단됨.');
+      return;
+    }
+
     navigate('/canvas/dataset');
   };
 

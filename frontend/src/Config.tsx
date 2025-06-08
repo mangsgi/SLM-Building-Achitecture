@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ConfigButton from './ui-component/ConfigButton';
-import InfoModal from './ui-component/InfoModal';
+import { FiInfo } from 'react-icons/fi';
 
 interface ConfigProps {
   onToggle: () => void;
@@ -48,12 +48,9 @@ export const defaultConfig = {
 };
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<
-    keyof typeof defaultConfig | null
-  >(null);
   const dtypeOptions = ['bf16', 'fp16', 'fp32'];
 
+  // ✅ 설정 변경 핸들러
   const handleChange = (key: keyof typeof config, value: string | boolean) => {
     let parsedValue: string | boolean | number = value;
 
@@ -121,12 +118,17 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
                 </label>
                 <button
                   onClick={() => {
-                    setSelectedConfig(typedKey);
-                    setShowModal(true);
+                    const event = new CustomEvent('fieldInfo', {
+                      detail: {
+                        title: configMap[typedKey],
+                        description: configDescriptions[typedKey],
+                      },
+                    });
+                    window.dispatchEvent(event);
                   }}
                   className="text-gray-500 hover:text-gray-700"
                 >
-                  <i className="fas fa-info-circle"></i>
+                  <FiInfo size={16} />
                 </button>
               </div>
 
@@ -168,14 +170,6 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
           );
         })}
       </div>
-
-      {showModal && selectedConfig && (
-        <InfoModal
-          title={configMap[selectedConfig]}
-          description={configDescriptions[selectedConfig]}
-          onClose={() => setShowModal(false)}
-        />
-      )}
     </aside>
   );
 };
