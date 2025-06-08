@@ -362,6 +362,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         defaultEdgeOptions={{
           zIndex: 20, // 모든 edge에 zIndex 높게 부여
         }}
+        className="chatflow-canvas"
       >
         <Controls />
       </ReactFlow>

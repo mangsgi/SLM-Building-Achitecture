@@ -1,5 +1,6 @@
 import { FC, ReactNode } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, useReactFlow } from 'reactflow';
+import { isValidConnection } from '../../ButtonEdge';
 
 interface LayerWrapperProps {
   children: ReactNode;
@@ -12,6 +13,8 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
   hideHandles = false,
   isResidual = false,
 }) => {
+  const { getEdges } = useReactFlow();
+
   const handleStyle: React.CSSProperties = hideHandles
     ? { opacity: 0, pointerEvents: 'none' as const }
     : { pointerEvents: 'auto' as const, zIndex: 12 };
@@ -41,6 +44,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           zIndex: 12,
           ...handleStyle,
         }}
+        isValidConnection={(params) => isValidConnection(getEdges(), params)}
       />
 
       <div style={{ position: 'relative', zIndex: 11 }}>{children}</div>
@@ -60,6 +64,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
             transform: 'translate(0, -50%)',
             zIndex: 12,
           }}
+          isValidConnection={(params) => isValidConnection(getEdges(), params)}
         />
       )}
       <Handle
@@ -75,6 +80,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           transform: 'translate(0, -50%)',
           zIndex: 12,
         }}
+        isValidConnection={(params) => isValidConnection(getEdges(), params)}
       />
 
       {/* 하단 핸들 */}
@@ -91,6 +97,7 @@ export const LayerWrapper: FC<LayerWrapperProps> = ({
           zIndex: 12,
           ...handleStyle,
         }}
+        isValidConnection={(params) => isValidConnection(getEdges(), params)}
       />
     </div>
   );

@@ -42,16 +42,14 @@ body {
   min-height: 100vh;
 }
 
-/* Modern Link Styles */
-a {
-  font-weight: 500;
-  color: var(--color-link);
-  text-decoration: none;
-  transition: color var(--transition-speed) ease;
+.chatflow-canvas .react-flow__handle-connecting {
+  cursor: not-allowed;
+  background: #db4e4e !important;
 }
-a:hover {
-  color: var(--color-link-hover);
-  text-decoration: underline;
+
+.chatflow-canvas .react-flow__handle-valid {
+  cursor: crosshair;
+  background: #5dba62 !important;
 }
 
 /* Input 태그의 스피너 제거 ( Chrome, Safari, Edge, Opera / Firefox ) */

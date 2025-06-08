@@ -37,6 +37,7 @@ export default [
       'react/jsx-uses-react': 'off',
       '@typescript-eslint/no-explicit-any': 'off', // <- any 사용 허용
       'react/prop-types': 'off', // <- prop-types 사용 허용
+      'no-unexpected-multiline': 'off', // <- 객체와 대괄호 ([) 사이에 줄바꿈 허용
     },
     settings: {
       react: {

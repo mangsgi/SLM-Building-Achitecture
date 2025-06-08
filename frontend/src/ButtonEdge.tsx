@@ -1,9 +1,23 @@
 import { getBezierPath, EdgeText, EdgeProps } from 'reactflow';
+import type { Edge, Connection } from 'reactflow';
 import { useDispatch } from 'react-redux';
 import { useContext } from 'react';
 import { SET_DIRTY } from './store/actions';
 import { flowContext } from './store/ReactFlowContext';
 import XIconButton from './ui-component/XIconButton';
+
+export function isValidConnection(
+  edges: Edge[],
+  connection: Connection,
+): boolean {
+  return !edges.some(
+    (edge) =>
+      (edge.source === connection.source &&
+        edge.sourceHandle === connection.sourceHandle) ||
+      (edge.target === connection.target &&
+        edge.targetHandle === connection.targetHandle),
+  );
+}
 
 const foreignObjectSize = 40;
 
