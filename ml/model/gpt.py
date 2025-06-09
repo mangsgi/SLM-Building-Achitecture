@@ -15,6 +15,7 @@ import tiktoken
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+from transformers import GPT2Tokenizer
 
 
 #####################################
