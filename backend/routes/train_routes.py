@@ -126,6 +126,7 @@ LayerNode.update_forward_refs()
 
 # 학습 요청 모델
 class TrainRequest(BaseModel):
+    exp_name: str
     layer_json: List[LayerNode]
     input_text: str
     max_length: int = Field(default=16, ge=1, le=1024)
@@ -157,6 +158,7 @@ async def train_model(request: TrainRequest):
         
         # 학습 태스크 시작
         train_task = train_and_infer_from_json.apply_async(args=[
+            request.exp_name,
             layer_dicts,
             request.input_text,
             request.max_length,
