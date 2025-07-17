@@ -11,20 +11,15 @@ import mlflow
 
 from slm_dataset import create_dataloader_v1, load_training_data
 from train_eval import calc_loss_batch, evaluate_model, generate_text
+from utils import get_best_device
 
-# Intel GPU 지원 추가
-try:
-    import intel_extension_for_pytorch as ipex
-    print("Intel GPU 지원 활성화됨")
-except ImportError:
-    print("Intel GPU 지원을 사용할 수 없습니다. CPU로 실행됩니다.")
 
 # 훈련 중단을 위한 전역 변수
 training_should_stop = False
 
 @celery_app.task
 def train_and_infer_from_json(experiment_name, layer_json, input_text, max_length=50, temperature=0.7, top_k=40, dataset_name="tiny_shakespeare", dataset_config="default"):
-    mlflow.set_tracking_uri("http://mlflow:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5000")
     mlflow.set_experiment(experiment_name)
 
     try:
@@ -47,7 +42,10 @@ def train_and_infer_from_json(experiment_name, layer_json, input_text, max_lengt
         # 4. 모델 초기화 및 구조 확인
         print("\n=== 모델 초기화 및 구조 확인 ===")
         try:
+            device = get_best_device()
+            
             model = build_model_from_json(layer_json)
+            model = model.to(device)
             
             # 모델 구조 출력
             print("\n[모델 구조]")
@@ -157,6 +155,7 @@ def train_and_infer_from_json(experiment_name, layer_json, input_text, max_lengt
                 )
                 output_text = tokenizer.decode(generated_ids[0].tolist())
                 print(f"[Epoch {epoch+1}] 생성된 텍스트: {output_text}")
+
 
             # 모델 저장
             ckpt_path = "trained_model.pt"

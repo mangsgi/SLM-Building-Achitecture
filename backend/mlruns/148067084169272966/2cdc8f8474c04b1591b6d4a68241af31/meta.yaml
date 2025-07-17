@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/148067084169272966/2cdc8f8474c04b1591b6d4a68241af31/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '148067084169272966'
+lifecycle_stage: active
+run_id: 2cdc8f8474c04b1591b6d4a68241af31
+run_name: lyrical-stag-917
+run_uuid: 2cdc8f8474c04b1591b6d4a68241af31
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1752754935205
+status: 1
+tags: []
+user_id: jiyoon
