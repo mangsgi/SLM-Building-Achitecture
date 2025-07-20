@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ConfigButton from './ui-component/ConfigButton';
 import { FiInfo } from 'react-icons/fi';
+import Modal from './ui-component/Modal';
 
 interface ConfigProps {
   onToggle: () => void;
@@ -48,7 +49,22 @@ export const defaultConfig = {
 };
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalInfo, setModalInfo] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
   const dtypeOptions = ['bf16', 'fp16', 'fp32'];
+
+  const handleShowInfo = (title: string, description: string) => {
+    setModalInfo({ title, description });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalInfo(null);
+  };
 
   // ✅ 설정 변경 핸들러
   const handleChange = (key: keyof typeof config, value: string | boolean) => {
@@ -117,15 +133,12 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
                   {configMap[typedKey]}
                 </label>
                 <button
-                  onClick={() => {
-                    const event = new CustomEvent('fieldInfo', {
-                      detail: {
-                        title: configMap[typedKey],
-                        description: configDescriptions[typedKey],
-                      },
-                    });
-                    window.dispatchEvent(event);
-                  }}
+                  onClick={() =>
+                    handleShowInfo(
+                      configMap[typedKey],
+                      configDescriptions[typedKey],
+                    )
+                  }
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <FiInfo size={16} />
@@ -170,6 +183,20 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
           );
         })}
       </div>
+      {isModalOpen && modalInfo && (
+        <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">{modalInfo.title}</h3>
+            <button
+              onClick={handleCloseModal}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <p className="text-gray-600">{modalInfo.description}</p>
+        </Modal>
+      )}
     </aside>
   );
 };

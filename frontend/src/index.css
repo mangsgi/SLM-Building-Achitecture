@@ -42,6 +42,7 @@ body {
   min-height: 100vh;
 }
 
+/* React Flow 핸들 스타일링 */
 .chatflow-canvas .react-flow__handle-connecting {
   cursor: not-allowed;
   background: #db4e4e !important;

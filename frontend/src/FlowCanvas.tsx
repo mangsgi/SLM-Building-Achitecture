@@ -20,7 +20,7 @@ import ReactFlow, {
 import type { Edge, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import NodeInfoModal from './nodes/components/NodeInfoModal';
+import Modal from './ui-component/Modal';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
@@ -367,7 +367,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         <Controls />
       </ReactFlow>
 
-      <NodeInfoModal
+      <Modal
         isOpen={modalData.isOpen}
         onClose={() =>
           setModalData({ isOpen: false, type: 'node', data: null })
@@ -381,7 +381,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
             <p className="text-sm">{modalData.data.description}</p>
           </>
         )}
-      </NodeInfoModal>
+      </Modal>
     </div>
   );
 };
