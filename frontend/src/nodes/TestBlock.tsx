@@ -5,7 +5,7 @@ import { NodeTitle } from './components/FieldComponents';
 import { BlockWrapper } from './components/BlockWrapper';
 import { TestBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
-import NodeInfoModal from './components/NodeInfoModal';
+import Modal from '../ui-component/Modal';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/nodeInfo';
@@ -94,12 +94,12 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
         />
       </div>
 
-      <NodeInfoModal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
+      <Modal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)}>
         <h3 className="text-lg font-semibold mb-2">
           {nodeInfo.testBlock.title}
         </h3>
         <p className="text-sm">{nodeInfo.testBlock.description}</p>
-      </NodeInfoModal>
+      </Modal>
     </BlockWrapper>
   );
 };

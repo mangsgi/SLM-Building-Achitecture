@@ -15,7 +15,8 @@ export function isValidConnection(
       (edge.source === connection.source &&
         edge.sourceHandle === connection.sourceHandle) ||
       (edge.target === connection.target &&
-        edge.targetHandle === connection.targetHandle),
+        edge.targetHandle === connection.targetHandle) ||
+      connection.source === connection.target,
   );
 }
 
