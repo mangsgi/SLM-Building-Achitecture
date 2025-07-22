@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { NodeTitle } from './components/FieldComponents';
-import { SDPAttentionData } from './components/NodeData';
+import { MHAttentionData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
@@ -10,11 +10,11 @@ import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/nodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
 
-interface SDPAttentionLayerProps {
+interface MHAttentionLayerProps {
   id: string;
 }
 
-export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
+export const MHAttentionLayer: React.FC<MHAttentionLayerProps> = ({ id }) => {
   const { setNodes, getNode, setEdges } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -24,7 +24,7 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
   const typedData = node.type as string;
 
   // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
-  const handleFieldChange = (field: keyof SDPAttentionData, value: string) => {
+  const handleFieldChange = (field: keyof MHAttentionData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
     setNodes((nds) =>
@@ -50,7 +50,7 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
     handleSaveClick,
     handleNodeClick,
     handleInfoClick,
-  } = useCommonNodeActions<SDPAttentionData>({
+  } = useCommonNodeActions<MHAttentionData>({
     id,
     setNodes,
     setEditMode,
@@ -64,7 +64,7 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
         <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          onInfo={() => handleInfoClick(nodeInfo.sdpAttention)}
+          onInfo={() => handleInfoClick(nodeInfo.mhAttention)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
@@ -75,7 +75,7 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
             fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
-              handleFieldChange(name as keyof SDPAttentionData, value)
+              handleFieldChange(name as keyof MHAttentionData, value)
             }
             onInfoClick={(info) => {
               // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
@@ -89,4 +89,4 @@ export const SDPAttentionLayer: React.FC<SDPAttentionLayerProps> = ({ id }) => {
   );
 };
 
-export default SDPAttentionLayer;
+export default MHAttentionLayer;

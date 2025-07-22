@@ -39,7 +39,7 @@ export interface ResidualData extends BaseNodeData {
   source: string;
 }
 
-export interface SDPAttentionData extends BaseNodeData {
+export interface MHAttentionData extends BaseNodeData {
   dropoutRate: number;
   ctxLength: number;
   numHeads: number;
