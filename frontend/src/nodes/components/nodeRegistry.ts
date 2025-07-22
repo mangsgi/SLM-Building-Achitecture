@@ -7,13 +7,13 @@ import {
   TransformerBlockData,
   TestBlockData,
   TokenEmbeddingData,
-  SDPAttentionData,
+  MHAttentionData,
   GQAttentionData,
 } from './NodeData';
 import { FieldConfig } from './FieldRenderer';
 import { nodeFieldInfo } from './nodeInfo';
 import ResidualLayer from '../Residual';
-import SDPAttentionLayer from '../SDPAttention';
+import MHAttentionLayer from '../MHAttention';
 import GQAttentionLayer from '../GQAttention';
 import TransformerBlock from '../TransformerBlock';
 import FeedForwardLayer from '../FeedForward';
@@ -89,7 +89,7 @@ export const getNodeDataByType = (
         ...data,
         dropoutRate: config.drop_rate,
       };
-    case 'sdpAttention':
+    case 'mhAttention':
       return {
         ...data,
         ctxLength: config.context_length,
@@ -292,7 +292,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       stringFields: ['label', 'feedForwardType', 'actFunc'],
       typeOptions: new Map([
         ['feedForwardTypeOptions', ['Standard', 'Gated']],
-        ['actFuncOptions', ['ReLU', 'GELU', 'SiLU', 'Mish']],
+        ['actFuncOptions', ['ReLU', 'GELU', 'SwiGLU', 'Mish']],
       ]),
       getFields: (data: BaseNodeData) => {
         const typed = data as FeedForwardData;
@@ -370,17 +370,17 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
     },
   ],
   [
-    'sdpAttention',
+    'mhAttention',
     {
-      type: 'sdpAttention',
-      label: 'SDP Attention',
-      component: SDPAttentionLayer,
+      type: 'mhAttention',
+      label: 'MH Attention',
+      component: MHAttentionLayer,
       defaultData: {
-        label: 'SDP Attention',
+        label: 'MH Attention',
       },
       stringFields: ['label'],
       getFields: (data: BaseNodeData) => {
-        const typed = data as SDPAttentionData;
+        const typed = data as MHAttentionData;
         return [
           {
             type: 'number',
@@ -388,7 +388,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             name: 'numHeads',
             value: typed.numHeads?.toString() || '',
             placeholder: 'Enter number of heads',
-            info: nodeFieldInfo.sdpAttention.numHeads,
+            info: nodeFieldInfo.mhAttention.numHeads,
           },
           {
             type: 'number',
@@ -396,7 +396,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             name: 'dropoutRate',
             value: typed.dropoutRate?.toString() || '',
             placeholder: 'Enter dropout rate',
-            info: nodeFieldInfo.sdpAttention.dropoutRate,
+            info: nodeFieldInfo.mhAttention.dropoutRate,
           },
           {
             type: 'select',
@@ -404,7 +404,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             name: 'qkvBias',
             value: typed.qkvBias ? 'true' : 'false',
             options: ['true', 'false'],
-            info: nodeFieldInfo.sdpAttention.qkvBias,
+            info: nodeFieldInfo.mhAttention.qkvBias,
           },
         ];
       },

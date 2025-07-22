@@ -47,8 +47,8 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
     description:
       '입력을 선형 변환하는 레이어입니다. 가중치 행렬과 편향을 사용하여 입력을 출력 차원으로 변환합니다.',
   },
-  sdpAttention: {
-    title: 'Scaled Dot-Product Attention',
+  mhAttention: {
+    title: 'Multi-Head Attention',
     description:
       '쿼리, 키, 값 벡터를 사용하여 입력 시퀀스의 각 위치 간의 관계를 계산하는 어텐션 메커니즘입니다.',
   },
@@ -158,7 +158,7 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
         '출력 벡터의 차원을 정의합니다. 이는 다음 레이어의 입력 차원과 일치해야 합니다. 마지막 레이어로 사용되는 경우 모델의 출력 차원(사전 크기)과 일치해야 합니다.',
     },
   },
-  sdpAttention: {
+  mhAttention: {
     numHeads: {
       title: 'Number of Heads',
       description:

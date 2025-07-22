@@ -81,9 +81,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType={nodeRegistry.get('sdpAttention')?.type ?? ''}
+        nodeType={nodeRegistry.get('mhAttention')?.type ?? ''}
         nodeData={{
-          label: nodeRegistry.get('sdpAttention')?.label ?? '',
+          label: nodeRegistry.get('mhAttention')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />
