@@ -22,7 +22,6 @@ import 'reactflow/dist/style.css';
 
 import Modal from './ui-component/Modal';
 import { BaseNodeData } from './nodes/components/NodeData';
-import { defaultConfig } from './Config';
 import ButtonEdge from './ButtonEdge';
 import { flowContext } from './store/ReactFlowContext';
 import {
@@ -34,7 +33,7 @@ import { getNodeDataByType } from './nodes/components/nodeRegistry';
 const edgeTypes = { buttonEdge: ButtonEdge };
 
 interface FlowCanvasProps {
-  config: typeof defaultConfig;
+  config: Record<string, any>;
   flowDataRef: React.MutableRefObject<{ nodes: Node[]; edges: Edge[] }>;
 }
 
@@ -74,7 +73,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         }
         return {
           ...node,
-          data: getNodeDataByType(node.type || '', config, node.data),
+          data: getNodeDataByType(node.type || '', config as any, node.data),
         };
       }),
     );
@@ -163,7 +162,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         id,
         type: nodeType,
         position,
-        data: getNodeDataByType(nodeType, config, {
+        data: getNodeDataByType(nodeType, config as any, {
           id,
           label,
           ...props,

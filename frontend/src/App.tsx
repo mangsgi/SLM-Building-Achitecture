@@ -23,23 +23,70 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
-// function downloadModelFile(model: any) {
-//   const blob = new Blob([JSON.stringify(model, null, 2)], {
-//     type: 'application/json',
-//   });
-//   const url = URL.createObjectURL(blob);
-//   const link = document.createElement('a');
-//   link.href = url;
-//   link.download = 'model.json';
-//   link.click();
-//   URL.revokeObjectURL(url);
-// }
-
 // ✅ 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
   nodes: Node[],
   edges: Edge[],
+  config: Record<string, any>,
 ): Promise<ModelNode[]> {
+  // emb_dim 짝수 유효성 검사 (Config)
+  if (config.emb_dim && Number(config.emb_dim) % 2 !== 0) {
+    alert(
+      `Config의 Embedding Dimension(emb_dim)은 짝수여야 합니다. 현재 값: ${config.emb_dim}`,
+    );
+    return [];
+  }
+
+  // emb_dim 짝수 유효성 검사 (Nodes)
+  for (const node of nodes) {
+    if (node.data.embDim && Number(node.data.embDim) % 2 !== 0) {
+      alert(
+        `노드 '${node.data.label}'의 Embedding Dimension(embDim)은 짝수여야 합니다. 현재 값: ${node.data.embDim}`,
+      );
+      return [];
+    }
+  }
+
+  // Llama3 GQA 유효성 검사
+  if ('n_kv_groups' in config) {
+    const gqaNodes = nodes.filter((n) => n.type === 'gqAttention');
+    for (const node of gqaNodes) {
+      const numHeads = Number(node.data.numHeads);
+      const nKvGroups = Number(config.n_kv_groups);
+      if (numHeads % nKvGroups !== 0) {
+        alert(
+          `GQA 노드 '${node.data.label}'의 numHeads(${numHeads})는 config의 n_kv_groups(${nKvGroups})로 나누어 떨어져야 합니다.`,
+        );
+        return [];
+      }
+    }
+  }
+
+  // TransformerBlock의 Head Dimension (head_dim) 유효성 검사
+  for (const node of nodes) {
+    if (!node.data.isLocked && node.type === 'transformerBlock') {
+      const embDim = Number(config.emb_dim);
+      const numHeads = Number(node.data.numHeads);
+
+      if (!embDim || !numHeads) continue; // 필요한 값이 없으면 건너뜀
+
+      if (embDim % numHeads !== 0) {
+        alert(
+          `TransformerBlock '${node.data.label}'의 Embedding Dimension(${embDim})은 Number of Heads(${numHeads})로 나누어 떨어져야 합니다.`,
+        );
+        return [];
+      }
+
+      const headDim = embDim / numHeads;
+      if (headDim % 2 !== 0) {
+        alert(
+          `TransformerBlock '${node.data.label}'의 Head Dimension(emb_dim / numHeads)은 짝수여야 합니다. 현재 값: ${headDim}`,
+        );
+        return [];
+      }
+    }
+  }
+
   // 1. 노드 맵 생성
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   console.log('🔍 Nodes:', nodes);
@@ -120,7 +167,7 @@ async function buildModelJSON(
   // 5-2. 예외 처리
   if (rootNodes.length !== 1) {
     alert(
-      `❗ 모델 구성 오류: 시작 노드가 ${rootNodes.length}개 존재합니다. 하나의 루트 노드만 있어야 합니다.`,
+      `⚠ 모델 구성 오류: 시작 노드가 ${rootNodes.length}개 존재합니다. 하나의 루트 노드만 있어야 합니다.`,
     );
     return [];
   }
@@ -133,27 +180,6 @@ async function buildModelJSON(
   }
 
   console.log('📦 Generated Model JSON:', model);
-  // downloadModelFile(model);
-
-  // 백엔드에 전송
-  try {
-    const response = await fetch('/api/model/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`서버 응답 오류: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('✅ 전송 완료:', result);
-  } catch (error) {
-    console.error('❌ 전송 실패:', error);
-  }
 
   return model;
 }
@@ -163,7 +189,7 @@ function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [config, setConfig] = useState(defaultConfig);
+  const [config, setConfig] = useState<Record<string, any>>(defaultConfig);
   const navigate = useNavigate();
 
   // ✅ FlowCanvas에 전달할 데이터 참조 객체
@@ -179,14 +205,14 @@ function App() {
   // ✅ 모델 전송 함수
   const handleSendModel = async () => {
     const { nodes, edges } = flowDataRef.current;
-    const model = await buildModelJSON(nodes, edges);
+    const model = await buildModelJSON(nodes, edges, config);
 
     if (!model.length) {
       console.warn('모델 생성 실패 또는 구성 오류로 인해 이동 중단됨.');
       return;
     }
 
-    navigate('/canvas/dataset');
+    navigate('/canvas/dataset', { state: { model, config } });
   };
 
   return (
