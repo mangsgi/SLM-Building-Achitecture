@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
 import Modal from './ui-component/Modal';
+import { ModelNode } from './App';
 
 // 임시 데이터셋 목록
 const datasets = [
@@ -14,7 +15,9 @@ const datasets = [
 type Dataset = (typeof datasets)[0];
 
 function DatasetSelection() {
-  const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
+    null,
+  );
   const [savePath, setSavePath] = useState('models'); // Default save path
   const [modalInfo, setModalInfo] = useState<{
     isOpen: boolean;
@@ -22,6 +25,11 @@ function DatasetSelection() {
     description: string;
   } | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { model, config } = location.state as {
+    model: ModelNode[];
+    config: Record<string, any>;
+  };
 
   const handleShowInfo = (e: React.MouseEvent, dataset: Dataset) => {
     e.stopPropagation();
@@ -37,20 +45,33 @@ function DatasetSelection() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedDataset || !savePath) return;
+    if (!selectedDatasetId || !savePath) return;
+
+    const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
+    if (!selectedDataset) return;
+
     try {
-      // TODO: 여기에 실제 모델과 선택된 데이터셋, 저장 경로를 백엔드로 전송하는 로직 추가
       const response = await fetch('/api/model/train', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          datasetId: selectedDataset,
+          config: config,
+          model: model,
+          dataset: selectedDataset.name,
           savePath: savePath,
-          // model은 전역 상태나 context에서 가져와야 합니다
         }),
       });
+
+      console.log(
+        JSON.stringify({
+          config,
+          model,
+          dataset: selectedDataset.name,
+          savePath,
+        }),
+      );
 
       if (!response.ok) {
         throw new Error('Failed to submit model and dataset');
@@ -82,11 +103,11 @@ function DatasetSelection() {
               <div
                 key={dataset.id}
                 className={`p-6 rounded-lg border-2 cursor-pointer transition-all ${
-                  selectedDataset === dataset.id
+                  selectedDatasetId === dataset.id
                     ? 'border-gray-600 bg-gray-50'
                     : 'border-gray-200 hover:border-gray-500'
                 }`}
-                onClick={() => setSelectedDataset(dataset.id)}
+                onClick={() => setSelectedDatasetId(dataset.id)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{dataset.name}</h3>
@@ -128,9 +149,9 @@ function DatasetSelection() {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!selectedDataset || !savePath}
+              disabled={!selectedDatasetId || !savePath}
               className={`px-6 py-2 rounded-md ${
-                selectedDataset && savePath
+                selectedDatasetId && savePath
                   ? 'bg-black text-white hover:bg-gray-600'
                   : 'bg-gray-300 text-gray-600 cursor-not-allowed'
               }`}

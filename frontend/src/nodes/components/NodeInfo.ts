@@ -194,10 +194,10 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
     },
   },
   transformerBlock: {
-    numLayers: {
-      title: 'Number of Layers',
+    numOfBlocks: {
+      title: 'Number of Blocks',
       description:
-        '트랜스포머 블록 내의 레이어 수를 지정합니다. 각 레이어는 멀티헤드 어텐션과 피드포워드 네트워크를 포함합니다.',
+        '반복할 트랜스포머 블록의 수를 지정합니다. 모델의 깊이와 복잡성에 직접적인 영향을 미칩니다.',
     },
   },
   dynamicBlock: {
