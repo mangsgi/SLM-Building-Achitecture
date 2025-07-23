@@ -50,11 +50,13 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
+    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
     handleInfoClick,
+    handleLockToggle,
   } = useCommonNodeActions<TokenEmbeddingData>({
     id,
     setNodes,
@@ -69,10 +71,12 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
         <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
+          isLocked={isLocked}
           onInfo={() => handleInfoClick(nodeInfo.tokenEmbedding)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
+          onLockToggle={handleLockToggle}
         />
         {!isCollapsed && (
           <FieldRenderer

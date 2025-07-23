@@ -48,11 +48,13 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
+    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
     handleInfoClick,
+    handleLockToggle,
   } = useCommonNodeActions<NormalizationData>({
     id,
     setNodes,
@@ -67,10 +69,12 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
         <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
+          isLocked={isLocked}
           onInfo={() => handleInfoClick(nodeInfo.normalization)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
+          onLockToggle={handleLockToggle}
         />
         {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (

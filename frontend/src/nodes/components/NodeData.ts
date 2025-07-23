@@ -3,6 +3,7 @@ export interface BaseNodeData {
   label: string; // Node 이름
   hideHandles?: boolean; // 노드 핸들 숨김 여부
   isTarget?: boolean; // 모델 타겟 노드 여부
+  isLocked?: boolean; // 노드 잠금 여부
   inDim?: number; // 입력 차원
   outDim?: number; // 출력 차원
   [key: string]: unknown; // Index Signature
