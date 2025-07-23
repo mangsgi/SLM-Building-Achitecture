@@ -45,11 +45,13 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
+    isLocked,
     handleDeleteClick,
     handleInfoClick,
     handleEditClick,
     handleSaveClick,
     handleNodeClick,
+    handleLockToggle,
   } = useCommonNodeActions<GQAttentionData>({
     id,
     setNodes,
@@ -64,10 +66,12 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
         <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
+          isLocked={isLocked}
           onInfo={() => handleInfoClick(nodeInfo.gqAttention)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
+          onLockToggle={handleLockToggle}
         />
         {/* Collapse가 아닐 때만 필드 보여줌 */}
         {!isCollapsed && (

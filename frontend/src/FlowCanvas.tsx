@@ -69,6 +69,9 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
+        if (node.data.isLocked) {
+          return node;
+        }
         return {
           ...node,
           data: getNodeDataByType(node.type || '', config, node.data),

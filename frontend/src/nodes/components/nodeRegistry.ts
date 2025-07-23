@@ -97,10 +97,6 @@ export const getNodeDataByType = (
         numHeads: config.n_heads,
         qkvBias: config.qkv_bias,
       };
-    case 'gpt2TransformerBlock':
-      return {
-        ...data,
-      };
     case 'transformerBlock':
       return {
         ...data,

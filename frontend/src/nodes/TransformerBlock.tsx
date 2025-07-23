@@ -63,10 +63,12 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
+    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,
     handleInfoClick,
+    handleLockToggle,
   } = useCommonNodeActions<TransformerBlockData>({
     id,
     setNodes,
@@ -83,10 +85,12 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
         <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
+          isLocked={isLocked}
           onInfo={() => handleInfoClick(nodeInfo.transformerBlock)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
+          onLockToggle={handleLockToggle}
         />
         <FieldRenderer
           fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
