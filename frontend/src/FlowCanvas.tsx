@@ -43,8 +43,12 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   flowDataRef,
 }: FlowCanvasProps) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    flowDataRef.current.nodes || [],
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    flowDataRef.current.edges || [],
+  );
   const { getEdges } = useReactFlow();
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조 & ReactFlowInstance 저장
   const { reactFlowInstance, setReactFlowInstance } = useContext(flowContext);
