@@ -194,11 +194,28 @@ function App() {
   const [config, setConfig] = useState<Record<string, any>>(defaultConfig);
   const navigate = useNavigate();
 
+  // ✅ 로컬 스토리지에서 상태를 불러오거나 기본값으로 초기화
+  const initialFlowState = () => {
+    try {
+      const savedState = localStorage.getItem('canvasState');
+      if (savedState) {
+        const { nodes, edges } = JSON.parse(savedState);
+        // 노드와 엣지에 대한 기본 유효성 검사
+        if (Array.isArray(nodes) && Array.isArray(edges)) {
+          return { nodes, edges };
+        }
+      }
+    } catch (error) {
+      console.error('저장된 캔버스 상태를 불러오는 데 실패했습니다:', error);
+    }
+    // 저장된 상태가 없거나 유효하지 않으면 기본값 반환
+    return { nodes: [], edges: [] };
+  };
+
   // ✅ FlowCanvas에 전달할 데이터 참조 객체
-  const flowDataRef = useRef<{ nodes: Node[]; edges: Edge[] }>({
-    nodes: [],
-    edges: [],
-  });
+  const flowDataRef = useRef<{ nodes: Node[]; edges: Edge[] }>(
+    initialFlowState(),
+  );
 
   // ✅ 콜백함수를 인자로 전달하는 Setter를 호출하는 토글 함수 정의
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
@@ -214,6 +231,13 @@ function App() {
       return;
     }
 
+    // 상태를 로컬 스토리지에 저장
+    try {
+      const canvasState = JSON.stringify({ nodes, edges });
+      localStorage.setItem('canvasState', canvasState);
+    } catch (error) {
+      console.error('캔버스 상태를 저장하는 데 실패했습니다:', error);
+    }
     navigate('/canvas/dataset', { state: { model, config } });
   };
 
