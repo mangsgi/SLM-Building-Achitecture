@@ -6,11 +6,13 @@ import { useNavigate } from 'react-router-dom';
 
 import CanvasHamburgerButton from './ui-component/CanvasHamburgerButton';
 import ConfigButton from './ui-component/ConfigButton';
-import NextButton from './ui-component/NextButton';
+import SendModelButton from './ui-component/SendModelButton';
 import Sidebar from './Sidebar';
 import Config, { defaultConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
+import Header from './ui-component/Header';
+import ModelButton from './ui-component/TestModelButton';
 
 // 모델을 구성하는 노드 타입
 export interface ModelNode {
@@ -218,18 +220,22 @@ function App() {
   return (
     <div className="flex flex-col w-full h-screen">
       {/* Header 영역 */}
-      <header className="bg-white p-4 shadow flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-left">
-          Building Your Own SLM
-        </h1>
-        <NextButton onClick={handleSendModel} text="Select Dataset" />
-      </header>
+      <Header>
+        <div className="flex items-center gap-4">
+          <ModelButton onClick={handleSendModel} text="Test Model" />
+          <SendModelButton onClick={handleSendModel} text="Select Dataset" />
+        </div>
+      </Header>
       {/* 메인 컨텐츠 영역 */}
       <div className="flex flex-grow relative min-h-0">
         <ReactFlowProvider>
           <ReactFlowContext>
             {/* 사이드바가 열린 경우 Sidebar 랜더링*/}
-            {isSidebarOpen && <Sidebar onToggle={toggleSidebar} />}
+            <div
+              className={`transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[250px]' : 'w-0'}`}
+            >
+              <Sidebar />
+            </div>
             {isConfigOpen && (
               <Config
                 onToggle={toggleConfig}
@@ -245,15 +251,13 @@ function App() {
 
             {/* 상단 왼쪽 버튼들 */}
             <div
-              className={`absolute top-2 z-10 flex items-center gap-2 ${
+              className={`absolute top-2 z-10 flex items-center gap-2 transition-all duration-300 ease-in-out ${
                 isSidebarOpen ? 'left-[250px] ml-2' : 'left-4'
               }`}
             >
-              {!isSidebarOpen && (
-                <div onClick={toggleSidebar}>
-                  <CanvasHamburgerButton />
-                </div>
-              )}
+              <div onClick={toggleSidebar}>
+                <CanvasHamburgerButton />
+              </div>
             </div>
 
             {/* Config가 닫힌 경우 우측 상단에 토글 버튼 */}

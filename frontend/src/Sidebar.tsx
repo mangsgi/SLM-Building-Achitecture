@@ -1,14 +1,9 @@
 import React from 'react';
 import SidebarNodeItem from './SidebarNodeItem';
-import CanvasHamburgerIcon from './ui-component/CanvasHamburgerButton';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { nodeRegistry } from './nodes/components/nodeRegistry';
 
-interface SidebarProps {
-  onToggle: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
+const Sidebar: React.FC = () => {
   // Drag 이벤트 핸들러 함수
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
@@ -22,13 +17,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   };
 
   return (
-    <aside className="w-[250px] h-full shadow z-10 bg-white px-4 py-2 overflow-y-auto">
+    <aside className="h-full shadow z-10 bg-white px-4 py-2 overflow-y-auto transition-transform duration-300 ease-in-out">
       {/* Sidebar Header 영역 */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">Node List</h2>
-        <div onClick={onToggle}>
-          <CanvasHamburgerIcon />
-        </div>
       </div>
       {/* 노드 항목 영역 */}
       <SidebarNodeItem
