@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
+import Header from './ui-component/Header';
 import Modal from './ui-component/Modal';
 import { ModelNode } from './App';
 
@@ -18,7 +19,7 @@ function DatasetSelection() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
     null,
   );
-  const [savePath, setSavePath] = useState('models'); // Default save path
+  const [modelName, setModelName] = useState('my-slm-model');
   const [modalInfo, setModalInfo] = useState<{
     isOpen: boolean;
     title: string;
@@ -45,7 +46,7 @@ function DatasetSelection() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedDatasetId || !savePath) return;
+    if (!selectedDatasetId || !modelName) return;
 
     const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
     if (!selectedDataset) return;
@@ -60,7 +61,7 @@ function DatasetSelection() {
           config: config,
           model: model,
           dataset: selectedDataset.name,
-          savePath: savePath,
+          modelName: modelName,
         }),
       });
 
@@ -69,7 +70,7 @@ function DatasetSelection() {
           config,
           model,
           dataset: selectedDataset.name,
-          savePath,
+          modelName,
         }),
       );
 
@@ -88,11 +89,7 @@ function DatasetSelection() {
 
   return (
     <div className="flex flex-col w-full h-screen">
-      <header className="bg-white p-4 shadow">
-        <h1 className="text-2xl font-semibold text-left">
-          Building Your Own SLM
-        </h1>
-      </header>
+      <Header />
 
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
@@ -124,19 +121,20 @@ function DatasetSelection() {
           </div>
 
           <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-8">2. Set Save Directory</h2>
+            <h2 className="text-3xl font-bold mb-8">2. Set Model Name</h2>
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                value={savePath}
-                onChange={(e) => setSavePath(e.target.value)}
-                placeholder="e.g., models"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="e.g., my-slm-model"
                 className="flex-grow w-full p-3 border rounded-md"
               />
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              Please enter the desired save directory. Default is
-              &apos;models&apos; inside the project root.
+              Please enter the desired model name(Default is
+              &apos;my-slm-model&apos;). Dataset will be saved in
+              &apos;models&apos; directory.
             </p>
           </div>
 
@@ -149,9 +147,9 @@ function DatasetSelection() {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!selectedDatasetId || !savePath}
+              disabled={!selectedDatasetId || !modelName}
               className={`px-6 py-2 rounded-md ${
-                selectedDatasetId && savePath
+                selectedDatasetId && modelName
                   ? 'bg-black text-white hover:bg-gray-600'
                   : 'bg-gray-300 text-gray-600 cursor-not-allowed'
               }`}
