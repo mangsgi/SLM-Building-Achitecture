@@ -64,7 +64,7 @@ def compute_rope(x, cos, sin):
     return x_rope
 
 class MultiHeadAttentionCombinedQKV(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False):
+    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
@@ -72,13 +72,13 @@ class MultiHeadAttentionCombinedQKV(nn.Module):
         self.context_length = context_length
         self.head_dim = d_out // num_heads
 
-        self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias)
-        self.proj = nn.Linear(d_out, d_out)
+        self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
+        self.proj = nn.Linear(d_out, d_out, dtype=dtype)
         self.dropout = nn.Dropout(dropout)
 
-        self.register_buffer(
-            "mask", torch.triu(torch.ones(context_length, context_length), diagonal=1)
-        )
+        # Create causal mask
+        mask = torch.triu(torch.ones(context_length, context_length), diagonal=1)
+        self.register_buffer("mask", mask)
 
     def forward(self, x):
         batch_size, num_tokens, embed_dim = x.shape
@@ -117,13 +117,14 @@ class MultiHeadAttentionCombinedQKV(nn.Module):
 
         return context_vec
 
+
 class GroupedQueryAttention(nn.Module):
     def __init__(
             self, d_in, d_out, context_length, num_heads,
             num_kv_groups,       # GQA를 위한 파라미터
             rope_base=10_000,    # RoPE 기본값
             rope_config=None,    # RoPE 추가 설정
-            dtype=None
+            dtype=torch.float32
         ):
         super().__init__()
         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
@@ -189,8 +190,9 @@ class GroupedQueryAttention(nn.Module):
 
         return context_vec
 
+
 class MHAPyTorchScaledDotProduct(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False):
+    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
@@ -199,8 +201,8 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         self.head_dim = d_out // num_heads
         self.d_out = d_out
 
-        self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias)
-        self.proj = nn.Linear(d_out, d_out)
+        self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
+        self.proj = nn.Linear(d_out, d_out, dtype=dtype)
         self.dropout = dropout
 
     def forward(self, x):

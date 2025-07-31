@@ -4,9 +4,9 @@ import numpy as np
 
 
 class LearnedPositionalEmbedding(nn.Module):
-    def __init__(self, max_len, d_model):
+    def __init__(self, ctx_length, emb_dim, dtype=torch.float32):
         super().__init__()
-        self.position_embeddings = nn.Embedding(max_len, d_model)
+        self.position_embeddings = nn.Embedding(ctx_length, emb_dim, dtype=dtype)
 
     def forward(self, x):
         seq_len = x.shape[1]
@@ -15,9 +15,10 @@ class LearnedPositionalEmbedding(nn.Module):
 
 
 class SinusoidalPositionalEmbedding(nn.Module):
-    def __init__(self, max_len, d_model):
+    def __init__(self, ctx_length, emb_dim, dtype=torch.float32):
         super().__init__()
-        self.pe = self._generate_sinusoidal_embeddings(max_len, d_model)
+        self.dtype = dtype
+        self.pe = self._generate_sinusoidal_embeddings(ctx_length, emb_dim)
 
     def _generate_sinusoidal_embeddings(self, seq_length, d_model):
         position = np.arange(seq_length)[:, np.newaxis]
@@ -25,17 +26,17 @@ class SinusoidalPositionalEmbedding(nn.Module):
         pe = np.zeros((seq_length, d_model))
         pe[:, 0::2] = np.sin(position * div_term)
         pe[:, 1::2] = np.cos(position * div_term)
-        return torch.tensor(pe, dtype=torch.float32).unsqueeze(0)
+        return torch.tensor(pe, dtype=self.dtype).unsqueeze(0)
 
     def forward(self, x):
-        return self.pe[:, :x.shape[1], :]
+        return self.pe[:, :x.shape[1], :].to(x.device)
 
 
 class RelativePositionalEmbedding(nn.Module):
-    def __init__(self, max_len, d_model):
+    def __init__(self, ctx_length, emb_dim, dtype=torch.float32):
         super().__init__()
-        self.max_len = max_len
-        self.rel_emb = nn.Embedding(2 * max_len, d_model)
+        self.max_len = ctx_length
+        self.rel_emb = nn.Embedding(2 * ctx_length, emb_dim, dtype=dtype)
 
     def forward(self, q, k):
         q_len = q.shape[1]
@@ -46,16 +47,17 @@ class RelativePositionalEmbedding(nn.Module):
 
 
 class RotaryPositionalEmbedding(nn.Module):
-    def __init__(self, d_model, max_len):
+    def __init__(self, emb_dim, ctx_length, dtype=torch.float32):
         super().__init__()
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * -(np.log(10000.0) / d_model))
-        self.theta = torch.zeros(max_len, d_model)
+        self.dtype = dtype
+        position = torch.arange(ctx_length).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, emb_dim, 2) * -(np.log(10000.0) / emb_dim))
+        self.theta = torch.zeros(ctx_length, emb_dim, dtype=self.dtype)
         self.theta[:, 0::2] = torch.cos(position * div_term)
         self.theta[:, 1::2] = torch.sin(position * div_term)
 
     def forward(self, x, pos):
-        theta = self.theta[pos]
+        theta = self.theta[pos].to(x.device)
         x_even = x[..., 0::2]
         x_odd = x[..., 1::2]
 
