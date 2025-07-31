@@ -16,3 +16,12 @@ class DynamicBlock(nn.Module):
         for i in range(self.num_layers):
             x = self.sequence(x)
         return x
+
+    def __repr__(self):
+        lines = []
+        for i in range(self.num_layers):
+            lines.append(f"  # Block 반복 {i+1}/{self.num_layers}")
+            for j, layer in enumerate(self.sequence):
+                layer_str = repr(layer).replace('\n', '\n    ')
+                lines.append(f"    ({j}): {layer_str}")
+        return "DynamicBlock(\n" + "\n".join(lines) + "\n)"

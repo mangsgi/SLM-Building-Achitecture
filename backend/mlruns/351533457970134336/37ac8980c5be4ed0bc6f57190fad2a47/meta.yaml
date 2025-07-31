@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/351533457970134336/37ac8980c5be4ed0bc6f57190fad2a47/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '351533457970134336'
+lifecycle_stage: active
+run_id: 37ac8980c5be4ed0bc6f57190fad2a47
+run_name: vaunted-moth-779
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1753950373635
+status: 1
+tags: []
+user_id: 염현석
