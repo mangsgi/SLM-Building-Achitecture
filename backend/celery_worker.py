@@ -1,12 +1,6 @@
-from celery import Celery
-
-
-celery_app = Celery(
-    'worker',
-    broker="redis://localhost:6379/0",
-    result_backend="redis://localhost:6379/0",
-    include=['tasks']  # tasks 모듈을 직접 포함
-)
+from celery_app import celery_app
+import tasks.train
+import tasks.structure
 
 celery_app.conf.update(
     result_expires=3600,
@@ -18,6 +12,3 @@ celery_app.conf.update(
     worker_concurrency=1,
     worker_pool='solo',
 )
-
-# tasks 모듈 자동 검색 비활성화
-# celery_app.autodiscover_tasks(['tasks'])
