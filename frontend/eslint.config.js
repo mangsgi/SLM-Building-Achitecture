@@ -35,6 +35,9 @@ export default [
       // React 17+에서는 JSX 사용 시 React 임포트 불필요
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
+      '@typescript-eslint/no-explicit-any': 'off', // <- any 사용 허용
+      'react/prop-types': 'off', // <- prop-types 사용 허용
+      'no-unexpected-multiline': 'off', // <- 객체와 대괄호 ([) 사이에 줄바꿈 허용
     },
     settings: {
       react: {

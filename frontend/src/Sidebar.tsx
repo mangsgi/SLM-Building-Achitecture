@@ -1,40 +1,112 @@
 import React from 'react';
+import SidebarNodeItem from './SidebarNodeItem';
+import { BaseNodeData } from './nodes/components/NodeData';
+import { nodeRegistry } from './nodes/components/nodeRegistry';
 
-const Sidebar = () => {
-  // 드래그 시작 시 dataTransfer에 노드 타입 저장
+const Sidebar: React.FC = () => {
+  // Drag 이벤트 핸들러 함수
   const onDragStart = (
     event: React.DragEvent<HTMLDivElement>,
     nodeType: string,
+    nodeData: BaseNodeData,
   ) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
+    const id = `${nodeType}-${+new Date()}`;
+    const dataString = JSON.stringify({ nodeType, id, ...nodeData });
+    event.dataTransfer.setData('application/reactflow', dataString);
     event.dataTransfer.effectAllowed = 'move';
   };
 
   return (
-    // Tailwind 클래스: 20% 너비, 전체 높이, 어두운 배경, 흰색 글자, 내부 여백
-    <aside className="w-1/5 h-full bg-gray-800 text-white p-4">
-      <h2 className="text-xl font-bold mb-4">레이어 목록</h2>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Transformer')}
-      >
-        Transformer Block
+    <aside className="h-full shadow z-10 bg-white px-4 py-2 overflow-y-auto transition-transform duration-300 ease-in-out">
+      {/* Sidebar Header 영역 */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Node List</h2>
       </div>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Linear')}
-      >
-        Linear Layer
-      </div>
-      <div
-        className="my-2 p-2 bg-gray-600 rounded cursor-grab hover:bg-gray-500"
-        draggable
-        onDragStart={(event) => onDragStart(event, 'Embedding')}
-      >
-        Embedding Layer
-      </div>
+      {/* 노드 항목 영역 */}
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('tokenEmbedding')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('tokenEmbedding')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('positionalEmbedding')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('positionalEmbedding')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('linearOutput')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('linearOutput')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('feedForward')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('feedForward')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('normalization')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('normalization')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('dropout')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('dropout')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('residual')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('residual')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('mhAttention')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('mhAttention')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('gqAttention')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('gqAttention')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('transformerBlock')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('transformerBlock')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      <SidebarNodeItem
+        nodeType={nodeRegistry.get('testBlock')?.type ?? ''}
+        nodeData={{
+          label: nodeRegistry.get('testBlock')?.label ?? '',
+        }}
+        onDragStart={onDragStart}
+      />
+      {/* <SidebarNodeItem
+        nodeType="gpt2TransformerBlock"
+        nodeData={{
+          label: 'GPT-2 Transformer Block',
+        }}
+        onDragStart={onDragStart}
+      /> */}
     </aside>
   );
 };
