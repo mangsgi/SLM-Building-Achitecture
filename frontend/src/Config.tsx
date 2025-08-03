@@ -66,6 +66,7 @@ const modelConfigs: Record<ModelType, Record<string, any>> = {
 };
 
 const configMap: Record<string, string> = {
+  model: 'Model',
   epochs: 'Epochs',
   batch_size: 'Batch Size',
   dtype: 'Data Type',
@@ -84,6 +85,7 @@ const configMap: Record<string, string> = {
 };
 
 const configDescriptions: Record<string, string> = {
+  model: '모델 유형을 선택합니다.',
   epochs: '모델 학습을 반복할 횟수입니다.',
   batch_size: '한 번에 처리할 데이터의 크기입니다.',
   dtype: '모델의 데이터 타입을 지정합니다. (bf16, fp16, fp32)',
@@ -128,17 +130,20 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   };
 
   const handleChange = (key: string, value: string | boolean) => {
-    let parsedValue: string | boolean | number = value;
+    if (value === 'true' || value === 'false') {
+      setConfig((prev) => ({ ...prev, [key]: value === 'true' }));
+      return;
+    }
 
-    if (value === 'true') parsedValue = true;
-    else if (value === 'false') parsedValue = false;
-    else if (!isNaN(Number(value)) && key !== 'qkv_bias' && key !== 'dtype')
-      parsedValue = Number(value);
+    if (key === 'dtype') {
+      setConfig((prev) => ({ ...prev, [key]: value as string }));
+      return;
+    }
 
-    setConfig((prev) => ({
-      ...prev,
-      [key]: parsedValue,
-    }));
+    const numValue = Number(value);
+    if (!isNaN(numValue)) {
+      setConfig((prev) => ({ ...prev, [key]: numValue }));
+    }
   };
 
   const handleNestedChange = (
@@ -146,18 +151,16 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     childKey: string,
     value: string,
   ) => {
-    let parsedValue: string | number = value;
-    if (!isNaN(Number(value)) && value.trim() !== '') {
-      parsedValue = Number(value);
+    const numValue = Number(value);
+    if (!isNaN(numValue) && value.trim() !== '') {
+      setConfig((prev: Record<string, any>) => ({
+        ...prev,
+        [parentKey]: {
+          ...prev[parentKey],
+          [childKey]: numValue,
+        },
+      }));
     }
-
-    setConfig((prev: Record<string, any>) => ({
-      ...prev,
-      [parentKey]: {
-        ...prev[parentKey],
-        [childKey]: parsedValue,
-      },
-    }));
   };
 
   const renderFractionInput = (
@@ -198,7 +201,17 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
       </div>
 
       <div className="mt-4">
-        <label className="text-sm font-medium">Model</label>
+        <div className="flex items-center gap-2 mb-1">
+          <label className="text-sm font-medium">Model Type</label>
+          <button
+            onClick={() =>
+              handleShowInfo(configMap['model'], configDescriptions['model'])
+            }
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FiInfo size={16} />
+          </button>
+        </div>
         <select
           value={selectedModel}
           onChange={(e) => handleModelChange(e.target.value as ModelType)}

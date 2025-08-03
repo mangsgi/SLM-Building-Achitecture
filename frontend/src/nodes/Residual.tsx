@@ -21,7 +21,6 @@ export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
-    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,
@@ -40,7 +39,7 @@ export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
         <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          isLocked={isLocked}
+          isLocked={node.data.isLocked}
           onInfo={() => handleInfoClick(nodeInfo.residual)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
