@@ -1,8 +1,14 @@
-import { createStore } from 'redux';
-import reducer from './reducer';
+import { configureStore } from '@reduxjs/toolkit';
+import canvasReducer from './canvasReducer';
+import statusReducer from './statusSlice';
 
-// store 생성
-const store = createStore(reducer);
-const persister = 'Free';
+export const store = configureStore({
+  reducer: {
+    canvas: canvasReducer,
+    status: statusReducer,
+  },
+});
 
-export { store, persister };
+// RootState와 AppDispatch 타입을 스토어에서 직접 추론
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
