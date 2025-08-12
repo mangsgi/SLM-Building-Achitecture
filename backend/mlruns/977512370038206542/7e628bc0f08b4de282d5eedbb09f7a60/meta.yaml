@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/977512370038206542/7e628bc0f08b4de282d5eedbb09f7a60/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '977512370038206542'
+lifecycle_stage: active
+run_id: 7e628bc0f08b4de282d5eedbb09f7a60
+run_name: dazzling-bat-402
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754934134913
+status: 1
+tags: []
+user_id: 염현석

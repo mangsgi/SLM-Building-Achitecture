@@ -1,8 +1,0 @@
-[
-  {
-    "index": 0,
-    "layer_id": null,
-    "class_name": "ModuleList",
-    "repr": "ModuleList(\n  (0): TokenEmbedding(\n    (embedding): Embedding(50257, 256)\n  )\n  (1): LearnedPositionalEmbedding(\n    (position_embeddings): Embedding(128, 256)\n  )\n  (2): DynamicBlock(\n    (sequence): Sequential(\n      (0): LayerNorm()\n      (1): MultiHeadAttentionCombinedQKV(\n        (qkv): Linear(in_features=256, out_features=768, bias=False)\n        (proj): Linear(in_features=256, out_features=256, bias=True)\n        (dropout): Dropout(p=0.1, inplace=False)\n      )\n      (2): Dropout(p=0.1, inplace=False)\n      (3): ResidualConnection()\n      (4): LayerNorm()\n      (5): CustomFFN(\n        (activation): ReLU()\n        (layers): Sequential(\n          (0): Linear(in_features=256, out_features=1024, bias=True)\n          (1): ReLU()\n          (2): Linear(in_features=1024, out_features=256, bias=True)\n        )\n      )\n      (6): Dropout(p=0.1, inplace=False)\n      (7): ResidualConnection()\n    )\n  )\n  (3): LayerNorm()\n  (4): Linear(in_features=256, out_features=50257, bias=True)\n)"
-  }
-]

@@ -1,12 +1,15 @@
 import mlflow
 from celery_app import celery_app
+from celery.utils.log import get_task_logger
 from ml.models.factory import build_model_from_json
 import torch
 from .dataset import create_dataloader_v1, load_training_data
-from .utils import str_to_torch_dtype
+from .tokenizers import choose_tokenizer_from_config
+import os
 
-# 평가/생성 관련 함수
+logger = get_task_logger(__name__)
 
+# ====== 평가/손실 계산 ======
 def calc_loss_batch(input_batch, target_batch, model, device):
     input_batch, target_batch = input_batch.to(device), target_batch.to(device)
     logits = model(input_batch)
@@ -14,7 +17,7 @@ def calc_loss_batch(input_batch, target_batch, model, device):
     return loss
 
 def calc_loss_loader(data_loader, model, device, num_batches=None):
-    total_loss = 0.
+    total_loss = 0.0
     if len(data_loader) == 0:
         return float("nan")
     elif num_batches is None:
@@ -37,144 +40,187 @@ def evaluate_model(model, train_loader, val_loader, device, eval_iter=10):
     model.train()
     return train_loss, val_loss
 
-def generate_text(model, input_ids, max_new_tokens, context_size, tokenizer, temperature=0.0, top_k=None):
-    model.eval()
-    with torch.no_grad():
-        for _ in range(max_new_tokens):
-            input_ids_cond = input_ids[:, -context_size:]
-            logits = model(input_ids_cond)
-            next_token_logits = logits[:, -1, :]
-            if top_k is not None:
-                top_logits, _ = torch.topk(next_token_logits, top_k)
-                min_val = top_logits[:, -1]
-                next_token_logits = torch.where(
-                    next_token_logits < min_val,
-                    torch.tensor(float('-inf')).to(next_token_logits.device),
-                    next_token_logits
-                )
-            if temperature > 0.0:
-                next_token_logits = next_token_logits / temperature
-                probs = torch.softmax(next_token_logits, dim=-1)
-                next_token = torch.multinomial(probs, num_samples=1)
-            else:
-                next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
-            if next_token.item() == tokenizer.eot_token:
-                break
-            input_ids = torch.cat([input_ids, next_token], dim=1)
-    return input_ids
 
+# ====== 메인 학습 태스크 ======
 @celery_app.task(bind=True)
-def train_and_infer_from_json(self, experiment_name, layer_json, input_text, max_length=50, temperature=0.7, top_k=40, dataset_name="tiny_shakespeare", dataset_config="default", dtype="fp32", epochs=5):
+def train_and_infer_from_json(self, request_json: dict):
+    # 1) 파라미터 파싱
+    config         = request_json.get("config", {})
+    layer_json     = request_json.get("model", [])
+    dataset_name   = request_json.get("dataset", "tiny_shakespeare")
+    dataset_config = request_json.get("dataset_config", "default")
+    model_name     = request_json.get("modelName", "trained_model")
+    run_id         = request_json.get("run_id")
+
+    # 학습/모델 관련 파라미터
+    batch_size  = int(config.get("batch_size", 4))
+    epochs      = int(config.get("epochs", 5))
+    dtype       = config.get("dtype", "fp32")
+
+    # ✅ context_length/stride 적용
+    seq_max_length = int(config.get("context_length", 32))
+    stride = int(config.get("stride", max(1, seq_max_length // 2)))
+
+    logger.info(
+        f"[TASK] start | model_name={model_name}, run_id={run_id}, "
+        f"epochs={epochs}, batch_size={batch_size}, dtype={dtype}, "
+        f"context_length={seq_max_length}, stride={stride}"
+    )
+    self.update_state(state="STARTED")
+
+    # 2) run_id 필수
+    if not run_id:
+        logger.error("run_id missing (router must create MLflow run).")
+        return {"status": "error", "message": "run_id missing (router must create MLflow run)."}
+
+    # 3) MLflow 트래킹 설정
     mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.set_experiment(experiment_name)
+
     try:
-        self.update_state(state="STARTED")
-        max_length = int(max_length)
-        temperature = float(temperature)
-        top_k = int(top_k)
-        epochs = int(epochs)
-        torch_dtype = str_to_torch_dtype(dtype)
-        import tiktoken
-        tokenizer = tiktoken.get_encoding("gpt2")
-        print("토크나이저 초기화 완료")
+        # 4) 토크나이저/모델 준비
+        tokenizer = choose_tokenizer_from_config(config)
+        logger.info(f"Tokenizer ready ({config.get('model','gpt-2')}), vocab={getattr(tokenizer,'n_vocab','N/A')}")
+
         if not isinstance(layer_json, list):
             raise ValueError("layer_json must be a list of layer configurations")
-        print("\n=== 모델 초기화 및 구조 확인 ===")
+
+        model = build_model_from_json(layer_json, dtype=dtype)
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        logger.info(f"Model built. total={total_params:,}, trainable={trainable_params:,}")
+
+        # (선택) positionalEmbedding.ctxLength와 config.context_length 불일치 경고
         try:
-            model = build_model_from_json(layer_json, dtype=dtype)
-            print("\n[모델 구조]")
-            for name, module in model.named_children():
-                print(f"{name}: {module}")
-            total_params = sum(p.numel() for p in model.parameters())
-            print(f"\n총 파라미터 수: {total_params:,}")
-        except Exception as e:
-            print(f"모델 초기화 중 에러 발생: {str(e)}")
-            print(f"JSON 구조: {layer_json}")
-            raise e
-        print("\n=== 데이터셋 로드 ===")
-        print(f"데이터셋 {dataset_name}/{dataset_config} 로딩 중...")
+            pe_ctx = next(
+                (n.get("data", {}).get("ctxLength")
+                 for n in layer_json if n.get("type") == "positionalEmbedding"),
+                None
+            )
+            if pe_ctx is not None and int(pe_ctx) != seq_max_length:
+                logger.warning(
+                    f"[WARN] config.context_length({seq_max_length}) != positionalEmbedding.ctxLength({pe_ctx}). "
+                    "학습은 config 값을 사용합니다."
+                )
+        except Exception:
+            pass
+
+        # 5) 데이터 로드/분할
+        logger.info(f"Loading dataset: {dataset_name}/{dataset_config}")
         training_text = load_training_data(dataset_name, dataset_config)
-        print(f"데이터셋 로딩 완료! 텍스트 길이: {len(training_text)} 문자")
-        print("\n=== 데이터로더 생성 ===")
+        # 과도한 길이 방지 (원하면 조절)
+        training_text = training_text[:20000]
+        split_idx = int(len(training_text) * 0.8)
+        train_text, val_text = training_text[:split_idx], training_text[split_idx:]
+
+        # 6) 데이터로더
         train_loader = create_dataloader_v1(
-            txt=training_text,
-            batch_size=4,
-            max_length=64,
-            stride=32,
+            txt=train_text,
+            batch_size=batch_size,
+            max_length=seq_max_length,
+            stride=stride,
             shuffle=True,
-            num_workers=0
+            num_workers=0,
+            tokenizer=tokenizer,
         )
         val_loader = create_dataloader_v1(
-            txt=training_text,
-            batch_size=4,
-            max_length=64,
-            stride=32,
+            txt=val_text,
+            batch_size=batch_size,
+            max_length=seq_max_length,
+            stride=stride,
             shuffle=False,
-            num_workers=0
+            num_workers=0,
+            tokenizer=tokenizer,
         )
-        print(f"데이터로더 생성 완료! 배치 수: {len(train_loader)}")
+        logger.info(f"Dataloaders ready. train_batches={len(train_loader)}, val_batches={len(val_loader)}")
+
+        # 7) 장비/옵티마이저
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
-        print(f"\n=== 학습 시작 (Device: {device}) ===")
         optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
-        num_epochs = epochs
-        eval_freq = 2
-        eval_iter = 5
-        train_losses, val_losses = [], []
-        global_step = 0
-        print("학습 시작...")
-        try:
-            with mlflow.start_run():
-                for epoch in range(num_epochs):
-                    model.train()
-                    epoch_loss = 0
-                    batch_count = 0
-                    for input_batch, target_batch in train_loader:
-                        optimizer.zero_grad()
-                        loss = calc_loss_batch(input_batch, target_batch, model, device)
-                        loss.backward()
-                        optimizer.step()
-                        global_step += 1
-                        epoch_loss += loss.item()
-                        batch_count += 1
-                        if global_step % eval_freq == 0:
-                            train_loss, val_loss = evaluate_model(model, train_loader, val_loader, device, eval_iter)
-                            train_losses.append(train_loss)
-                            val_losses.append(val_loss)
-                            mlflow.log_metric("train_loss", train_loss, step=global_step)
-                            mlflow.log_metric("val_loss", val_loss, step=global_step)
-                            print(f"Epoch {epoch+1} (Step {global_step:06d}): "
-                                  f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
-                    avg_epoch_loss = epoch_loss / batch_count
-                    print(f"Epoch {epoch+1} 완료! 평균 Loss: {avg_epoch_loss:.3f}")
-                    model.eval()
-                    input_ids = torch.tensor([tokenizer.encode(input_text)], device=device)
-                    generated_ids = generate_text(
-                        model=model,
-                        input_ids=input_ids,
-                        max_new_tokens=max_length,
-                        context_size=64,
-                        tokenizer=tokenizer,
-                        temperature=temperature,
-                        top_k=top_k
-                    )
-                    output_text = tokenizer.decode(generated_ids[0].tolist())
-                    print(f"[Epoch {epoch+1}] 생성된 텍스트: {output_text}")
-                ckpt_path = "trained_model.pt"
-                torch.save(model.state_dict(), ckpt_path)
-                mlflow.log_artifact(ckpt_path, artifact_path="checkpoints")
-                print("모델 저장 완료!")
-            return {
-                "status": "success",
-                "message": "Training and inference complete",
-                "input_text": input_text,
-                "generated_text": output_text,
-                "train_losses": train_losses,
-                "val_losses": val_losses
+        eval_freq, eval_iter = 2, 5
+        train_losses, val_losses, global_step = [], [], 0
+        logger.info(f"Training on device: {device}")
+
+        # 8) 학습 + MLflow 로깅
+        with mlflow.start_run(run_id=run_id):
+            for epoch in range(epochs):
+                model.train()
+                epoch_loss, batch_count = 0.0, 0
+
+                for input_batch, target_batch in train_loader:
+                    optimizer.zero_grad()
+                    loss = calc_loss_batch(input_batch, target_batch, model, device)
+                    loss.backward()
+                    optimizer.step()
+
+                    global_step += 1
+                    epoch_loss  += loss.item()
+                    batch_count += 1
+
+                    if global_step % eval_freq == 0:
+                        tr, vl = evaluate_model(model, train_loader, val_loader, device, eval_iter)
+                        train_losses.append(tr); val_losses.append(vl)
+
+                        # MLflow 메트릭
+                        try:
+                            mlflow.log_metric("train_loss", tr, step=global_step)
+                            mlflow.log_metric("val_loss",   vl, step=global_step)
+                        except Exception as e:
+                            logger.warning(f"[MLflow] metric log skipped: {e}")
+
+                        # 상태 업데이트
+                        logger.info(
+                            f"Epoch {epoch+1}/{epochs} | step={global_step:06d} "
+                            f"train={tr:.4f} val={vl:.4f}"
+                        )
+                        self.update_state(
+                            state="PROGRESS",
+                            meta={
+                                "epoch": epoch + 1, "epochs": epochs,
+                                "step": global_step,
+                                "train_loss": round(tr, 4),
+                                "val_loss": round(vl, 4),
+                            },
+                        )
+
+                avg_epoch = epoch_loss / max(batch_count, 1)
+                logger.info(f"Epoch {epoch+1} done | avg_loss={avg_epoch:.4f}")
+
+            completed_dir = os.path.join(os.path.dirname(__file__), "..", "completed")
+            os.makedirs(completed_dir, exist_ok=True)
+            completed_path = os.path.join(completed_dir, f"{model_name}.pt")
+
+            bundle = {
+                "config": config,            # 요청으로 들어온 학습 설정 (dtype, context_length, tokenizer path 등)
+                "layers": layer_json,        # 실제 학습에 사용한 레이어 JSON 리스트
+                "state_dict": model.state_dict(),
+                "vocab_size": getattr(tokenizer, "n_vocab", None),
+                "meta": {
+                    "run_id": run_id,
+                    "epochs": epochs,
+                    "batch_size": batch_size,
+                    "context_length": seq_max_length,
+                    "stride": stride,
+                    "device": str(device),
+                    "total_params": total_params,
+                    "trainable_params": trainable_params,
+                },
             }
-        except KeyboardInterrupt:
-            print("학습이 중단되었습니다!")
-            return {"status": "stopped", "message": "Training was stopped by user."}
+            torch.save(bundle, completed_path)
+            try:
+                mlflow.log_artifact(completed_path, artifact_path="checkpoints")
+            except Exception as e:
+                logger.warning(f"[MLflow] artifact log skipped: {e}")
+
+        logger.info("Training finished successfully.")
+        return {
+            "status": "success",
+            "message": "Training complete",
+            "train_losses": train_losses,
+            "val_losses": val_losses,
+            "completed_model_path": completed_path,
+        }
+
     except Exception as e:
-        print(f"오류 발생: {str(e)}")
-        return {"status": "error", "message": str(e)} 
+        logger.exception("Training failed")
+        return {"status": "error", "message": str(e)}

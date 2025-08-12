@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/920328878672435112/ff4334b5e04842579b0ff7057a809a1c/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '920328878672435112'
+lifecycle_stage: active
+run_id: ff4334b5e04842579b0ff7057a809a1c
+run_name: selective-asp-623
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754964860851
+status: 1
+tags: []
+user_id: unknown

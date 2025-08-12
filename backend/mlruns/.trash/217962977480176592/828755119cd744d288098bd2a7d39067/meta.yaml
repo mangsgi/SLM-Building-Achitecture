@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/217962977480176592/828755119cd744d288098bd2a7d39067/artifacts
+deleted_time: 1754932114402
+end_time: null
+entry_point_name: ''
+experiment_id: '217962977480176592'
+lifecycle_stage: deleted
+run_id: 828755119cd744d288098bd2a7d39067
+run_name: mercurial-shrimp-538
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754918630418
+status: 1
+tags: []
+user_id: 염현석

@@ -1,0 +1,7 @@
+artifact_location: mlflow-artifacts:/388785303972054363
+creation_time: 1754328039934
+experiment_id: '388785303972054363'
+last_update_time: 1754932172096
+lifecycle_stage: deleted
+name: my-slm-model_edafc400
+tags: {}

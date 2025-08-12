@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/677167970800096236/2812f8ba9858445caea3f2d818d1e6f8/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '677167970800096236'
+lifecycle_stage: active
+run_id: 2812f8ba9858445caea3f2d818d1e6f8
+run_name: serious-seal-704
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754929958598
+status: 1
+tags: []
+user_id: 염현석

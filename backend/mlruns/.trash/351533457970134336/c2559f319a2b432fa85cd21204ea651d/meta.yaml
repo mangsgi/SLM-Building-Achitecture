@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/351533457970134336/c2559f319a2b432fa85cd21204ea651d/artifacts
+deleted_time: 1754932176689
+end_time: null
+entry_point_name: ''
+experiment_id: '351533457970134336'
+lifecycle_stage: deleted
+run_id: c2559f319a2b432fa85cd21204ea651d
+run_name: redolent-ox-222
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754926962979
+status: 1
+tags: []
+user_id: 염현석
