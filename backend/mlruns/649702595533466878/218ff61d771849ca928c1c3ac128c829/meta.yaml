@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/649702595533466878/218ff61d771849ca928c1c3ac128c829/artifacts
+end_time: 1755093521372
+entry_point_name: ''
+experiment_id: '649702595533466878'
+lifecycle_stage: active
+run_id: 218ff61d771849ca928c1c3ac128c829
+run_name: traveling-calf-189
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755091336384
+status: 3
+tags: []
+user_id: unknown

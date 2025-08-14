@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/404128274881225501/8945926d48aa4633b7fcb6786a2bab3d/artifacts
+end_time: 1755090228150
+entry_point_name: ''
+experiment_id: '404128274881225501'
+lifecycle_stage: active
+run_id: 8945926d48aa4633b7fcb6786a2bab3d
+run_name: gregarious-croc-509
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755088060766
+status: 3
+tags: []
+user_id: unknown
