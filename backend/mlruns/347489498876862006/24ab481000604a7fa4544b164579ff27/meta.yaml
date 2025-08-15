@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/347489498876862006/24ab481000604a7fa4544b164579ff27/artifacts
+end_time: 1755162273734
+entry_point_name: ''
+experiment_id: '347489498876862006'
+lifecycle_stage: active
+run_id: 24ab481000604a7fa4544b164579ff27
+run_name: wise-hog-283
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755162129568
+status: 3
+tags: []
+user_id: unknown

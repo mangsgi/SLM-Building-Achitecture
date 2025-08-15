@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/384890176289676202/6fbac4d038d24d53b9334d8a2819abe3/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '384890176289676202'
+lifecycle_stage: active
+run_id: 6fbac4d038d24d53b9334d8a2819abe3
+run_name: big-croc-343
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755086111695
+status: 1
+tags: []
+user_id: unknown

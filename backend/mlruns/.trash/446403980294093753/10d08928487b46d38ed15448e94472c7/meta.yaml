@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/446403980294093753/10d08928487b46d38ed15448e94472c7/artifacts
+deleted_time: 1754932081827
+end_time: null
+entry_point_name: ''
+experiment_id: '446403980294093753'
+lifecycle_stage: deleted
+run_id: 10d08928487b46d38ed15448e94472c7
+run_name: learned-perch-992
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754919276298
+status: 1
+tags: []
+user_id: 염현석

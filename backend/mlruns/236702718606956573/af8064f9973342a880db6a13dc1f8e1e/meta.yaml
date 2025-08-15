@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/236702718606956573/af8064f9973342a880db6a13dc1f8e1e/artifacts
+end_time: 1755005515657
+entry_point_name: ''
+experiment_id: '236702718606956573'
+lifecycle_stage: active
+run_id: af8064f9973342a880db6a13dc1f8e1e
+run_name: lyrical-seal-660
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755005501064
+status: 4
+tags: []
+user_id: unknown

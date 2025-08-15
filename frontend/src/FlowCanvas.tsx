@@ -20,6 +20,50 @@ import ReactFlow, {
 import type { Edge, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
+interface ModelConfig {
+  model: string;
+  epochs: number;
+  batch_size: number;
+  vocab_size: number;
+  context_length: number;
+  emb_dim: number;
+  n_heads: number;
+  n_blocks: number;
+  drop_rate: number;
+  qkv_bias: boolean;
+  dtype: string;
+}
+
+interface LayerData {
+  id: string;
+  label: string;
+  inDim?: number;
+  outDim?: number;
+  vocabSize?: number;
+  embDim?: number;
+  ctxLength?: number;
+  dropoutRate?: number;
+  numOfFactor?: number;
+  source?: string;
+  numHeads?: number;
+  qkvBias?: boolean;
+  numOfBlocks?: number;
+  numKvGroups?: number;
+}
+
+interface LayerNode {
+  type: string;
+  data: LayerData;
+  children?: LayerNode[];
+}
+
+interface CompleteModelRequest {
+  config: ModelConfig;
+  model: LayerNode[];
+  dataset: string;
+  modelName: string;
+}
+
 import Modal from './ui-component/Modal';
 import { BaseNodeData } from './nodes/components/NodeData';
 import ButtonEdge from './ButtonEdge';

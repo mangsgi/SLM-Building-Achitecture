@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/772945048311386889/8e980e76c597454c8868ce2d2fca0b16/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '772945048311386889'
+lifecycle_stage: active
+run_id: 8e980e76c597454c8868ce2d2fca0b16
+run_name: classy-midge-870
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755079375674
+status: 1
+tags: []
+user_id: unknown

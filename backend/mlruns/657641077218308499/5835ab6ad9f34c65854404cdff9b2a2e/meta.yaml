@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/657641077218308499/5835ab6ad9f34c65854404cdff9b2a2e/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '657641077218308499'
+lifecycle_stage: active
+run_id: 5835ab6ad9f34c65854404cdff9b2a2e
+run_name: aged-foal-861
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755076485838
+status: 1
+tags: []
+user_id: unknown
