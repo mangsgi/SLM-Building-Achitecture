@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/404128274881225501/81e4f56665ff43ab87e41879f546d71c/artifacts
+end_time: 1755000583398
+entry_point_name: ''
+experiment_id: '404128274881225501'
+lifecycle_stage: active
+run_id: 81e4f56665ff43ab87e41879f546d71c
+run_name: stately-stork-149
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754998343805
+status: 4
+tags: []
+user_id: unknown

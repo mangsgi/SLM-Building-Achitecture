@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/715885779021497608/21ba173fa56d4960bbf2e93a992871bd/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '715885779021497608'
+lifecycle_stage: active
+run_id: 21ba173fa56d4960bbf2e93a992871bd
+run_name: casual-shad-697
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754938232404
+status: 1
+tags: []
+user_id: unknown

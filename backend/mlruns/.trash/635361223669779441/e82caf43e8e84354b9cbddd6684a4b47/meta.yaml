@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/635361223669779441/e82caf43e8e84354b9cbddd6684a4b47/artifacts
+deleted_time: 1754932077968
+end_time: 1754923664367
+entry_point_name: ''
+experiment_id: '635361223669779441'
+lifecycle_stage: deleted
+run_id: e82caf43e8e84354b9cbddd6684a4b47
+run_name: clean-auk-891
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754920426247
+status: 3
+tags: []
+user_id: 염현석

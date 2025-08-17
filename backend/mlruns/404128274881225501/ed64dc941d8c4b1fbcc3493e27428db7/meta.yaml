@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/404128274881225501/ed64dc941d8c4b1fbcc3493e27428db7/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '404128274881225501'
+lifecycle_stage: active
+run_id: ed64dc941d8c4b1fbcc3493e27428db7
+run_name: stately-bat-499
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755001879460
+status: 1
+tags: []
+user_id: unknown

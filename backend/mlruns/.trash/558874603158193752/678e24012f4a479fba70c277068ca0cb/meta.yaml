@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/558874603158193752/678e24012f4a479fba70c277068ca0cb/artifacts
+deleted_time: 1754932170461
+end_time: null
+entry_point_name: ''
+experiment_id: '558874603158193752'
+lifecycle_stage: deleted
+run_id: 678e24012f4a479fba70c277068ca0cb
+run_name: shivering-shark-504
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754328521970
+status: 1
+tags: []
+user_id: 염현석

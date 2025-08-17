@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/965935117845525253/db4151a3e6fd4a5fa81242a8a2fa3d5d/artifacts
+end_time: 1755165433946
+entry_point_name: ''
+experiment_id: '965935117845525253'
+lifecycle_stage: active
+run_id: db4151a3e6fd4a5fa81242a8a2fa3d5d
+run_name: ambitious-gnu-385
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755164746692
+status: 3
+tags: []
+user_id: unknown

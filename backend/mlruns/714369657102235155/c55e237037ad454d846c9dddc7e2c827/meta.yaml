@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/714369657102235155/c55e237037ad454d846c9dddc7e2c827/artifacts
+end_time: 1754941359634
+entry_point_name: ''
+experiment_id: '714369657102235155'
+lifecycle_stage: active
+run_id: c55e237037ad454d846c9dddc7e2c827
+run_name: polite-hen-240
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754939051430
+status: 3
+tags: []
+user_id: unknown

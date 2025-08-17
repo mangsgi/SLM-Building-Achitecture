@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/0/cd5a93e596f64169b18a97f007534198/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: cd5a93e596f64169b18a97f007534198
+run_name: ex7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1755086936295
+status: 1
+tags: []
+user_id: 염현석

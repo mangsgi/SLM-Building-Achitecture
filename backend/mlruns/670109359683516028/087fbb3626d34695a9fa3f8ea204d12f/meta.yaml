@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/670109359683516028/087fbb3626d34695a9fa3f8ea204d12f/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '670109359683516028'
+lifecycle_stage: active
+run_id: 087fbb3626d34695a9fa3f8ea204d12f
+run_name: painted-frog-390
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1754938926232
+status: 1
+tags: []
+user_id: unknown
