@@ -45,7 +45,6 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
-    isLocked,
     handleDeleteClick,
     handleInfoClick,
     handleEditClick,
@@ -66,7 +65,7 @@ export const GQAttentionLayer: React.FC<GQAttentionLayerProps> = ({ id }) => {
         <NodeTitle onClick={handleNodeClick}>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          isLocked={isLocked}
+          isLocked={node.data.isLocked}
           onInfo={() => handleInfoClick(nodeInfo.gqAttention)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}

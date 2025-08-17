@@ -241,12 +241,16 @@ function App() {
     navigate('/canvas/dataset', { state: { model, config } });
   };
 
+  const handleTestModelClick = () => {
+    navigate('/test');
+  };
+
   return (
     <div className="flex flex-col w-full h-screen">
       {/* Header 영역 */}
       <Header>
         <div className="flex items-center gap-4">
-          <ModelButton onClick={handleSendModel} text="Test Model" />
+          <ModelButton onClick={handleTestModelClick} text="Test Model" />
           <SendModelButton onClick={handleSendModel} text="Select Dataset" />
         </div>
       </Header>

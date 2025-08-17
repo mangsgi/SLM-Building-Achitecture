@@ -24,7 +24,6 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   // Layer Node 별 펼쳐져 있을 때 높이
   const defaultHeightMap = NODE_HEIGHTS;
   const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
-  const [isLocked, setIsLocked] = useState(false);
 
   // ✅ 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
   useEffect(() => {
@@ -166,25 +165,20 @@ export function useCommonNodeActions<T extends BaseNodeData>({
 
   const handleLockToggle = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    setIsLocked((prev) => {
-      const newLockState = !prev;
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id === id) {
-            return {
-              ...n,
-              data: { ...n.data, isLocked: newLockState },
-            };
-          }
-          return n;
-        }),
-      );
-      return newLockState;
-    });
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id === id) {
+          return {
+            ...n,
+            data: { ...n.data, isLocked: !n.data.isLocked },
+          };
+        }
+        return n;
+      }),
+    );
   };
 
   return {
-    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,

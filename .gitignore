@@ -1,0 +1,7 @@
+models/*.pt
+models/*.pth
+models/*.ckpt
+models/*.bin
+models/*.h5
+models/*.safetensors
+models/*.onnx

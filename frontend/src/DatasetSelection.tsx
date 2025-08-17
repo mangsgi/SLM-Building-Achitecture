@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
+import { useSelector, useDispatch } from 'react-redux';
 import Header from './ui-component/Header';
 import Modal from './ui-component/Modal';
 import { ModelNode } from './App';
+import { RootState, AppDispatch } from './store';
+import { startTraining, resetStatus } from './store/statusSlice';
 
 // 임시 데이터셋 목록
 const datasets = [
@@ -27,6 +30,11 @@ function DatasetSelection() {
   } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch: AppDispatch = useDispatch();
+  const trainingStatus = useSelector(
+    (state: RootState) => state.status.trainingStatus,
+  );
+
   const { model, config } = location.state as {
     model: ModelNode[];
     config: Record<string, any>;
@@ -46,7 +54,8 @@ function DatasetSelection() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedDatasetId || !modelName) return;
+    if (!selectedDatasetId || !modelName || trainingStatus === 'TRAINING')
+      return;
 
     const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
     if (!selectedDataset) return;
@@ -65,25 +74,42 @@ function DatasetSelection() {
         }),
       });
 
-      console.log(
-        JSON.stringify({
-          config,
-          model,
-          dataset: selectedDataset.name,
-          modelName,
-        }),
-      );
-
       if (!response.ok) {
         throw new Error('Failed to submit model and dataset');
       }
 
+      const result = await response.json();
+      const mlflowUrl = result.mlflow_url; // 백엔드 응답에서 mlflow_url 추출
+
       // 성공 시 처리
-      console.log('Model and dataset submitted successfully');
-      // 예를 들어, 학습 완료 페이지로 이동하거나 알림을 표시할 수 있습니다.
-      navigate('/training-complete');
+      if (mlflowUrl) {
+        dispatch(startTraining({ mlflowUrl }));
+        console.log('Model and dataset submitted successfully');
+        navigate('/canvas');
+      } else {
+        throw new Error('MLFlow URL not found in response');
+      }
     } catch (error) {
       console.error('Error submitting model and dataset:', error);
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      // 백엔드에 학습 중단 요청
+      const response = await fetch('/api/model/cancel', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel training');
+      }
+
+      // 성공 시 상태 초기화
+      dispatch(resetStatus());
+      console.log('Training cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling training:', error);
     }
   };
 
@@ -145,11 +171,23 @@ function DatasetSelection() {
             >
               Back
             </button>
+            {trainingStatus === 'TRAINING' && (
+              <button
+                onClick={handleCancel}
+                className="px-6 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50"
+              >
+                Cancel Training
+              </button>
+            )}
             <button
               onClick={handleSubmit}
-              disabled={!selectedDatasetId || !modelName}
+              disabled={
+                !selectedDatasetId ||
+                !modelName ||
+                trainingStatus === 'TRAINING'
+              }
               className={`px-6 py-2 rounded-md ${
-                selectedDatasetId && modelName
+                selectedDatasetId && modelName && trainingStatus !== 'TRAINING'
                   ? 'bg-black text-white hover:bg-gray-600'
                   : 'bg-gray-300 text-gray-600 cursor-not-allowed'
               }`}

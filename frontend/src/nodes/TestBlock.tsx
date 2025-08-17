@@ -56,7 +56,6 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
 
   // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
-    isLocked,
     handleDeleteClick,
     handleEditClick,
     handleSaveClick,
@@ -78,7 +77,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
         <NodeTitle>{node.data.label}</NodeTitle>
         <NodeActionPanel
           editMode={editMode}
-          isLocked={isLocked}
+          isLocked={node.data.isLocked}
           onInfo={() => handleInfoClick(nodeInfo.testBlock)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
