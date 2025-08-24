@@ -29,8 +29,8 @@ pip install -r requirements.txt
 
 ## 실행 순서
 
-# 1) 가상환경 + 설치
 ```bash
+# 1) 가상환경 + 설치
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt

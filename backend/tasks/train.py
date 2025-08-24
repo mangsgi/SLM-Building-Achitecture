@@ -191,7 +191,7 @@ def train_and_infer_from_json(self, request_json: dict):
         # ---------- 4) 데이터 로드/분할 ----------
         logger.info(f"Loading dataset: {dataset_name}/{dataset_config}")
         training_text = load_training_data(dataset_name, dataset_config)
-        training_text = training_text[:20000]  # 샘플 컷 (원하면 제거)
+        training_text = training_text[:2000]  # 샘플 컷 (원하면 제거)
         split_idx = int(len(training_text) * 0.8)
         train_text, val_text = training_text[:split_idx], training_text[split_idx:]
 

@@ -8,7 +8,7 @@ import NodeActionPanel from './components/ActionPanel';
 import Modal from '../ui-component/Modal';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
-import { nodeInfo } from './components/nodeInfo';
+import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
 
 interface TestBlockProps {

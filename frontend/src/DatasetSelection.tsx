@@ -10,10 +10,30 @@ import { startTraining, resetStatus } from './store/statusSlice';
 
 // 임시 데이터셋 목록
 const datasets = [
-  { id: 1, name: 'Dataset 1', description: 'First sample dataset' },
-  { id: 2, name: 'Dataset 2', description: 'Second sample dataset' },
-  { id: 3, name: 'Dataset 3', description: 'Third sample dataset' },
-  { id: 4, name: 'Dataset 4', description: 'Fourth sample dataset' },
+  {
+    id: 1,
+    name: 'Tiny shakespeare',
+    description: 'Tiny shakespeare dataset',
+    path: 'tiny_shakespeare',
+  },
+  {
+    id: 2,
+    name: 'Dataset 2',
+    description: 'Second sample dataset',
+    path: 'dataset2',
+  },
+  {
+    id: 3,
+    name: 'Dataset 3',
+    description: 'Third sample dataset',
+    path: 'dataset3',
+  },
+  {
+    id: 4,
+    name: 'Dataset 4',
+    description: 'Fourth sample dataset',
+    path: 'dataset4',
+  },
 ];
 
 type Dataset = (typeof datasets)[0];
@@ -53,6 +73,7 @@ function DatasetSelection() {
     setModalInfo(null);
   };
 
+  // ✅ 학습 제출 함수
   const handleSubmit = async () => {
     if (!selectedDatasetId || !modelName || trainingStatus === 'TRAINING')
       return;
@@ -61,18 +82,36 @@ function DatasetSelection() {
     if (!selectedDataset) return;
 
     try {
-      const response = await fetch('/api/model/train', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        'http://localhost:8000/api/v1/train-complete-model',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            config: config,
+            model: model,
+            dataset: selectedDataset.path,
+            modelName: modelName,
+            dataset_config:
+              selectedDataset.path === 'tiny_shakespeare'
+                ? 'default'
+                : 'default',
+          }),
         },
-        body: JSON.stringify({
+      );
+
+      console.log(
+        JSON.stringify({
           config: config,
           model: model,
-          dataset: selectedDataset.name,
+          dataset: selectedDataset.path,
           modelName: modelName,
+          dataset_config:
+            selectedDataset.path === 'tiny_shakespeare' ? 'default' : 'default',
         }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error('Failed to submit model and dataset');
@@ -80,10 +119,11 @@ function DatasetSelection() {
 
       const result = await response.json();
       const mlflowUrl = result.mlflow_url; // 백엔드 응답에서 mlflow_url 추출
+      console.log(result);
 
       // 성공 시 처리
       if (mlflowUrl) {
-        dispatch(startTraining({ mlflowUrl }));
+        dispatch(startTraining({ mlflowUrl, task_id: result.task_id }));
         console.log('Model and dataset submitted successfully');
         navigate('/canvas');
       } else {
@@ -94,12 +134,30 @@ function DatasetSelection() {
     }
   };
 
+  // ✅ 학습 취소 함수
   const handleCancel = async () => {
     try {
+      // dispatch(resetStatus());
       // 백엔드에 학습 중단 요청
-      const response = await fetch('/api/model/cancel', {
-        method: 'POST',
-      });
+      const response = await fetch(
+        'http://localhost:8000/api/v1/stop-training',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            task_id: localStorage.getItem('task_id') ?? null,
+            force_kill: false,
+          }),
+        },
+      );
+      console.log(
+        JSON.stringify({
+          task_id: localStorage.getItem('task_id') ?? null,
+          force_kill: false,
+        }),
+      );
 
       if (!response.ok) {
         throw new Error('Failed to cancel training');

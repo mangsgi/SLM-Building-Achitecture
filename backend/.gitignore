@@ -2,4 +2,11 @@
 env
 .env
 venv
+.venv
+.DS_Store
+.vscode
+
 completed/
+temp_structures/
+
+__pycache__/

@@ -7,7 +7,7 @@ import { TransformerBlockData } from './components/NodeData';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
-import { nodeInfo } from './components/nodeInfo';
+import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
 import { NODE_GAP, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
 

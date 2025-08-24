@@ -6,7 +6,7 @@ import { ResidualData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
-import { nodeInfo } from './components/nodeInfo';
+import { nodeInfo } from './components/NodeInfo';
 
 interface ResidualLayerProps {
   id: string;
