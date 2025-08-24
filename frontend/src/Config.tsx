@@ -13,10 +13,10 @@ interface ConfigProps {
 
 // GPT-2 124M
 const gpt2Config = {
-  epochs: 10,
-  batch_size: 8,
+  epochs: 1,
+  batch_size: 1,
   vocab_size: 50257,
-  context_length: 1024,
+  context_length: 128,
   emb_dim: 768,
   n_heads: 12,
   n_blocks: 12,
@@ -27,10 +27,10 @@ const gpt2Config = {
 
 // Llama2 7B
 const llama2Config = {
-  epochs: 10,
-  batch_size: 8,
+  epochs: 1,
+  batch_size: 1,
   vocab_size: 32000,
-  context_length: 4096,
+  context_length: 128,
   emb_dim: 4096,
   n_heads: 32,
   n_layers: 32,
@@ -40,10 +40,10 @@ const llama2Config = {
 
 // Llama3 8B
 const llama3Config = {
-  epochs: 10,
-  batch_size: 8,
+  epochs: 1,
+  batch_size: 1,
   vocab_size: 128256,
-  context_length: 131072,
+  context_length: 128,
   emb_dim: 4096,
   n_heads: 32,
   n_layers: 32,
@@ -103,7 +103,10 @@ const configDescriptions: Record<string, string> = {
   rope_freq: 'RoPE 주파수 스케일링 값입니다.',
 };
 
-export const defaultConfig = gpt2Config;
+export const defaultConfig = {
+  ...gpt2Config,
+  model: 'gpt-2',
+};
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   const [selectedModel, setSelectedModel] = useState<ModelType>('GPT-2');
@@ -116,7 +119,11 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
 
   const handleModelChange = (model: ModelType) => {
     setSelectedModel(model);
-    setConfig(modelConfigs[model]);
+    const modelId = model === 'GPT-2' ? 'gpt-2' : model.toLowerCase();
+    setConfig({
+      ...modelConfigs[model],
+      model: modelId,
+    });
   };
 
   const handleShowInfo = (title: string, description: string) => {

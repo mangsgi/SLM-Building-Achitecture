@@ -42,7 +42,7 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
     description:
       '학습 시 일부 뉴런을 무작위로 비활성화하여 과적합을 방지하는 레이어입니다. 테스트 시에는 모든 뉴런을 사용합니다.',
   },
-  linearOutput: {
+  linear: {
     title: 'Linear Output',
     description:
       '입력을 선형 변환하는 레이어입니다. 가중치 행렬과 편향을 사용하여 입력을 출력 차원으로 변환합니다.',
@@ -138,10 +138,10 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       description:
         '피드포워드 네트워크의 구조를 선택합니다. Standard, Gated 등이 있습니다.',
     },
-    numOfFactor: {
-      title: 'Number of Factors',
+    hiddenDim: {
+      title: 'Hidden Dimension Size',
       description:
-        '피드포워드 네트워크의 확장 비율을 지정합니다. 입력 차원에 이 값을 곱하여 내부 차원을 결정합니다.',
+        '피드포워드 네트워크의 내부 차원을 지정합니다. 입력 차원에 이 값을 곱하여 내부 차원을 결정합니다.',
     },
   },
   dropout: {
@@ -151,7 +151,7 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
         '비활성화할 뉴런의 비율을 정의합니다. 0에서 1 사이의 값을 가집니다.',
     },
   },
-  linearOutput: {
+  linear: {
     outDim: {
       title: 'Output Dimension',
       description:

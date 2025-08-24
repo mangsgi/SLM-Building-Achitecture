@@ -38,9 +38,9 @@ const Sidebar: React.FC = () => {
         onDragStart={onDragStart}
       />
       <SidebarNodeItem
-        nodeType={nodeRegistry.get('linearOutput')?.type ?? ''}
+        nodeType={nodeRegistry.get('linear')?.type ?? ''}
         nodeData={{
-          label: nodeRegistry.get('linearOutput')?.label ?? '',
+          label: nodeRegistry.get('linear')?.label ?? '',
         }}
         onDragStart={onDragStart}
       />

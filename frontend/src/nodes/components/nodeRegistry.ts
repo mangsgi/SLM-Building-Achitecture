@@ -11,7 +11,7 @@ import {
   GQAttentionData,
 } from './NodeData';
 import { FieldConfig } from './FieldRenderer';
-import { nodeFieldInfo } from './nodeInfo';
+import { nodeFieldInfo } from './NodeInfo';
 import ResidualLayer from '../Residual';
 import MHAttentionLayer from '../MHAttention';
 import GQAttentionLayer from '../GQAttention';
@@ -79,7 +79,7 @@ export const getNodeDataByType = (
         ctxLength: config.context_length,
         embDim: config.emb_dim,
       };
-    case 'linearOutput':
+    case 'linear':
       return {
         ...data,
         outDim: config.vocab_size,
@@ -222,13 +222,13 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
     },
   ],
   [
-    'linearOutput',
+    'linear',
     {
-      type: 'linearOutput',
-      label: 'Linear Output',
+      type: 'linear',
+      label: 'Linear',
       component: LinearOutputLayer,
       defaultData: {
-        label: 'Linear Output',
+        label: 'Linear',
       },
       stringFields: ['label'],
       getFields: (data: BaseNodeData) => {
@@ -239,7 +239,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             name: 'outDim',
             value: data.outDim?.toString() || '',
             placeholder: 'Enter output dimension',
-            info: nodeFieldInfo.linearOutput.outDim,
+            info: nodeFieldInfo.linear.outDim,
           },
         ];
       },
