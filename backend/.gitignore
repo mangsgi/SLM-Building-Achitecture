@@ -8,5 +8,7 @@ venv
 
 completed/
 temp_structures/
+mlartifacts/
+mlruns/
 
 __pycache__/
