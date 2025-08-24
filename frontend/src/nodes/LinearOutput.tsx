@@ -7,7 +7,7 @@ import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
-import { nodeInfo } from './components/nodeInfo';
+import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
 
 interface LinearOutputLayerProps {
@@ -66,7 +66,7 @@ export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
         <NodeActionPanel
           editMode={editMode}
           isLocked={node.data.isLocked}
-          onInfo={() => handleInfoClick(nodeInfo.linearOutput)}
+          onInfo={() => handleInfoClick(nodeInfo.linear)}
           onEdit={handleEditClick}
           onSave={handleSaveClick}
           onDelete={handleDeleteClick}
