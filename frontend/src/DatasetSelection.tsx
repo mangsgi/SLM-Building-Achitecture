@@ -148,7 +148,7 @@ function DatasetSelection() {
           },
           body: JSON.stringify({
             task_id: localStorage.getItem('task_id') ?? null,
-            force_kill: false,
+            force_kill: true,
           }),
         },
       );

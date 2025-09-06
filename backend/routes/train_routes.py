@@ -137,6 +137,9 @@ async def train_complete_model(request: CompleteModelRequest, http_request: Requ
         )
         run_id = run.info.run_id
         mlflow_url = f"{tracking_uri}/#/experiments/{exp_id}/runs/{run_id}"
+        
+        # 브라우저 접속용 URL 생성
+        browser_mlflow_url = mlflow_url.replace("://mlflow:", "://localhost:")
 
         # ---------- F) 학습 태스크 시작 (run_id 포함) ----------
         payload = {
@@ -165,7 +168,7 @@ async def train_complete_model(request: CompleteModelRequest, http_request: Requ
             "structure_id": request.modelName,
             "model_name": request.modelName,
             "experiment_name": experiment_name,
-            "mlflow_url": mlflow_url,
+            "mlflow_url": browser_mlflow_url,
             "model_info": {
                 "total_parameters": total_params,
                 "trainable_parameters": trainable_params,

@@ -11,7 +11,8 @@ interface HeaderProps {
 const StatusIndicator: React.FC<{
   status: TrainingStatus;
   mlflowUrl: string | null;
-}> = ({ status, mlflowUrl }) => {
+  error: string | null; // 1. error prop 받기
+}> = ({ status, mlflowUrl, error }) => {
   const statusConfig = {
     IDLE: {
       color: 'bg-green-500',
@@ -25,8 +26,9 @@ const StatusIndicator: React.FC<{
     },
     COMPLETED: {
       color: 'bg-blue-500',
-      shortMessage: 'Completed Training',
-      longMessage: 'Training complete! You can now start a new one.',
+      shortMessage: 'Completed', // 2. 짧은 메시지 통일
+      // 3. 에러 메시지 유무에 따라 다른 메시지 표시
+      longMessage: error ?? 'Training complete! You can now start a new one.',
     },
   };
 
@@ -36,14 +38,15 @@ const StatusIndicator: React.FC<{
     <div className="relative flex items-center gap-2 group">
       <div className={`w-3 h-3 rounded-full ${color}`}></div>
       <span className="text-sm text-gray-600">{shortMessage}</span>
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      {/* 4. 툴팁 위치 아래로 변경 및 z-index 추가 */}
+      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
         <p>{longMessage}</p>
         {status === 'TRAINING' && mlflowUrl && (
           <a
             href={mlflowUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 hover:underline"
+            className="text-blue-400 hover:underline hover:text-white"
           >
             View in MLFlow
           </a>
@@ -57,15 +60,18 @@ function Header({ children }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
-  const { trainingStatus, mlflowUrl } = useSelector(
+  // 5. Redux store에서 error 상태 가져오기
+  const { trainingStatus, mlflowUrl, error } = useSelector(
     (state: RootState) => state.status,
   );
 
   useEffect(() => {
+    // 페이지 경로가 변경될 때, 현재 상태가 'COMPLETED'이면 'IDLE'로 리셋합니다.
     if (trainingStatus === 'COMPLETED') {
       dispatch(resetStatus());
     }
-  }, [location.pathname, dispatch, trainingStatus]);
+    // 의존성 배열에서 trainingStatus를 제외하여, 페이지 이동 시에만 이 효과가 실행되도록 합니다.
+  }, [location.pathname, dispatch]);
 
   return (
     <header className="bg-white p-4 shadow flex justify-between items-center">
@@ -76,7 +82,12 @@ function Header({ children }: HeaderProps) {
         >
           Building Your Own SLM
         </h1>
-        <StatusIndicator status={trainingStatus} mlflowUrl={mlflowUrl} />
+        {/* 6. error prop 전달 */}
+        <StatusIndicator
+          status={trainingStatus}
+          mlflowUrl={mlflowUrl}
+          error={error}
+        />
       </div>
       <div className="flex items-center gap-4">{children}</div>
     </header>

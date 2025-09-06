@@ -180,8 +180,8 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   // ✅ Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
   const onNodeDrag: NodeDragHandler = (_, node) => {
     // Node의 X 중심 좌표와 Y 중심 좌표 계산
-    const centerX = (node.position.x + (node.width ?? 0)) / 2;
-    const centerY = (node.position.y + (node.height ?? 0)) / 2;
+    const centerX = node.position.x + (node.width ?? 0) / 2;
+    const centerY = node.position.y + (node.height ?? 0) / 2;
 
     // 이전 타겟 노드의 isTarget 초기화
     if (target) {
@@ -209,14 +209,14 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         n.id !== node.id,
     );
 
-    console.log('node.position.x: ', node.position.x);
-    console.log('node.position.y: ', node.position.y);
-    console.log('node.width: ', node.width);
-    console.log('node.height: ', node.height);
-    console.log('targetNode.position.x: ', targetNode?.position.x);
-    console.log('targetNode.position.y: ', targetNode?.position.y);
-    console.log('targetNode.width: ', targetNode?.width);
-    console.log('targetNode.height: ', targetNode?.height);
+    // console.log('node.position.x: ', node.position.x);
+    // console.log('node.position.y: ', node.position.y);
+    // console.log('node.width: ', node.width);
+    // console.log('node.height: ', node.height);
+    // console.log('targetNode.position.x: ', targetNode?.position.x);
+    // console.log('targetNode.position.y: ', targetNode?.position.y);
+    // console.log('targetNode.width: ', targetNode?.width);
+    // console.log('targetNode.height: ', targetNode?.height);
 
     if (targetNode) {
       // 타겟 노드의 isTarget 설정
