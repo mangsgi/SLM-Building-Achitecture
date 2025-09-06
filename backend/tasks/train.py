@@ -109,7 +109,7 @@ def calc_loss_batch(input_batch, target_batch, model, device):
 def calc_loss_loader(data_loader, model, device, num_batches=None):
     total_loss = 0.0
     if len(data_loader) == 0:
-        return None
+        return float("nan")
     if num_batches is None:
         num_batches = len(data_loader)
     else:
@@ -335,6 +335,7 @@ def train_and_infer_from_json(self, request_json: dict):
                     last_train_loss, last_val_loss = evaluate_model(
                         model, train_loader, val_loader, device, eval_iter=eval_iter
                     )
+                    
                     if last_train_loss is not None:
                         mlflow.log_metric("eval/train_loss", last_train_loss, step=epoch)
                     if last_val_loss is not None:
