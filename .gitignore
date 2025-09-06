@@ -1,7 +1,22 @@
-models/*.pt
-models/*.pth
-models/*.ckpt
-models/*.bin
-models/*.h5
-models/*.safetensors
-models/*.onnx
+# Python bytecode / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# 가상환경/빌드
+.venv/
+venv/
+*.egg-info/
+
+# Redis dump
+dump.rdb
+backend/dump.rdb
+
+# 기타 에디터/OS
+.DS_Store
+
+# 프런트엔드 빌드/의존성 (있다면)
+frontend/node_modules/
+dist/
+build/
