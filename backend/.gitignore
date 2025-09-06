@@ -10,5 +10,7 @@ completed/
 temp_structures/
 mlartifacts/
 mlruns/
+*.pt
+*.pth
 
 __pycache__/
