@@ -231,93 +231,90 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
       </div>
 
       <div className="mt-4 space-y-4">
-        {Object.entries(config).map(([key, value]) => {
-          return (
-            <div key={key} className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <label className="text-sm font-medium capitalize">
-                  {configMap[key]}
-                </label>
-                <button
-                  onClick={() =>
-                    handleShowInfo(configMap[key], configDescriptions[key])
-                  }
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <FiInfo size={16} />
-                </button>
-              </div>
-
-              {key === 'dtype' ? (
-                <select
-                  value={value.toString()}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  className="border p-2 rounded"
-                >
-                  {dtypeOptions.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              ) : fractionalKeys.includes(key) && typeof value === 'number' ? (
-                renderFractionInput(key, value, (k, v) =>
-                  setConfig((prev) => ({ ...prev, [k]: v })),
-                )
-              ) : typeof value === 'boolean' ? (
-                <select
-                  value={value.toString()}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  className="border p-2 rounded"
-                >
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              ) : typeof value === 'number' ? (
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                  className="border p-2 rounded"
-                />
-              ) : typeof value === 'object' &&
-                value !== null &&
-                !Array.isArray(value) ? (
-                <div className="pl-4 mt-2 border-l-2 border-gray-200 space-y-2">
-                  {Object.entries(value).map(([childKey, childValue]) => (
-                    <div key={childKey}>
-                      <label className="text-sm font-medium capitalize text-gray-500">
-                        {childKey.replace(/_/g, ' ')}
-                      </label>
-                      <input
-                        type="text"
-                        value={childValue as any}
-                        onChange={(e) =>
-                          handleNestedChange(key, childKey, e.target.value)
-                        }
-                        className="border p-2 rounded w-full mt-1"
-                      />
-                    </div>
-                  ))}
+        {Object.entries(config)
+          .filter(([key]) => key !== 'model')
+          .map(([key, value]) => {
+            return (
+              <div key={key} className="flex flex-col">
+                <div className="flex items-center gap-2 mb-1">
+                  <label className="text-sm font-medium capitalize">
+                    {configMap[key]}
+                  </label>
+                  <button
+                    onClick={() =>
+                      handleShowInfo(configMap[key], configDescriptions[key])
+                    }
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FiInfo size={16} />
+                  </button>
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
+
+                {key === 'dtype' ? (
+                  <select
+                    value={value.toString()}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    className="border p-2 rounded"
+                  >
+                    {dtypeOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                ) : fractionalKeys.includes(key) &&
+                  typeof value === 'number' ? (
+                  renderFractionInput(key, value, (k, v) =>
+                    setConfig((prev) => ({ ...prev, [k]: v })),
+                  )
+                ) : typeof value === 'boolean' ? (
+                  <select
+                    value={value.toString()}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    className="border p-2 rounded"
+                  >
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                ) : typeof value === 'number' ? (
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                    className="border p-2 rounded"
+                  />
+                ) : typeof value === 'object' &&
+                  value !== null &&
+                  !Array.isArray(value) ? (
+                  <div className="pl-4 mt-2 border-l-2 border-gray-200 space-y-2">
+                    {Object.entries(value).map(([childKey, childValue]) => (
+                      <div key={childKey}>
+                        <label className="text-sm font-medium capitalize text-gray-500">
+                          {childKey.replace(/_/g, ' ')}
+                        </label>
+                        <input
+                          type="text"
+                          value={childValue as any}
+                          onChange={(e) =>
+                            handleNestedChange(key, childKey, e.target.value)
+                          }
+                          className="border p-2 rounded w-full mt-1"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
       </div>
       {isModalOpen && modalInfo && (
-        <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">{modalInfo.title}</h3>
-            <button
-              onClick={handleCloseModal}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-          <p className="text-gray-600">{modalInfo.description}</p>
-        </Modal>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={modalInfo.title}
+          markdown={modalInfo.description}
+        />
       )}
     </aside>
   );

@@ -1,26 +1,56 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  children: React.ReactNode;
+  /** 전달되면 마크다운으로 렌더링 */
+  markdown?: string;
+  /** 헤더를 Modal이 그려주길 원하면 사용(선택) */
+  title?: string;
+  children?: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  markdown,
+  title,
+  children,
+}) => {
   if (!isOpen) return null;
 
   return (
-    // 전체 화면을 덮는 오버레이. 클릭 시 onClose 실행.
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onClick={onClose}
     >
-      {/* 모달 내용: 클릭 이벤트 전파를 막아 오버레이 클릭으로 닫히지 않도록 함 */}
       <div
-        className="bg-white rounded-md shadow-lg p-4 w-80"
+        className="bg-white rounded-md shadow-lg p-4 max-w-[90vw] max-h-[90vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        {title && (
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">{title}</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <i className="fas fa-times" />
+            </button>
+          </div>
+        )}
+
+        {markdown ? (
+          <article className="prose max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {markdown}
+            </ReactMarkdown>
+          </article>
+        ) : (
+          children
+        )}
       </div>
     </div>
   );
