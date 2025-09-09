@@ -18,7 +18,7 @@ interface TransformerBlockLayerProps {
 const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   id,
 }) => {
-  const { setNodes, getNode, setEdges } = useReactFlow();
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const node = getNode(id);
@@ -70,9 +70,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
     handleLockToggle,
   } = useCommonNodeActions<TransformerBlockData>({
     id,
-    setNodes,
     setEditMode,
-    setEdges,
   });
 
   return (

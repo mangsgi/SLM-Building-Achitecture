@@ -1,6 +1,7 @@
 // 모든 노드에 공통으로 필요한 속성을 포함하는 Base interface
 export interface BaseNodeData {
   label: string; // Node 이름
+  isCollapsed?: boolean; // 노드 접힘/펼침 상태
   hideHandles?: boolean; // 노드 핸들 숨김 여부
   isTarget?: boolean; // 모델 타겟 노드 여부
   isLocked?: boolean; // 노드 잠금 여부

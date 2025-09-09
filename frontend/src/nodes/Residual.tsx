@@ -13,7 +13,7 @@ interface ResidualLayerProps {
 }
 
 export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
-  const { setNodes, getNode, setEdges } = useReactFlow();
+  const { getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
   const node = getNode(id);
@@ -28,9 +28,7 @@ export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
     handleLockToggle,
   } = useCommonNodeActions<ResidualData>({
     id,
-    setNodes,
     setEditMode,
-    setEdges,
   });
 
   return (

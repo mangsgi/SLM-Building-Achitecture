@@ -1,75 +1,23 @@
-import { MouseEvent, useState, useEffect } from 'react';
-import type { Node, Edge } from 'reactflow';
+import { MouseEvent } from 'react';
+import { useReactFlow, type Node, type Edge } from 'reactflow';
 import { BaseNodeData } from './NodeData';
 import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../../constants/nodeHeights';
-import { NodeInfo } from './nodeInfo';
+import { NodeInfo } from './NodeInfo';
 
 // NodaData 템플릿 적용
-interface UseCommonNodeActionsParams<T extends BaseNodeData> {
+interface UseCommonNodeActionsParams {
   id: string;
-  setNodes: (updater: (nds: Node<T>[]) => Node<T>[]) => void;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsCollapsed?: React.Dispatch<React.SetStateAction<boolean>>;
-  setEdges: (updater: (eds: Edge[]) => Edge[]) => void;
 }
 
 // 노드별 공통 로직 Custom Hook으로 구현
 export function useCommonNodeActions<T extends BaseNodeData>({
   id,
-  setNodes,
   setEditMode,
-  setIsCollapsed,
-  setEdges,
-}: UseCommonNodeActionsParams<T>) {
-  // Layer Node 별 펼쳐져 있을 때 높이
-  const defaultHeightMap = NODE_HEIGHTS;
-  const [collapseTrigger, setCollapseTrigger] = useState<boolean | null>(false);
+}: UseCommonNodeActionsParams) {
+  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow<T, Edge>();
 
-  // ✅ 특정 Node id의 collapseTrigger 변경 시 실행되어 형제 Node의 위치 조정
-  useEffect(() => {
-    if (collapseTrigger === null) return;
-    setNodes((nds) => {
-      const targetNode = nds.find((n) => n.id === id);
-      if (!targetNode?.parentNode || !targetNode.type) return nds;
-      const parentId = targetNode.parentNode;
-
-      const newHeight = collapseTrigger
-        ? 43
-        : (defaultHeightMap[targetNode.type as keyof typeof defaultHeightMap] ??
-          DEFAULT_NODE_HEIGHT);
-
-      // 해당 Node height 변경
-      const updatedNodes = nds.map((node) => {
-        if (node.id === id) {
-          return { ...node, height: newHeight };
-        }
-        return node;
-      });
-
-      // 형제 Node 정렬
-      const siblings = updatedNodes
-        .filter((n) => n.parentNode === parentId)
-        .sort((a, b) => a.position.y - b.position.y);
-
-      let yOffset = 110;
-      const reordered = siblings.map((n) => {
-        const updated = {
-          ...n,
-          position: { ...n.position, y: yOffset },
-        };
-        yOffset += (n.height ?? 40) + 10;
-        return updated;
-      });
-
-      return nds.filter((n) => n.parentNode !== parentId).concat(reordered);
-    });
-
-    // !collapseTrigger을 인자로 사용 시 무한 루프가 되므로 null로 설정
-    setCollapseTrigger(null);
-    // Node id별로 collapseTrigger 구분
-  }, [collapseTrigger, id, setNodes]);
-
-  // ✅ 노드 정보 클릭 핸들러 오버라이드
+  // 노드 정보 클릭 핸들러
   const handleInfoClick = (info: NodeInfo) => {
     const event = new CustomEvent('nodeInfo', {
       detail: info,
@@ -77,60 +25,98 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     window.dispatchEvent(event);
   };
 
-  // ✅ Node Click 시 !isCollapsed 후, 자식 노드 위치 변경을 위한 useEffect 실행
+  // Node Click 시 isCollapsed 상태를 반전시키고, 노드 높이와 형제 노드 위치를 재조정
   const handleNodeClick = () => {
-    if (!setIsCollapsed) return;
-    setIsCollapsed((prev) => {
-      const newState = !prev;
-      setCollapseTrigger(newState);
-      return newState;
+    setNodes((nds) => {
+      const targetNode = nds.find((n) => n.id === id);
+      // 방어 코드: 노드나 데이터가 없으면 아무것도 하지 않음
+      if (!targetNode || !targetNode.data) return nds;
+
+      const newIsCollapsed = !targetNode.data.isCollapsed;
+
+      // 1. 대상 노드의 isCollapsed 상태와 높이를 업데이트
+      const updatedNodes = nds.map((n) => {
+        if (n.id === id) {
+          const newHeight = newIsCollapsed
+            ? 43 // 접혔을 때 높이
+            : (NODE_HEIGHTS[n.type as keyof typeof NODE_HEIGHTS] ??
+              DEFAULT_NODE_HEIGHT);
+          return {
+            ...n,
+            data: { ...n.data, isCollapsed: newIsCollapsed },
+            height: newHeight,
+          };
+        }
+        return n;
+      });
+
+      // 2. 부모가 있는 경우에만 형제 노드 위치 재조정
+      if (!targetNode.parentNode) {
+        return updatedNodes; // 부모가 없으면 재조정 불필요
+      }
+
+      const parentId = targetNode.parentNode;
+      const siblings = updatedNodes
+        .filter((n) => n.parentNode === parentId)
+        .sort((a, b) => a.position.y - b.position.y);
+
+      let yOffset = 110; // 자식 노드의 시작 Y 위치
+      const reorderedSiblings = siblings.map((sibling) => {
+        const updatedSibling = {
+          ...sibling,
+          position: { ...sibling.position, y: yOffset },
+        };
+        // 현재 노드의 높이를 기준으로 다음 노드의 yOffset 계산
+        yOffset += (updatedSibling.height ?? 40) + 10;
+        return updatedSibling;
+      });
+
+      // 3. 전체 노드 배열을 재구성하여 반환
+      return updatedNodes
+        .filter((n) => n.parentNode !== parentId)
+        .concat(reorderedSiblings);
     });
   };
 
-  // ✅ Delete 버튼 클릭 시 노드 삭제 및 부모 존재 시 남은 노드들 위치 조정
+  // Delete 버튼 클릭 시 노드 삭제 및 부모 존재 시 남은 노드들 위치 조정
   const handleDeleteClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
 
-    setNodes((nds) => {
-      const nodeToDelete = nds.find((n) => n.id === id);
-      if (!nodeToDelete) {
-        console.warn('삭제 대상 노드를 찾지 못했습니다:', id);
-        return nds;
-      }
+    const allNodes = getNodes();
+    const allEdges = getEdges();
+    const nodeToDelete = allNodes.find((n) => n.id === id);
+    if (!nodeToDelete) return;
 
-      // 부모 노드를 삭제하는 경우: 자식 노드도 같이 삭제
-      if (!nodeToDelete.parentNode) {
-        // 이 노드가 부모인 모든 자식 노드 찾기
-        const childIds = nds
-          .filter((n) => n.parentNode === id)
-          .map((n) => n.id);
+    let nodesToKeep: Node<T>[];
+    let edgesToKeep: Edge[];
 
-        // 부모 노드와 자식 노드를 모두 삭제
-        return nds.filter((n) => n.id !== id && !childIds.includes(n.id));
-      }
+    // 부모 노드를 삭제하는 경우: 자식 노드도 같이 삭제
+    if (!nodeToDelete.parentNode) {
+      const childIds = allNodes
+        .filter((n) => n.parentNode === id)
+        .map((n) => n.id);
+      const allIdsToDelete = [id, ...childIds];
 
-      // 삭제할 노드의 부모 노드가 존재하면
-      if (!nodeToDelete.parentNode) {
-        // 이 노드가 부모인 모든 자식 노드 찾기
-        const childIds = nds
-          .filter((n) => n.parentNode === id)
-          .map((n) => n.id);
-
-        // 부모 노드와 자식 노드를 모두 삭제
-        return nds.filter((n) => n.id !== id && !childIds.includes(n.id));
-      }
-
-      // 일반 노드(부모 있음) 삭제 시 위치 재정렬
+      nodesToKeep = allNodes.filter(
+        (n) => !allIdsToDelete.includes(n.id),
+      ) as Node<T>[];
+      edgesToKeep = allEdges.filter(
+        (e) =>
+          !allIdsToDelete.includes(e.source) &&
+          !allIdsToDelete.includes(e.target),
+      );
+    } else {
+      // 일반 노드(부모 있음) 삭제 시
       const parentId = nodeToDelete.parentNode;
+      nodesToKeep = allNodes.filter((n) => n.id !== id) as Node<T>[];
 
-      // 나를 제외한 자식 노드 찾기
-      const remainingChildren = nds
-        .filter((n) => n.parentNode === parentId && n.id !== id)
+      // 삭제 후 남은 형제 노드들의 위치 재정렬
+      const remainingSiblings = nodesToKeep
+        .filter((n) => n.parentNode === parentId)
         .sort((a, b) => a.position.y - b.position.y);
 
-      // 위치 변경
       let yOffset = 110;
-      const updatedChildren = remainingChildren.map((child) => {
+      const updatedSiblings = remainingSiblings.map((child) => {
         const updated = {
           ...child,
           position: { ...child.position, y: yOffset },
@@ -139,24 +125,25 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         return updated;
       });
 
-      // Edge 삭제
-      setEdges((eds) =>
-        eds.filter((edge) => edge.source !== id && edge.target !== id),
+      nodesToKeep = nodesToKeep
+        .filter((n) => n.parentNode !== parentId)
+        .concat(updatedSiblings);
+      edgesToKeep = allEdges.filter(
+        (edge) => edge.source !== id && edge.target !== id,
       );
+    }
 
-      return nds
-        .filter((n) => n.id !== id && n.parentNode !== parentId)
-        .concat(updatedChildren);
-    });
+    setNodes(nodesToKeep);
+    setEdges(edgesToKeep);
   };
 
-  // ✅ Edit 버튼 클릭
+  // Edit 버튼 클릭
   const handleEditClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setEditMode(true);
   };
 
-  // ✅ Save 버튼 클릭
+  // Save 버튼 클릭
   const handleSaveClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setEditMode(false);
@@ -167,7 +154,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
     e.stopPropagation();
     setNodes((nds) =>
       nds.map((n) => {
-        if (n.id === id) {
+        if (n.id === id && n.data) {
           return {
             ...n,
             data: { ...n.data, isLocked: !n.data.isLocked },

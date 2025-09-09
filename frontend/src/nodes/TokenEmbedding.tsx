@@ -17,9 +17,8 @@ interface TokenEmbeddingLayerProps {
 export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
   id,
 }) => {
-  const { setNodes, getNode, setEdges } = useReactFlow();
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
@@ -56,13 +55,7 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
     handleNodeClick,
     handleInfoClick,
     handleLockToggle,
-  } = useCommonNodeActions<TokenEmbeddingData>({
-    id,
-    setNodes,
-    setEditMode,
-    setIsCollapsed,
-    setEdges,
-  });
+  } = useCommonNodeActions<TokenEmbeddingData>({ id, setEditMode });
 
   return (
     <LayerWrapper hideHandles={node.data.hideHandles}>
@@ -77,7 +70,7 @@ export const TokenEmbeddingLayer: React.FC<TokenEmbeddingLayerProps> = ({
           onDelete={handleDeleteClick}
           onLockToggle={handleLockToggle}
         />
-        {!isCollapsed && (
+        {!node.data.isCollapsed && (
           <FieldRenderer
             fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}

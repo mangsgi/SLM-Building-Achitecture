@@ -15,9 +15,8 @@ interface DropoutLayerProps {
 }
 
 export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
-  const { setNodes, getNode, setEdges } = useReactFlow();
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   const node = getNode(id);
   if (!node) return null;
@@ -51,13 +50,7 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
     handleNodeClick,
     handleInfoClick,
     handleLockToggle,
-  } = useCommonNodeActions<DropoutData>({
-    id,
-    setNodes,
-    setEditMode,
-    setIsCollapsed,
-    setEdges,
-  });
+  } = useCommonNodeActions<DropoutData>({ id, setEditMode });
 
   return (
     <LayerWrapper hideHandles={node.data.hideHandles}>
@@ -72,8 +65,8 @@ export const DropoutLayer: React.FC<DropoutLayerProps> = ({ id }) => {
           onDelete={handleDeleteClick}
           onLockToggle={handleLockToggle}
         />
-        {/* Collapse가 아닐 때만 필드 보여줌 */}
-        {!isCollapsed && (
+        {/* isCollapsed가 false일 때만 필드 보여줌 */}
+        {!node.data.isCollapsed && (
           <FieldRenderer
             fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}

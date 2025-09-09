@@ -16,7 +16,7 @@ interface TestBlockProps {
 }
 
 export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
-  const { setNodes, getNode, setEdges } = useReactFlow();
+  const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
 
@@ -63,9 +63,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
     handleLockToggle,
   } = useCommonNodeActions<TestBlockData>({
     id,
-    setNodes,
     setEditMode,
-    setEdges,
   });
 
   return (
