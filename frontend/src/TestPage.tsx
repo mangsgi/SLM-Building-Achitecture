@@ -13,7 +13,7 @@ const TestPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ 백엔드 API를 통해 모델 목록을 가져옴
+  // 백엔드 API를 통해 모델 목록을 가져옴
   useEffect(() => {
     fetch(`http://localhost:8000/api/v1/completed-models`)
       .then((res) => res.json())
@@ -25,7 +25,7 @@ const TestPage: React.FC = () => {
       .catch((err) => console.error('Failed to fetch models:', err));
   }, []);
 
-  // ✅ 메시지 전송 함수
+  // 메시지 전송 함수
   const handleSendMessage = () => {
     if (input.trim() === '' || !selectedModel || isLoading) return;
 

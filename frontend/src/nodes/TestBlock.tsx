@@ -24,7 +24,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
   if (!node) return null;
   const typedData = node.type as string;
 
-  // ✅ 자식 노드와 자식 노드의 높이 합 저장
+  // 자식 노드와 자식 노드의 높이 합 저장
   const getNodes = useStore((state) => state.getNodes);
   const nodes = getNodes();
   const childNodes = useMemo(() => {
@@ -34,7 +34,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
     return childNodes.reduce((acc, node) => 10 + acc + (node.height ?? 0), 0);
   }, [childNodes]);
 
-  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof TestBlockData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
@@ -54,7 +54,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
     );
   };
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,

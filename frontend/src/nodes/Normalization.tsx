@@ -25,7 +25,7 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
   if (!node) return null;
   const typedData = node.type as string;
 
-  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (field: keyof NormalizationData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
@@ -46,7 +46,7 @@ export const NormalizationLayer: React.FC<NormalizationLayerProps> = ({
     );
   };
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,

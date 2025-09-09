@@ -1,6 +1,6 @@
-import { ReactFlowProvider } from 'reactflow';
+import { ReactFlowProvider, useNodesState, useEdgesState } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { Edge, Node } from 'reactflow';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,7 @@ import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
 import Header from './ui-component/Header';
 import ModelButton from './ui-component/TestModelButton';
+import { referenceNodes, referenceEdges } from './constants/referenceModels';
 
 // 모델을 구성하는 노드 타입
 export interface ModelNode {
@@ -25,7 +26,7 @@ export interface ModelNode {
   children?: ModelNode[]; // Block 노드일 경우에만
 }
 
-// ✅ 백엔드에 보낼 모델 JSON 파일 구성 함수
+// 백엔드에 보낼 모델 JSON 파일 구성 함수
 async function buildModelJSON(
   nodes: Node[],
   edges: Edge[],
@@ -186,7 +187,7 @@ async function buildModelJSON(
   return model;
 }
 
-// ✅ 메인 컴포넌트
+// 메인 컴포넌트
 function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -194,7 +195,7 @@ function App() {
   const [config, setConfig] = useState<Record<string, any>>(defaultConfig);
   const navigate = useNavigate();
 
-  // ✅ 로컬 스토리지에서 상태를 불러오거나 기본값으로 초기화
+  // 로컬 스토리지에서 상태를 불러오거나 기본값으로 초기화
   const initialFlowState = () => {
     try {
       const savedState = localStorage.getItem('canvasState');
@@ -212,18 +213,52 @@ function App() {
     return { nodes: [], edges: [] };
   };
 
-  // ✅ FlowCanvas에 전달할 데이터 참조 객체
-  const flowDataRef = useRef<{ nodes: Node[]; edges: Edge[] }>(
-    initialFlowState(),
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialFlowState().nodes,
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    initialFlowState().edges,
   );
 
-  // ✅ 콜백함수를 인자로 전달하는 Setter를 호출하는 토글 함수 정의
+  // Save flow state to local storage whenever it changes
+  useEffect(() => {
+    try {
+      const canvasState = JSON.stringify({ nodes, edges });
+      localStorage.setItem('canvasState', canvasState);
+    } catch (error) {
+      console.error('캔버스 상태를 저장하는 데 실패했습니다:', error);
+    }
+  }, [nodes, edges]);
+
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
-  // ✅ 모델 전송 함수
+  const loadReferenceModel = () => {
+    if (!referenceNodes || !referenceEdges || referenceNodes.length === 0) {
+      alert(
+        'Reference model is empty. Please add nodes and edges to src/constants/reference-model.ts',
+      );
+      return;
+    }
+    setNodes(referenceNodes);
+    setEdges(referenceEdges);
+  };
+
+  // 모델 전송 함수
   const handleSendModel = async () => {
-    const { nodes, edges } = flowDataRef.current;
+    // Save flow state to JSON file
+    const flowState = { nodes, edges };
+    const jsonString = JSON.stringify(flowState, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'reactflow-state.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
     const model = await buildModelJSON(nodes, edges, config);
 
     if (!model.length) {
@@ -231,13 +266,6 @@ function App() {
       return;
     }
 
-    // 상태를 로컬 스토리지에 저장
-    try {
-      const canvasState = JSON.stringify({ nodes, edges });
-      localStorage.setItem('canvasState', canvasState);
-    } catch (error) {
-      console.error('캔버스 상태를 저장하는 데 실패했습니다:', error);
-    }
     navigate('/canvas/dataset', { state: { model, config } });
   };
 
@@ -262,7 +290,7 @@ function App() {
             <div
               className={`transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[250px]' : 'w-0'}`}
             >
-              <Sidebar />
+              <Sidebar loadReferenceModel={loadReferenceModel} />
             </div>
             {isConfigOpen && (
               <Config
@@ -274,7 +302,15 @@ function App() {
 
             {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
             <div className="flex-1 h-full">
-              <FlowCanvas config={config} flowDataRef={flowDataRef} />
+              <FlowCanvas
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                setNodes={setNodes}
+                setEdges={setEdges}
+                config={config}
+              />
             </div>
 
             {/* 상단 왼쪽 버튼들 */}

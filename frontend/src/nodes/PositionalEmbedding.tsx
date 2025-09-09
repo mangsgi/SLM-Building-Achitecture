@@ -25,7 +25,7 @@ export const PositionalEmbeddingLayer: React.FC<
   if (!node) return null;
   const typedData = node.type as string;
 
-  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (
     field: keyof PositionalEmbeddingData,
     value: string,
@@ -48,7 +48,7 @@ export const PositionalEmbeddingLayer: React.FC<
     );
   };
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,

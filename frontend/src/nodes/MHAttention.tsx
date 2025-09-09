@@ -23,7 +23,7 @@ export const MHAttentionLayer: React.FC<MHAttentionLayerProps> = ({ id }) => {
   if (!node) return null;
   const typedData = node.type as string;
 
-  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
+  // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof MHAttentionData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
     const newValue = stringFields.includes(field) ? value : Number(value);
@@ -43,7 +43,7 @@ export const MHAttentionLayer: React.FC<MHAttentionLayerProps> = ({ id }) => {
     );
   };
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,

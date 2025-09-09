@@ -117,6 +117,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   } | null>(null);
   const dtypeOptions = ['bf16', 'fp16', 'fp32'];
 
+  // 모델 변경 이벤트 핸들러
   const handleModelChange = (model: ModelType) => {
     setSelectedModel(model);
     const modelId = model === 'GPT-2' ? 'gpt-2' : model.toLowerCase();
@@ -126,16 +127,19 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     });
   };
 
+  // 정보 모달을 열기 위한 이벤트 핸들러
   const handleShowInfo = (title: string, description: string) => {
     setModalInfo({ title, description });
     setIsModalOpen(true);
   };
 
+  // 정보 모달을 닫기 위한 이벤트 핸들러
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalInfo(null);
   };
 
+  // 설정 변경 이벤트 핸들러
   const handleChange = (key: string, value: string | boolean) => {
     if (value === 'true' || value === 'false') {
       setConfig((prev) => ({ ...prev, [key]: value === 'true' }));
@@ -153,6 +157,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     }
   };
 
+  // 중첩된 설정 변경 이벤트 핸들러
   const handleNestedChange = (
     parentKey: string,
     childKey: string,
@@ -170,6 +175,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     }
   };
 
+  // 분수 입력 렌더링 함수
   const renderFractionInput = (
     key: string,
     value: number,
@@ -196,6 +202,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     );
   };
 
+  // 분수 키 목록
   const fractionalKeys: string[] = ['drop_rate'];
 
   return (

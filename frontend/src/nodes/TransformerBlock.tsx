@@ -38,7 +38,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
     );
   }, [childNodes]);
 
-  // ✅ input 값 변경 시, 노드의 data에 직접 업데이트
+  // input 값 변경 시, 노드의 data에 직접 업데이트
   const handleFieldChange = (
     field: keyof TransformerBlockData,
     value: string,
@@ -61,7 +61,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
     );
   };
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,

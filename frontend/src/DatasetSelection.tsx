@@ -73,7 +73,7 @@ function DatasetSelection() {
     setModalInfo(null);
   };
 
-  // ✅ 학습 제출 함수
+  // 학습 제출 함수
   const handleSubmit = async () => {
     if (!selectedDatasetId || !modelName || trainingStatus === 'TRAINING')
       return;
@@ -134,7 +134,7 @@ function DatasetSelection() {
     }
   };
 
-  // ✅ 학습 취소 함수
+  // 학습 취소 함수
   const handleCancel = async () => {
     try {
       // dispatch(resetStatus());

@@ -6,6 +6,7 @@ import { SET_DIRTY } from './store/actions';
 import { flowContext } from './store/ReactFlowContext';
 import XIconButton from './ui-component/XIconButton';
 
+// Edge 연결 가능 여부 확인
 export function isValidConnection(
   edges: Edge[],
   connection: Connection,
@@ -46,7 +47,7 @@ const ButtonEdge = ({
   const { deleteEdge } = useContext(flowContext);
   const dispatch = useDispatch();
 
-  // ✅ Edge 클릭 시 삭제
+  // Edge 클릭 시 삭제
   const onEdgeClick = (
     evt: React.MouseEvent<HTMLButtonElement>,
     edgeId: string,

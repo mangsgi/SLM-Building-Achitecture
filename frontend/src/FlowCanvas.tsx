@@ -9,13 +9,12 @@ import React, {
 import ReactFlow, {
   useReactFlow,
   addEdge,
-  useNodesState,
-  useEdgesState,
   Controls,
   Connection,
   NodeDragHandler,
   NodeMouseHandler,
-  // ReactFlowInstance,
+  OnNodesChange,
+  OnEdgesChange,
 } from 'reactflow';
 import type { Edge, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -33,22 +32,26 @@ import { getNodeDataByType } from './nodes/components/nodeRegistry';
 const edgeTypes = { buttonEdge: ButtonEdge };
 
 interface FlowCanvasProps {
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  setNodes: (nodes: Node[] | ((nodes: Node[]) => Node[])) => void;
+  setEdges: (edges: Edge[] | ((edges: Edge[]) => Edge[])) => void;
   config: Record<string, any>;
-  flowDataRef: React.MutableRefObject<{ nodes: Node[]; edges: Edge[] }>;
 }
 
-// ✅ Canvas 메인 함수
+// Canvas 메인 함수
 export const FlowCanvas: React.FC<FlowCanvasProps> = ({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  setNodes,
+  setEdges,
   config,
-  flowDataRef,
-}: FlowCanvasProps) => {
+}) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    flowDataRef.current.nodes || [],
-  );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
-    flowDataRef.current.edges || [],
-  );
   const { getEdges } = useReactFlow();
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조 & ReactFlowInstance 저장
   const { reactFlowInstance, setReactFlowInstance } = useContext(flowContext);
@@ -63,12 +66,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   const nodeTypes = useMemo(() => getNodeTypes(), []);
   const allowedTypes = useMemo(() => getAllowedParentBlocks(), []);
 
-  // ✅ 노드와 엣지 데이터 저장
-  useEffect(() => {
-    flowDataRef.current = { nodes, edges };
-  }, [nodes, edges]);
-
-  // ✅ Config 값이 변경될 때마다 Node의 Data 업데이트
+  // Config 값이 변경될 때마다 Node의 Data 업데이트
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -83,7 +81,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     );
   }, [config, setNodes]);
 
-  // ✅ 노드 간 연결 이벤트 핸들
+  // 노드 간 연결 이벤트 핸들
   const onConnect = useCallback(
     // 전달된 params를 기반으로 addEdge 헬퍼 함수를 사용해 현재 edges 상태에 새로운 edge를 추가
     (params: Edge<unknown> | Connection) => {
@@ -118,29 +116,29 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         return addEdge(newEdge, eds);
       });
     },
-    [setEdges],
+    [setEdges, setNodes],
   );
 
-  // ✅ Node Click 시 이벤트 핸들러
+  // Node Click 시 이벤트 핸들러
   const onNodeClick: NodeMouseHandler = (_, node) => {
     if (node && node.id) {
       console.log(node);
     }
   };
 
-  // ✅ Drag된 요소가 Canvas 위로 올라오는 이벤트 핸들러
+  // Drag된 요소가 Canvas 위로 올라오는 이벤트 핸들러
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     // 사용자에게 이동 동작임을 시각적으로 표시
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // ✅ Node Drag가 시작되었을 때, Drag된 객체를 지정
+  // Node Drag가 시작되었을 때, Drag된 객체를 지정
   const onNodeDragStart: NodeDragHandler = (_, node) => {
     dragRef.current = node;
   };
 
-  // ✅ Sidebar의 Node가 Canvas에 Drop되는 이벤트 처리
+  // Sidebar의 Node가 Canvas에 Drop되는 이벤트 처리
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -174,10 +172,10 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
       };
       setNodes((nds) => nds.concat(newNode));
     },
-    [reactFlowInstance, config],
+    [reactFlowInstance, config, setNodes],
   );
 
-  // ✅ Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
+  // Drag 중인 Node가 중심에 위치한 Node를 target Node로 설정
   const onNodeDrag: NodeDragHandler = (_, node) => {
     // Node의 X 중심 좌표와 Y 중심 좌표 계산
     const centerX = node.position.x + (node.width ?? 0) / 2;
@@ -209,15 +207,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         n.id !== node.id,
     );
 
-    // console.log('node.position.x: ', node.position.x);
-    // console.log('node.position.y: ', node.position.y);
-    // console.log('node.width: ', node.width);
-    // console.log('node.height: ', node.height);
-    // console.log('targetNode.position.x: ', targetNode?.position.x);
-    // console.log('targetNode.position.y: ', targetNode?.position.y);
-    // console.log('targetNode.width: ', targetNode?.width);
-    // console.log('targetNode.height: ', targetNode?.height);
-
     if (targetNode) {
       // 타겟 노드의 isTarget 설정
       setNodes((nodes) =>
@@ -237,7 +226,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     }
   };
 
-  // ✅ Node 드래그가 끝났을 때
+  // Node 드래그가 끝났을 때
   const onNodeDragStop: NodeDragHandler = (_, node) => {
     // 이전 타겟 노드의 isTarget 초기화
     if (target) {
@@ -308,7 +297,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     dragRef.current = null;
   };
 
-  // ✅ 노드 정보 modal을 위한 상태변수 저장
+  // 노드 정보 modal을 위한 상태변수 저장
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
     type: 'node' | 'field';
@@ -319,7 +308,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
     data: null,
   });
 
-  // ✅ 정보 모달을 열기 위한 이벤트 리스너
+  // 정보 모달을 열기 위한 이벤트 리스너
   useEffect(() => {
     const handleFieldInfo = (event: CustomEvent) => {
       setModalData({

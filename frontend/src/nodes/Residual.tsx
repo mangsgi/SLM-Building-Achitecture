@@ -19,7 +19,7 @@ export const ResidualLayer: React.FC<ResidualLayerProps> = ({ id }) => {
   const node = getNode(id);
   if (!node) return null;
 
-  // ✅ 공통 액션 핸들러를 커스텀 훅을 통해 생성
+  // 공통 액션 핸들러를 커스텀 훅을 통해 생성
   const {
     handleDeleteClick,
     handleEditClick,
