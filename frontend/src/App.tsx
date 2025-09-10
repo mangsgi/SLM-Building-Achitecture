@@ -21,7 +21,7 @@ export interface ModelNode {
   data: {
     id: string;
     label: string;
-    [key: string]: unknown; // 필요하다면 더 세부적으로 정의 가능
+    [key: string]: unknown;
   };
   children?: ModelNode[]; // Block 노드일 경우에만
 }
@@ -128,7 +128,9 @@ async function buildModelJSON(
     // Node에서 필요없는 데이터 제거
     delete result.data.openModal;
     delete result.data.hideHandles;
+    delete result.data.isCollapsed;
     delete result.data.isTarget;
+    delete result.data.isLocked;
     delete (result.data as any).label;
 
     // Block 노드이면 children도 탐색
@@ -143,6 +145,9 @@ async function buildModelJSON(
           const childData = { ...child.data };
           delete childData.openModal;
           delete childData.hideHandles;
+          delete childData.isCollapsed;
+          delete childData.isTarget;
+          delete childData.isLocked;
           return {
             type: child.type,
             data: childData,
@@ -246,18 +251,18 @@ function App() {
 
   // 모델 전송 함수
   const handleSendModel = async () => {
-    // Save flow state to JSON file
-    const flowState = { nodes, edges };
-    const jsonString = JSON.stringify(flowState, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'reactflow-state.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // 모델 다운로드 (Reference 생성 시 주석 해제)
+    // const flowState = { nodes, edges };
+    // const jsonString = JSON.stringify(flowState, null, 2);
+    // const blob = new Blob([jsonString], { type: 'application/json' });
+    // const url = URL.createObjectURL(blob);
+    // const link = document.createElement('a');
+    // link.href = url;
+    // link.download = 'reactflow-state.json';
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
+    // URL.revokeObjectURL(url);
 
     const model = await buildModelJSON(nodes, edges, config);
 

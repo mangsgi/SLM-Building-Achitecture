@@ -5,8 +5,8 @@ export interface BaseNodeData {
   hideHandles?: boolean; // 노드 핸들 숨김 여부
   isTarget?: boolean; // 모델 타겟 노드 여부
   isLocked?: boolean; // 노드 잠금 여부
-  inDim?: number; // 입력 차원
-  outDim?: number; // 출력 차원
+  inDim: number; // 입력 차원
+  outDim: number; // 출력 차원
   [key: string]: unknown; // Index Signature
 }
 
@@ -45,7 +45,7 @@ export interface MHAttentionData extends BaseNodeData {
   dropoutRate: number;
   ctxLength: number;
   numHeads: number;
-  qkvBias?: false;
+  qkvBias: false;
 }
 
 export interface GQAttentionData extends BaseNodeData {
@@ -55,11 +55,6 @@ export interface GQAttentionData extends BaseNodeData {
   qkvBias?: false;
 }
 
-export interface GPT2TransformerBlockData extends BaseNodeData {
-  numLayers: number;
-  // 레이어 이름별 true/false 값 딕셔너리 추가
-}
-
 export interface TransformerBlockData extends BaseNodeData {
   numOfBlocks: number;
 }
@@ -67,4 +62,9 @@ export interface TransformerBlockData extends BaseNodeData {
 export interface TestBlockData extends BaseNodeData {
   testType: number;
   // sdpAttention?: SDPAttentionData | null;
+}
+
+export interface GPT2TransformerBlockData extends BaseNodeData {
+  numLayers: number;
+  // 레이어 이름별 true/false 값 딕셔너리 추가
 }

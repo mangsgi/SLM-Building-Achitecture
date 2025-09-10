@@ -35,7 +35,7 @@ class LayerFactory:
             "positionalEmbedding": PositionalEmbeddingFactory,
             "normalization": NormalizationFactory,
             "attention": AttentionFactory,
-            "sdpAttention": AttentionFactory,
+            "mhAttention": AttentionFactory,
             "flashAttention": AttentionFactory,
             "gqaAttention": AttentionFactory,
             "feedForward": FeedForwardFactory,
@@ -77,20 +77,20 @@ class PositionalEmbeddingFactory:
     """포지셔널 임베딩 레이어 생성"""
     @staticmethod
     def create(data: Dict[str, Any], dtype=torch.float32):
-        mode = data.get("mode", "learned")
+        mode = data.get("mode", "Learned Positional Embedding")
         common_args = {
             "ctx_length": data["ctxLength"],
             "emb_dim": data["embDim"],
             "dtype": dtype,  # dtype 추가
         }
 
-        if mode == "learned":
+        if mode == "Learned Positional Embedding":
             return LearnedPositionalEmbedding(**common_args)
-        elif mode == "sinusoidal":
+        elif mode == "Sinusoidal Positional Embedding":
             return SinusoidalPositionalEmbedding(**common_args)
-        elif mode == "relative":
+        elif mode == "Relative Positional Embedding":
             return RelativePositionalEmbedding(**common_args)
-        elif mode == "rotary":
+        elif mode == "Rotary Positional Embedding":
             return RotaryPositionalEmbedding(
                 data["embDim"], data["ctxLength"], dtype=dtype
             )
@@ -119,7 +119,7 @@ class AttentionFactory:
         }
 
         # 타입별 처리
-        if layer_type == "sdpAttention" or (
+        if layer_type == "mhAttention" or (
             layer_type is None and "numHeads" in data
         ):
             # Scaled Dot-Product Attention
@@ -205,10 +205,10 @@ class FeedForwardFactory:
     @staticmethod
     def create(data: Dict[str, Any], dtype=torch.float32) -> CustomFFN:
         return CustomFFN(
-            emb_dim=data.get("embDim") or data.get("inDim"),
-            dff_ratio=data.get("numOfFactor", 4.0),
-            activation=data.get("activation", "relu"),
-            gated=data.get("gated", False),
+            emb_dim=data.get("outDim") or data.get("inDim"),
+            dff_ratio=data.get("hiddenDim", 3072),
+            activation=data.get("actFunc", "GELU"),
+            gated=data.get("feedForwardType", "Standard") == "Gated",
             dtype=dtype,  # dtype 이미 있음
         )
 
@@ -327,11 +327,16 @@ def build_model_from_json(
         id_map[node["data"]["id"]] = node
 
     layers = []
+    print("--- Starting model build loop ---")  # 디버깅용 print 추가
     for node in layer_nodes:
+        node_id = node.get("data", {}).get("id", "N/A")
+        print(f"--- Creating layer for node: {node_id} ---")  # 디버깅용 print 추가
+
         layer = LayerFactory.create_layer(node, dtype=torch_dtype)
         if "id" in node["data"]:
             layer.layer_id = node["data"]["id"]
             id_to_module[layer.layer_id] = layer
         layers.append(layer)
 
+    print("--- Model build loop finished ---")  # 디버깅용 print 추가
     return CustomSequential(layers, id_to_module)

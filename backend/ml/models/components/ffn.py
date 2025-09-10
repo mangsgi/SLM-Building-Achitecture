@@ -5,9 +5,9 @@ from .activation_function import activation_map, ReLU
 
 
 class CustomFFN(nn.Module):
-    def __init__(self, emb_dim, dff_ratio=4.0, activation="relu", gated=False, dtype=torch.float32):
+    def __init__(self, emb_dim, dff_ratio=3072, activation="GELU", gated=False, dtype=torch.float32):
         super().__init__()
-        d_ff = int(emb_dim * dff_ratio)
+        d_ff = dff_ratio
         self.activation = activation_map.get(activation.lower(), ReLU())
 
         if gated:

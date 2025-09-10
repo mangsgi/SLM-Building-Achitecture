@@ -33,6 +33,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('tokenEmbedding')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('tokenEmbedding')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -40,6 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('positionalEmbedding')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('positionalEmbedding')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -47,6 +51,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('linear')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('linear')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -54,6 +60,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('feedForward')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('feedForward')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -61,6 +69,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('normalization')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('normalization')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -68,6 +78,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('dropout')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('dropout')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -75,6 +87,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('residual')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('residual')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -82,6 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('mhAttention')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('mhAttention')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -89,6 +105,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('gqAttention')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('gqAttention')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -96,6 +114,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('transformerBlock')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('transformerBlock')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />
@@ -103,6 +123,8 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           nodeType={nodeRegistry.get('testBlock')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('testBlock')?.label ?? '',
+            inDim: 0,
+            outDim: 0,
           }}
           onDragStart={onDragStart}
         />

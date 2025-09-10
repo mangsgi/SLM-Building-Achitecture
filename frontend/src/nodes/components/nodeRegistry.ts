@@ -59,51 +59,89 @@ export const getAllowedParentBlocks = () =>
     .filter((def) => def.type.includes('Block'))
     .map((def) => def.type);
 
-// ✅ Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
+// Config로부터 Data를 받아 nodeType에 따라 node에 데이터 적용하는 함수
+// 모든 노드의 모든 속성에 대해서 초기화 필요
 export const getNodeDataByType = (
   nodeType: string,
   config: typeof defaultConfig,
   baseData: BaseNodeData,
 ): BaseNodeData => {
+  const modelType = config.model;
   const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
-  switch (nodeType) {
-    case 'tokenEmbedding':
-      return {
-        ...data,
-        vocabSize: config.vocab_size,
-        embDim: config.emb_dim,
-      };
-    case 'positionalEmbedding':
-      return {
-        ...data,
-        ctxLength: config.context_length,
-        embDim: config.emb_dim,
-      };
-    case 'linear':
-      return {
-        ...data,
-        outDim: config.vocab_size,
-      };
-    case 'dropout':
-      return {
-        ...data,
-        dropoutRate: config.drop_rate,
-      };
-    case 'mhAttention':
-      return {
-        ...data,
-        ctxLength: config.context_length,
-        dropoutRate: config.drop_rate,
-        numHeads: config.n_heads,
-        qkvBias: config.qkv_bias,
-      };
-    case 'transformerBlock':
-      return {
-        ...data,
-        numOfBlocks: config.n_blocks,
-      };
-    default:
+
+  switch (modelType) {
+    case 'gpt-2': {
+      switch (nodeType) {
+        case 'tokenEmbedding':
+          return {
+            ...data,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
+          };
+        case 'positionalEmbedding':
+          return {
+            ...data,
+            ctxLength: config.context_length,
+            posType: 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
+          };
+        case 'feedForward':
+          return {
+            ...data,
+            hiddenDim: 3072,
+            feedForwardType: 'Standard', // Standard, Gated
+            actFunc: 'GELU', // ReLU, GELU, SwiGLU, Mish
+          };
+        case 'linear':
+          return {
+            ...data,
+            outDim: config.vocab_size, // 일단 Linear Output 기준으로 초기화
+          };
+        case 'dropout':
+          return {
+            ...data,
+            dropoutRate: config.drop_rate,
+          };
+        case 'normalization':
+          return {
+            ...data,
+            normType: 'Layer Normalization', // Layer Normalization, RMS Normalization
+          };
+        case 'mhAttention':
+          return {
+            ...data,
+            dropoutRate: config.drop_rate,
+            ctxLength: config.context_length,
+            numHeads: config.n_heads,
+            qkvBias: config.qkv_bias, // true, false
+          };
+        case 'gqAttention':
+          return {
+            ...data,
+            dropoutRate: config.drop_rate,
+            ctxLength: config.context_length,
+            numHeads: config.n_heads,
+            qkvBias: config.qkv_bias, // true, false
+          };
+        case 'transformerBlock':
+          return {
+            ...data,
+            numOfBlocks: config.n_blocks,
+          };
+        default: // e.g., testBlock, residual
+          return data;
+      }
+    }
+    case 'llama2': {
       return data;
+    }
+    case 'llama3': {
+      return data;
+    }
+    default: {
+      return data;
+    }
   }
 };
 
@@ -115,6 +153,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Test Block',
       component: TestBlock,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Test Block',
       },
       stringFields: ['label'],
@@ -140,6 +180,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Token Embedding',
       component: TokenEmbeddingLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Token Embedding',
       },
       stringFields: ['label'],
@@ -173,6 +215,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Positional Embedding',
       component: PositionalEmbeddingLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Positional Embedding',
       },
       stringFields: ['label', 'posType'],
@@ -228,6 +272,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Linear',
       component: LinearOutputLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Linear',
       },
       stringFields: ['label'],
@@ -252,6 +298,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Normalization',
       component: NormalizationLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Normalization',
       },
       stringFields: ['label', 'normType'],
@@ -283,6 +331,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Feed Forward',
       component: FeedForwardLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Feed Forward',
       },
       stringFields: ['label', 'feedForwardType', 'actFunc'],
@@ -334,6 +384,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Dropout',
       component: DropoutLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Dropout',
       },
       stringFields: ['label'],
@@ -359,6 +411,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Residual',
       component: ResidualLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Residual',
       },
       stringFields: [],
@@ -372,6 +426,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'MH Attention',
       component: MHAttentionLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'MH Attention',
       },
       stringFields: ['label'],
@@ -413,6 +469,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'GQ Attention',
       component: GQAttentionLayer,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'GQ Attention',
       },
       stringFields: ['label'],
@@ -462,6 +520,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       label: 'Transformer Block',
       component: TransformerBlock,
       defaultData: {
+        inDim: 0,
+        outDim: 0,
         label: 'Transformer Block',
       },
       stringFields: ['label'],
