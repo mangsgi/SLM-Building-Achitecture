@@ -284,12 +284,21 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
                     <option value="false">false</option>
                   </select>
                 ) : typeof value === 'number' ? (
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                    className="border p-2 rounded"
-                  />
+                  key === 'vocab_size' ? (
+                    <input
+                      type="text"
+                      value={value}
+                      readOnly
+                      className="border p-2 rounded bg-gray-100 cursor-not-allowed"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      className="border p-2 rounded"
+                    />
+                  )
                 ) : typeof value === 'object' &&
                   value !== null &&
                   !Array.isArray(value) ? (

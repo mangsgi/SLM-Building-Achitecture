@@ -14,6 +14,7 @@ import { ReactFlowContext } from './store/ReactFlowContext';
 import Header from './ui-component/Header';
 import ModelButton from './ui-component/TestModelButton';
 import { referenceNodes, referenceEdges } from './constants/referenceModels';
+import Modal from './ui-component/Modal'; // Modal 컴포넌트 import 추가
 
 // 모델을 구성하는 노드 타입
 export interface ModelNode {
@@ -34,19 +35,17 @@ async function buildModelJSON(
 ): Promise<ModelNode[]> {
   // emb_dim 짝수 유효성 검사 (Config)
   if (config.emb_dim && Number(config.emb_dim) % 2 !== 0) {
-    alert(
+    throw new Error(
       `Config의 Embedding Dimension(emb_dim)은 짝수여야 합니다. 현재 값: ${config.emb_dim}`,
     );
-    return [];
   }
 
   // emb_dim 짝수 유효성 검사 (Nodes)
   for (const node of nodes) {
     if (node.data.embDim && Number(node.data.embDim) % 2 !== 0) {
-      alert(
+      throw new Error(
         `노드 '${node.data.label}'의 Embedding Dimension(embDim)은 짝수여야 합니다. 현재 값: ${node.data.embDim}`,
       );
-      return [];
     }
   }
 
@@ -57,10 +56,9 @@ async function buildModelJSON(
       const numHeads = Number(node.data.numHeads);
       const nKvGroups = Number(config.n_kv_groups);
       if (numHeads % nKvGroups !== 0) {
-        alert(
+        throw new Error(
           `GQA 노드 '${node.data.label}'의 numHeads(${numHeads})는 config의 n_kv_groups(${nKvGroups})로 나누어 떨어져야 합니다.`,
         );
-        return [];
       }
     }
   }
@@ -74,18 +72,16 @@ async function buildModelJSON(
       if (!embDim || !numHeads) continue; // 필요한 값이 없으면 건너뜀
 
       if (embDim % numHeads !== 0) {
-        alert(
+        throw new Error(
           `TransformerBlock '${node.data.label}'의 Embedding Dimension(${embDim})은 Number of Heads(${numHeads})로 나누어 떨어져야 합니다.`,
         );
-        return [];
       }
 
       const headDim = embDim / numHeads;
       if (headDim % 2 !== 0) {
-        alert(
+        throw new Error(
           `TransformerBlock '${node.data.label}'의 Head Dimension(emb_dim / numHeads)은 짝수여야 합니다. 현재 값: ${headDim}`,
         );
-        return [];
       }
     }
   }
@@ -174,10 +170,9 @@ async function buildModelJSON(
 
   // 5-2. 예외 처리
   if (rootNodes.length !== 1) {
-    alert(
+    throw new Error(
       `⚠ 모델 구성 오류: 시작 노드가 ${rootNodes.length}개 존재합니다. 하나의 루트 노드만 있어야 합니다.`,
     );
-    return [];
   }
 
   // 5-3. DFS 실행
@@ -199,6 +194,12 @@ function App() {
   const [isConfigOpen, setIsConfigOpen] = useState(true);
   const [config, setConfig] = useState<Record<string, any>>(defaultConfig);
   const navigate = useNavigate();
+
+  // 오류 모달 상태 추가
+  const [errorModal, setErrorModal] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
 
   // 로컬 스토리지에서 상태를 불러오거나 기본값으로 초기화
   const initialFlowState = () => {
@@ -238,11 +239,13 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
-  const loadReferenceModel = () => {
+  const loadReferenceModel = async () => {
     if (!referenceNodes || !referenceEdges || referenceNodes.length === 0) {
-      alert(
-        'Reference model is empty. Please add nodes and edges to src/constants/reference-model.ts',
-      );
+      setErrorModal({
+        isOpen: true,
+        message:
+          'Reference model is empty. Please add nodes and edges to src/constants/reference-model.ts',
+      });
       return;
     }
     setNodes(referenceNodes);
@@ -264,14 +267,18 @@ function App() {
     // document.body.removeChild(link);
     // URL.revokeObjectURL(url);
 
-    const model = await buildModelJSON(nodes, edges, config);
+    try {
+      const model = await buildModelJSON(nodes, edges, config);
 
-    if (!model.length) {
-      console.warn('모델 생성 실패 또는 구성 오류로 인해 이동 중단됨.');
-      return;
+      if (!model.length) {
+        console.warn('모델 생성 실패 또는 구성 오류로 인해 이동 중단됨.');
+        return;
+      }
+
+      navigate('/canvas/dataset', { state: { model, config } });
+    } catch (e: any) {
+      setErrorModal({ isOpen: true, message: e.message });
     }
-
-    navigate('/canvas/dataset', { state: { model, config } });
   };
 
   const handleTestModelClick = () => {
@@ -342,6 +349,15 @@ function App() {
           </ReactFlowContext>
         </ReactFlowProvider>
       </div>
+
+      {/* 오류 표시를 위한 Modal 컴포넌트 */}
+      <Modal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="모델 구성 오류"
+      >
+        <p className="text-sm text-gray-600">{errorModal.message}</p>
+      </Modal>
     </div>
   );
 }
