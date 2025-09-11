@@ -9,7 +9,11 @@ import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
-import { NODE_GAP, DEFAULT_NODE_HEIGHT } from '../constants/nodeHeights';
+import {
+  NODE_GAP,
+  DEFAULT_NODE_HEIGHT,
+  DEFAULT_BLOCK_NODE_HEIGHT,
+} from '../constants/nodeHeights';
 
 interface TransformerBlockLayerProps {
   id: string;
@@ -25,17 +29,25 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   if (!node) return null;
   const typedData = node.type as string;
 
-  // 자식 노드와 자식 노드의 높이 합 저장
   const getNodes = useStore((state) => state.getNodes);
   const nodes = getNodes();
   const childNodes = useMemo(() => {
     return nodes.filter((n) => n.parentNode === id);
-  }, [nodes]);
-  const childNodesHeight = useMemo(() => {
-    return childNodes.reduce(
-      (acc, node) => NODE_GAP + acc + (node.height ?? DEFAULT_NODE_HEIGHT),
-      40,
+  }, [nodes, id]);
+
+  // 자식 노드들이 차지하는 순수 영역의 높이 계산
+  const childrenAreaHeight = useMemo(() => {
+    // 자식이 없으면 플레이스홀더를 위한 높이 반환
+    if (childNodes.length === 0) {
+      return DEFAULT_BLOCK_NODE_HEIGHT;
+    }
+    // 자식이 있으면, 자식들의 총 높이 + 자식들 사이의 간격의 합을 반환
+    const totalChildrenSize = childNodes.reduce(
+      (acc, node) => acc + (node.height ?? DEFAULT_NODE_HEIGHT),
+      DEFAULT_NODE_HEIGHT,
     );
+    const totalGaps = (childNodes.length - 1) * NODE_GAP;
+    return totalChildrenSize + totalGaps;
   }, [childNodes]);
 
   // input 값 변경 시, 노드의 data에 직접 업데이트
@@ -75,7 +87,7 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
 
   return (
     <BlockWrapper
-      childNodesHeight={childNodesHeight}
+      childrenAreaHeight={childrenAreaHeight}
       isTarget={node.data.isTarget}
     >
       <div className="relative group">
@@ -100,8 +112,8 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
             window.dispatchEvent(event);
           }}
         />
-        {childNodesHeight === 40 && (
-          <div className="border-dashed border-2 text-center text-gray-500 italic">
+        {childNodes.length === 0 && (
+          <div className="border-dashed border-2 text-center text-gray-500 italic p-4">
             여기에 노드를 드롭하세요
           </div>
         )}

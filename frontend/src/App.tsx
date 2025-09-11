@@ -8,7 +8,7 @@ import CanvasHamburgerButton from './ui-component/CanvasHamburgerButton';
 import ConfigButton from './ui-component/ConfigButton';
 import SendModelButton from './ui-component/SendModelButton';
 import Sidebar from './Sidebar';
-import Config, { defaultConfig } from './Config';
+import Config, { defaultConfig, ModelConfig } from './Config';
 import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
 import Header from './ui-component/Header';
@@ -192,7 +192,7 @@ function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [config, setConfig] = useState<Record<string, any>>(defaultConfig);
+  const [config, setConfig] = useState<ModelConfig>(defaultConfig);
   const navigate = useNavigate();
 
   // 오류 모달 상태 추가

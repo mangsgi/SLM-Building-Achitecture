@@ -3,16 +3,22 @@ import { Handle, Position } from 'reactflow';
 
 interface BlockWrapperProps {
   children: ReactNode;
-  hideHandles?: boolean;
-  childNodesHeight: number;
+  childrenAreaHeight: number; // 자식 영역의 순수 높이
   isTarget?: boolean;
 }
 
 export const BlockWrapper: FC<BlockWrapperProps> = ({
   children,
-  childNodesHeight,
+  childrenAreaHeight,
   isTarget = false,
 }) => {
+  // 블록 노드의 헤더(제목 등) 영역의 기본 높이와, 자식 영역의 상/하단 여백
+  const HEADER_HEIGHT = 60;
+  const PADDING_Y = 20;
+
+  // 최종 높이 계산 = 헤더 높이 + 자식 영역 높이 + 상/하단 여백
+  const totalHeight = HEADER_HEIGHT + childrenAreaHeight + PADDING_Y;
+
   return (
     <div
       className={`block-wrapper p-2 bg-white border-2 rounded shadow ${
@@ -22,7 +28,7 @@ export const BlockWrapper: FC<BlockWrapperProps> = ({
         pointerEvents: 'auto',
         position: 'relative',
         width: '320px',
-        height: `${100 + childNodesHeight}px`,
+        height: `${totalHeight}px`,
         zIndex: 1,
         isolation: 'isolate',
       }}

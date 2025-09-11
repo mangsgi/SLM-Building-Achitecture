@@ -23,25 +23,21 @@ import LinearOutputLayer from '../LinearOutput';
 import TokenEmbeddingLayer from '../TokenEmbedding';
 import PositionalEmbeddingLayer from '../PositionalEmbedding';
 import TestBlock from '../TestBlock';
-import { defaultConfig } from '../../Config';
+import { ModelConfig } from '../../Config';
 
 interface NodeDefinition {
   // 1. 기본 정보
   type: string;
   label: string;
-
   // 2. 데이터 관련
   defaultData: BaseNodeData;
-
   configMapping?: {
     [key: string]: string;
   };
-
   // 3. 필드 관련
   stringFields: (keyof BaseNodeData)[];
   typeOptions?: Map<string, string[]>;
   getFields: (data: BaseNodeData) => FieldConfig[];
-
   // 4. 컴포넌트 관련
   component: React.ComponentType<any>;
 }
@@ -63,14 +59,13 @@ export const getAllowedParentBlocks = () =>
 // 모든 노드의 모든 속성에 대해서 초기화 필요
 export const getNodeDataByType = (
   nodeType: string,
-  config: typeof defaultConfig,
+  config: ModelConfig,
   baseData: BaseNodeData,
 ): BaseNodeData => {
-  const modelType = config.model;
   const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
 
-  switch (modelType) {
-    case 'gpt-2': {
+  switch (config.model) {
+    case 'gpt-2':
       switch (nodeType) {
         case 'tokenEmbedding':
           return {
@@ -94,54 +89,87 @@ export const getNodeDataByType = (
             actFunc: 'GELU', // ReLU, GELU, SwiGLU, Mish
           };
         case 'linear':
-          return {
-            ...data,
-            outDim: config.vocab_size, // 일단 Linear Output 기준으로 초기화
-          };
-        case 'dropout':
-          return {
-            ...data,
-            dropoutRate: config.drop_rate,
-          };
+          return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
         case 'normalization':
-          return {
-            ...data,
-            normType: 'Layer Normalization', // Layer Normalization, RMS Normalization
-          };
+          return { ...data, normType: 'Layer Normalization' }; // Layer Normalization, RMS Normalization
+        case 'dropout':
+          return { ...data, dropoutRate: config.drop_rate };
         case 'mhAttention':
           return {
             ...data,
-            dropoutRate: config.drop_rate,
-            ctxLength: config.context_length,
-            numHeads: config.n_heads,
             qkvBias: config.qkv_bias, // true, false
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: config.drop_rate,
           };
         case 'gqAttention':
           return {
             ...data,
-            dropoutRate: config.drop_rate,
-            ctxLength: config.context_length,
-            numHeads: config.n_heads,
             qkvBias: config.qkv_bias, // true, false
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: config.drop_rate,
           };
         case 'transformerBlock':
+          return { ...data, numOfBlocks: config.n_blocks };
+        default:
+          break;
+      }
+      break;
+    case 'llama2':
+      switch (nodeType) {
+        case 'tokenEmbedding':
           return {
             ...data,
-            numOfBlocks: config.n_blocks,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
           };
-        default: // e.g., testBlock, residual
-          return data;
+        case 'positionalEmbedding':
+          return {
+            ...data,
+            ctxLength: config.context_length,
+            embDim: config.emb_dim,
+          };
+        case 'feedForward':
+          return {
+            ...data,
+            hiddenDim: 3072,
+            feedForwardType: 'Standard',
+            actFunc: 'GELU',
+          };
+        case 'linear':
+          return { ...data, outDim: config.vocab_size };
+        case 'normalization':
+          return { ...data, normType: 'Layer Normalization' };
+        default:
+          break;
       }
-    }
-    case 'llama2': {
+      break;
+    case 'llama3':
+      // Llama 타입이 보장되므로, llama 전용 속성에 안전하게 접근 가능
+      switch (nodeType) {
+        // case 'gqAttention': // 예시: llama 모델은 gqAttention을 사용
+        //   return { ...data, numKvGroups: config.n_kv_groups };
+        default:
+          break;
+      }
+      break;
+  }
+
+  // 모든 모델 타입에 공통적인 로직
+  switch (nodeType) {
+    case 'tokenEmbedding':
+      return { ...data, vocabSize: config.vocab_size, embDim: config.emb_dim };
+    case 'positionalEmbedding':
+      return {
+        ...data,
+        ctxLength: config.context_length,
+        embDim: config.emb_dim,
+      };
+    case 'linear':
+      return { ...data, outDim: config.vocab_size };
+    default:
       return data;
-    }
-    case 'llama3': {
-      return data;
-    }
-    default: {
-      return data;
-    }
   }
 };
 

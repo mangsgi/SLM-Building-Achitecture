@@ -3,16 +3,60 @@ import ConfigButton from './ui-component/ConfigButton';
 import { FiInfo } from 'react-icons/fi';
 import Modal from './ui-component/Modal';
 
+// --- 타입 정의 시작 ---
 type ModelType = 'GPT-2' | 'Llama2' | 'Llama3';
+
+// 공통 설정값 인터페이스
+interface BaseConfig {
+  epochs: number;
+  batch_size: number;
+  vocab_size: number;
+  context_length: number;
+  emb_dim: number;
+  n_heads: number;
+  dtype: string;
+}
+
+// 모델별 고유 설정값 인터페이스
+export interface GPT2Config extends BaseConfig {
+  model: 'gpt-2';
+  n_blocks: number;
+  drop_rate: number;
+  qkv_bias: boolean;
+}
+
+export interface Llama2Config extends BaseConfig {
+  model: 'llama2';
+  n_layers: number;
+  hidden_dim: number;
+}
+
+export interface Llama3Config extends BaseConfig {
+  model: 'llama3';
+  n_layers: number;
+  hidden_dim: number;
+  n_kv_groups: number;
+  rope_base: number;
+  rope_freq: {
+    factor: number;
+    low_freq_factor: number;
+    high_freq_factor: number;
+    original_context_length: number;
+  };
+}
+
+// 구별된 유니온 타입
+export type ModelConfig = GPT2Config | Llama2Config | Llama3Config;
+// --- 타입 정의 끝 ---
 
 interface ConfigProps {
   onToggle: () => void;
-  config: Record<string, any>;
-  setConfig: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  config: ModelConfig;
+  setConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
 }
 
-// GPT-2 124M
-const gpt2Config = {
+// --- 설정값 객체들 ---
+const gpt2Config: Omit<GPT2Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 50257,
@@ -25,8 +69,7 @@ const gpt2Config = {
   dtype: 'bf16',
 };
 
-// Llama2 7B
-const llama2Config = {
+const llama2Config: Omit<Llama2Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 32000,
@@ -38,8 +81,7 @@ const llama2Config = {
   dtype: 'bf16',
 };
 
-// Llama3 8B
-const llama3Config = {
+const llama3Config: Omit<Llama3Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 128256,
@@ -59,12 +101,13 @@ const llama3Config = {
   dtype: 'bf16',
 };
 
-const modelConfigs: Record<ModelType, Record<string, any>> = {
+const modelConfigs: Record<ModelType, Omit<ModelConfig, 'model'>> = {
   'GPT-2': gpt2Config,
   Llama2: llama2Config,
   Llama3: llama3Config,
 };
 
+// --- 기타 설정 맵 ---
 const configMap: Record<string, string> = {
   model: 'Model',
   epochs: 'Epochs',
@@ -103,13 +146,23 @@ const configDescriptions: Record<string, string> = {
   rope_freq: 'RoPE 주파수 스케일링 값입니다.',
 };
 
-export const defaultConfig = {
-  ...gpt2Config,
-  model: 'gpt-2',
+// --- 기본 설정값 ---
+export const defaultConfig: Llama2Config = {
+  ...llama2Config,
+  model: 'llama2',
 };
 
 const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
-  const [selectedModel, setSelectedModel] = useState<ModelType>('GPT-2');
+  const getModelTypeFromId = (modelId: ModelConfig['model']): ModelType => {
+    if (modelId === 'gpt-2') return 'GPT-2';
+    if (modelId === 'llama2') return 'Llama2';
+    if (modelId === 'llama3') return 'Llama3';
+    return 'GPT-2'; // Fallback
+  };
+
+  const [selectedModel, setSelectedModel] = useState<ModelType>(
+    getModelTypeFromId(config.model),
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInfo, setModalInfo] = useState<{
     title: string;
@@ -120,11 +173,18 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   // 모델 변경 이벤트 핸들러
   const handleModelChange = (model: ModelType) => {
     setSelectedModel(model);
-    const modelId = model === 'GPT-2' ? 'gpt-2' : model.toLowerCase();
-    setConfig({
-      ...modelConfigs[model],
+    const modelId =
+      model === 'GPT-2'
+        ? 'gpt-2'
+        : (model.toLowerCase() as ModelConfig['model']);
+    const newConfigData = modelConfigs[model];
+
+    const newConfig: ModelConfig = {
+      ...newConfigData,
       model: modelId,
-    });
+    } as ModelConfig;
+
+    setConfig(newConfig);
   };
 
   // 정보 모달을 열기 위한 이벤트 핸들러
@@ -142,18 +202,20 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   // 설정 변경 이벤트 핸들러
   const handleChange = (key: string, value: string | boolean) => {
     if (value === 'true' || value === 'false') {
-      setConfig((prev) => ({ ...prev, [key]: value === 'true' }));
+      setConfig(
+        (prev) => ({ ...prev, [key]: value === 'true' }) as ModelConfig,
+      );
       return;
     }
 
     if (key === 'dtype') {
-      setConfig((prev) => ({ ...prev, [key]: value as string }));
+      setConfig((prev) => ({ ...prev, [key]: value as string }) as ModelConfig);
       return;
     }
 
     const numValue = Number(value);
     if (!isNaN(numValue)) {
-      setConfig((prev) => ({ ...prev, [key]: numValue }));
+      setConfig((prev) => ({ ...prev, [key]: numValue }) as ModelConfig);
     }
   };
 
@@ -165,13 +227,16 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   ) => {
     const numValue = Number(value);
     if (!isNaN(numValue) && value.trim() !== '') {
-      setConfig((prev: Record<string, any>) => ({
-        ...prev,
-        [parentKey]: {
-          ...prev[parentKey],
-          [childKey]: numValue,
-        },
-      }));
+      setConfig(
+        (prev) =>
+          ({
+            ...prev,
+            [parentKey]: {
+              ...(prev as any)[parentKey],
+              [childKey]: numValue,
+            },
+          }) as ModelConfig,
+      );
     }
   };
 
@@ -272,7 +337,7 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
                 ) : fractionalKeys.includes(key) &&
                   typeof value === 'number' ? (
                   renderFractionInput(key, value, (k, v) =>
-                    setConfig((prev) => ({ ...prev, [k]: v })),
+                    setConfig((prev) => ({ ...prev, [k]: v }) as ModelConfig),
                   )
                 ) : typeof value === 'boolean' ? (
                   <select

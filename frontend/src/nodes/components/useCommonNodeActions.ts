@@ -1,7 +1,12 @@
 import { MouseEvent } from 'react';
 import { useReactFlow, type Node, type Edge } from 'reactflow';
 import { BaseNodeData } from './NodeData';
-import { NODE_HEIGHTS, DEFAULT_NODE_HEIGHT } from '../../constants/nodeHeights';
+import {
+  NODE_HEIGHTS,
+  DEFAULT_NODE_HEIGHT,
+  BLOCK_START_Y,
+  NODE_GAP,
+} from '../../constants/nodeHeights';
 import { NodeInfo } from './NodeInfo';
 
 // NodaData 템플릿 적용
@@ -38,7 +43,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
       const updatedNodes = nds.map((n) => {
         if (n.id === id) {
           const newHeight = newIsCollapsed
-            ? 43 // 접혔을 때 높이
+            ? DEFAULT_NODE_HEIGHT
             : (NODE_HEIGHTS[n.type as keyof typeof NODE_HEIGHTS] ??
               DEFAULT_NODE_HEIGHT);
           return {
@@ -67,7 +72,7 @@ export function useCommonNodeActions<T extends BaseNodeData>({
           position: { ...sibling.position, y: yOffset },
         };
         // 현재 노드의 높이를 기준으로 다음 노드의 yOffset 계산
-        yOffset += (updatedSibling.height ?? 40) + 10;
+        yOffset += (updatedSibling.height ?? DEFAULT_NODE_HEIGHT) + NODE_GAP;
         return updatedSibling;
       });
 
@@ -115,13 +120,13 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         .filter((n) => n.parentNode === parentId)
         .sort((a, b) => a.position.y - b.position.y);
 
-      let yOffset = 110;
+      let yOffset = BLOCK_START_Y;
       const updatedSiblings = remainingSiblings.map((child) => {
         const updated = {
           ...child,
           position: { ...child.position, y: yOffset },
         };
-        yOffset += (child.height ?? 40) + 10;
+        yOffset += (child.height ?? DEFAULT_NODE_HEIGHT) + NODE_GAP;
         return updated;
       });
 

@@ -14,10 +14,11 @@ export const NODE_HEIGHTS = {
   gqAttention: 371,
 } as const;
 
-// 기본 높이값 (노드 타입이 정의되지 않은 경우 사용)
+// 기본 높이값 (노드가 접혀있을 때의 높이)
 export const DEFAULT_NODE_HEIGHT = 43;
-
-// 노드 간 간격
+// 기본 블록 노드 높이 (블록 노드 내 자식 노드가 없을 때의 높이)
+export const DEFAULT_BLOCK_NODE_HEIGHT = 90;
+// 노드 간 간격 (블록 노드 내 자식 노드 간 간격)
 export const NODE_GAP = 10;
 
 // 블록 노드의 시작 y 위치
