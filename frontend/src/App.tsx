@@ -13,7 +13,7 @@ import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
 import Header from './ui-component/Header';
 import ModelButton from './ui-component/TestModelButton';
-import { referenceNodes, referenceEdges } from './constants/referenceModels';
+import { referenceModels } from './constants/referenceModels';
 import Modal from './ui-component/Modal'; // Modal 컴포넌트 import 추가
 
 // 모델을 구성하는 노드 타입
@@ -239,17 +239,19 @@ function App() {
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
-  const loadReferenceModel = async () => {
-    if (!referenceNodes || !referenceEdges || referenceNodes.length === 0) {
+  const loadReferenceModel = async (
+    modelName: 'GPT-2' | 'Llama2' | 'Llama3',
+  ) => {
+    const model = referenceModels[modelName];
+    if (!model || !model.nodes || !model.edges || model.nodes.length === 0) {
       setErrorModal({
         isOpen: true,
-        message:
-          'Reference model is empty. Please add nodes and edges to src/constants/reference-model.ts',
+        message: `Reference model '${modelName}' is empty. Please add nodes and edges to src/constants/referenceModels.ts`,
       });
       return;
     }
-    setNodes(referenceNodes);
-    setEdges(referenceEdges);
+    setNodes(model.nodes);
+    setEdges(model.edges);
   };
 
   // 모델 전송 함수

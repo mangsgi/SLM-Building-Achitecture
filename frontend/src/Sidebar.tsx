@@ -4,7 +4,7 @@ import { BaseNodeData } from './nodes/components/NodeData';
 import { nodeRegistry } from './nodes/components/nodeRegistry';
 
 interface SidebarProps {
-  loadReferenceModel: () => void;
+  loadReferenceModel: (modelName: 'GPT-2' | 'Llama2' | 'Llama3') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
@@ -132,12 +132,29 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
 
       {/* 레퍼런스 모델 로드 버튼 */}
       <div className="mt-auto pt-4 border-t border-gray-200">
-        <button
-          onClick={loadReferenceModel}
-          className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
+        <p className="text-sm font-medium text-gray-600 mb-2 text-center">
           Load Reference Model
-        </button>
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => loadReferenceModel('GPT-2')}
+            className="flex-1 px-2 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            GPT-2
+          </button>
+          <button
+            onClick={() => loadReferenceModel('Llama2')}
+            className="flex-1 px-2 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Llama2
+          </button>
+          <button
+            onClick={() => loadReferenceModel('Llama3')}
+            className="flex-1 px-2 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Llama3
+          </button>
+        </div>
       </div>
     </aside>
   );

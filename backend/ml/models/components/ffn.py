@@ -5,21 +5,21 @@ from .activation_function import activation_map, ReLU
 
 
 class CustomFFN(nn.Module):
-    def __init__(self, emb_dim, dff_ratio=3072, activation="GELU", gated=False, dtype=torch.float32):
+    def __init__(self, emb_dim, hidden_dim=3072, activation="GELU", is_gated=False, dtype=torch.float32):
         super().__init__()
-        d_ff = dff_ratio
+        hidden_dim = hidden_dim
         self.activation = activation_map.get(activation.lower(), ReLU())
 
-        if gated:
-            self.fc1 = nn.Linear(emb_dim, d_ff, dtype=dtype, bias=False)
-            self.fc2 = nn.Linear(emb_dim, d_ff, dtype=dtype, bias=False)
-            self.fc3 = nn.Linear(d_ff, emb_dim, dtype=dtype, bias=False)
+        if is_gated:
+            self.fc1 = nn.Linear(emb_dim, hidden_dim, dtype=dtype, bias=False)
+            self.fc2 = nn.Linear(emb_dim, hidden_dim, dtype=dtype, bias=False)
+            self.fc3 = nn.Linear(hidden_dim, emb_dim, dtype=dtype, bias=False)
             self.forward = self._gated_forward
         else:
             self.layers = nn.Sequential(
-                nn.Linear(emb_dim, d_ff, dtype=dtype),
+                nn.Linear(emb_dim, hidden_dim, dtype=dtype),
                 self.activation,
-                nn.Linear(d_ff, emb_dim, dtype=dtype),
+                nn.Linear(hidden_dim, emb_dim, dtype=dtype),
             )
             self.forward = self._sequential_forward
 

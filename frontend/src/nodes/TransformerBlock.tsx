@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useReactFlow, NodeProps, useStore } from 'reactflow';
+import { useReactFlow, NodeProps, useNodes } from 'reactflow';
 
 import { BlockWrapper } from './components/BlockWrapper';
 import { NodeTitle } from './components/FieldComponents';
@@ -29,11 +29,10 @@ const TransformerBlock: React.FC<NodeProps<TransformerBlockLayerProps>> = ({
   if (!node) return null;
   const typedData = node.type as string;
 
-  const getNodes = useStore((state) => state.getNodes);
-  const nodes = getNodes();
+  const allNodes = useNodes();
   const childNodes = useMemo(() => {
-    return nodes.filter((n) => n.parentNode === id);
-  }, [nodes, id]);
+    return allNodes.filter((n) => n.parentNode === id);
+  }, [allNodes, id]);
 
   // 자식 노드들이 차지하는 순수 영역의 높이 계산
   const childrenAreaHeight = useMemo(() => {

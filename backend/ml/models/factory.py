@@ -18,7 +18,7 @@ from .components.attention import (
 from .components.normalization import LayerNorm, RMSNorm
 from .components.ffn import CustomFFN
 from .components.residual import ResidualConnection
-from .components.dynamic_block import DynamicBlock
+from .components.transformer_block import TrasnformerBlock
 
 
 # ===== Factory Classes =====
@@ -206,9 +206,9 @@ class FeedForwardFactory:
     def create(data: Dict[str, Any], dtype=torch.float32) -> CustomFFN:
         return CustomFFN(
             emb_dim=data.get("outDim") or data.get("inDim"),
-            dff_ratio=data.get("hiddenDim", 3072),
+            hidden_dim=data.get("hiddenDim", 3072),
             activation=data.get("actFunc", "GELU"),
-            gated=data.get("feedForwardType", "Standard") == "Gated",
+            is_gated=data.get("feedForwardType", "Standard") == "Gated",
             dtype=dtype,  # dtype 이미 있음
         )
 
@@ -227,14 +227,14 @@ class ResidualFactory:
 class TransformerBlockFactory:
     """트랜스포머 블록 레이어 생성"""
     @staticmethod
-    def create(node: Dict[str, Any], dtype=torch.float32) -> DynamicBlock:
+    def create(node: Dict[str, Any], dtype=torch.float32) -> TrasnformerBlock:
         children = [
             LayerFactory.create_layer(child, dtype=dtype)
             for child in node.get("children", [])
         ]
         num_layers = node["data"].get("numOfBlocks", 1)
         block_id = node["data"].get("id")
-        return DynamicBlock(*children, num_layers=num_layers, block_id=block_id)
+        return TrasnformerBlock(*children, num_layers=num_layers, block_id=block_id)
 
 
 class LinearFactory:
@@ -290,7 +290,7 @@ class CustomSequential(nn.Module):
                 if source_id in cache:
                     x = x + cache[source_id]
                 else:
-                    # dynamicBlock 내부의 레이어 ID도 확인
+                    # TrasnformerBlock 내부의 레이어 ID도 확인
                     block_source_id = (
                         f"{layer.source_id}_layer_{i}"
                         if hasattr(layer, "block_id")

@@ -10,8 +10,8 @@ export const NODE_HEIGHTS = {
   feedForward: 240,
   dropout: 109,
   linear: 174,
-  sdpAttention: 371,
-  gqAttention: 371,
+  mhAttention: 241,
+  gqAttention: 241,
 } as const;
 
 // 기본 높이값 (노드가 접혀있을 때의 높이)

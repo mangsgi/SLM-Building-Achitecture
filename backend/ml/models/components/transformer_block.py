@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-class DynamicBlock(nn.Module):
+class TrasnformerBlock(nn.Module):
     def __init__(self, *args, num_layers=1, block_id=None):
         super().__init__()
         self.sequence = nn.Sequential(*args)
@@ -24,4 +24,4 @@ class DynamicBlock(nn.Module):
             for j, layer in enumerate(self.sequence):
                 layer_str = repr(layer).replace('\n', '\n    ')
                 lines.append(f"    ({j}): {layer_str}")
-        return "DynamicBlock(\n" + "\n".join(lines) + "\n)"
+        return "TrasnformerBlock(\n" + "\n".join(lines) + "\n)"
