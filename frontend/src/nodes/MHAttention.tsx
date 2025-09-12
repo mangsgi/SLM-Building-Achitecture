@@ -9,6 +9,8 @@ import { useCommonNodeActions } from './components/useCommonNodeActions';
 import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
+import { calculateNodeHeight } from '../constants/nodeHeights';
+import { repositionSiblings } from './components/useCommonNodeActions';
 
 interface MHAttentionLayerProps {
   id: string;
@@ -35,20 +37,33 @@ export const MHAttentionLayer: React.FC<MHAttentionLayerProps> = ({ id }) => {
       newValue = Number(value);
     }
 
-    setNodes((nds) =>
-      nds.map((nodeItem) => {
+    setNodes((nds) => {
+      // 1. 현재 노드의 데이터와 높이를 먼저 업데이트합니다.
+      let updatedNodes = nds.map((nodeItem) => {
         if (nodeItem.id === id) {
-          return {
-            ...nodeItem,
-            data: {
-              ...nodeItem.data,
-              [field]: newValue,
-            },
-          };
+          const updatedData = { ...nodeItem.data, [field]: newValue };
+          const updatedNode = { ...nodeItem, data: updatedData };
+
+          // isRoPE 필드가 변경될 때만 높이를 재계산합니다.
+          if (field === 'isRoPE') {
+            return {
+              ...updatedNode,
+              height: calculateNodeHeight(updatedNode),
+            };
+          }
+          return updatedNode;
         }
         return nodeItem;
-      }),
-    );
+      });
+
+      // 2. 현재 노드에 부모가 있다면, 형제 노드들의 위치를 재조정합니다.
+      const currentNode = updatedNodes.find((n) => n.id === id);
+      if (currentNode && currentNode.parentNode && field === 'isRoPE') {
+        updatedNodes = repositionSiblings(updatedNodes, currentNode.parentNode);
+      }
+
+      return updatedNodes;
+    });
   };
 
   // 공통 액션 핸들러를 커스텀 훅을 통해 생성

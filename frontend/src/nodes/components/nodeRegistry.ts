@@ -497,14 +497,6 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             info: nodeFieldInfo.mhAttention.numHeads,
           },
           {
-            type: 'number',
-            label: 'Dropout Rate:',
-            name: 'dropoutRate',
-            value: typed.dropoutRate?.toString() || '',
-            placeholder: 'Enter dropout rate',
-            info: nodeFieldInfo.mhAttention.dropoutRate,
-          },
-          {
             type: 'select',
             label: 'RoPE Enabled:',
             name: 'isRoPE',
@@ -524,14 +516,24 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             info: nodeFieldInfo.mhAttention.theta,
           });
         } else {
-          fields.push({
-            type: 'select',
-            label: 'QKV Bias:',
-            name: 'qkvBias',
-            value: typed.qkvBias ? 'true' : 'false',
-            options: ['true', 'false'],
-            info: nodeFieldInfo.mhAttention.qkvBias,
-          });
+          fields.push(
+            {
+              type: 'number',
+              label: 'Dropout Rate:',
+              name: 'dropoutRate',
+              value: typed.dropoutRate?.toString() || '',
+              placeholder: 'Enter dropout rate',
+              info: nodeFieldInfo.mhAttention.dropoutRate,
+            },
+            {
+              type: 'select',
+              label: 'QKV Bias:',
+              name: 'qkvBias',
+              value: typed.qkvBias ? 'true' : 'false',
+              options: ['true', 'false'],
+              info: nodeFieldInfo.mhAttention.qkvBias,
+            },
+          );
         }
 
         return fields;

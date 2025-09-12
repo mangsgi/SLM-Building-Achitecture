@@ -35,8 +35,11 @@ class ModelConfig(BaseModel):
     emb_dim: int
     n_heads: int
     n_blocks: int
-    drop_rate: float
-    qkv_bias: bool
+    qkv_bias: Optional[bool] = None   # GPT-2
+    drop_rate: Optional[float] = None # GPT-2
+    hidden_dim: Optional[int] = None  # Llama2
+    multiple_of: Optional[int] = None # Llama3
+    n_kv_heads: Optional[int] = None  # Llama3 GQA
     dtype: str
 
 class LayerData(BaseModel):
@@ -47,13 +50,15 @@ class LayerData(BaseModel):
     vocabSize: Optional[int] = None
     embDim: Optional[int] = None
     ctxLength: Optional[int] = None
-    dropoutRate: Optional[float] = None
-    numOfFactor: Optional[float] = None
-    source: Optional[str] = None
-    numHeads: Optional[int] = None
-    qkvBias: Optional[bool] = None
-    numOfBlocks: Optional[int] = None
-    numKvGroups: Optional[int] = None
+    dropoutRate: Optional[float] = None # for Dropout
+    numOfFactor: Optional[float] = None # for FeedForward
+    source: Optional[str] = None # for Residual
+    numOfBlocks: Optional[int] = None # for TransformerBlock
+    numHeads: Optional[int] = None # for Attention
+    qkvBias: Optional[bool] = None # GPT-2
+    isRoPE: Optional[bool] = None # Llama2
+    theta: Optional[float] = None # Llama2
+    numKvGroups: Optional[int] = None # Llama3
 
 class LayerNode(BaseModel):
     type: str

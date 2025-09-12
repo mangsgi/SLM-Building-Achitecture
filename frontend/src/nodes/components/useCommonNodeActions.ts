@@ -2,7 +2,7 @@ import { MouseEvent } from 'react';
 import { useReactFlow, type Node, type Edge } from 'reactflow';
 import { BaseNodeData } from './NodeData';
 import {
-  NODE_HEIGHTS,
+  calculateNodeHeight,
   DEFAULT_NODE_HEIGHT,
   BLOCK_START_Y,
   NODE_GAP,
@@ -14,6 +14,32 @@ interface UseCommonNodeActionsParams {
   id: string;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+// 부모 노드 내의 자식 노드(형제)들의 위치를 재정렬하는 유틸리티 함수
+export const repositionSiblings = (nodes: Node[], parentId: string): Node[] => {
+  const siblings = nodes
+    .filter((n) => n.parentNode === parentId)
+    .sort((a, b) => a.position.y - b.position.y);
+
+  let yOffset = BLOCK_START_Y;
+  const reorderedSiblings = siblings.map((sibling) => {
+    const correctHeight = sibling.data.isCollapsed
+      ? DEFAULT_NODE_HEIGHT
+      : calculateNodeHeight(sibling);
+
+    const updatedSibling = {
+      ...sibling,
+      position: { ...sibling.position, y: yOffset },
+      height: correctHeight,
+    };
+    yOffset += correctHeight + NODE_GAP;
+    return updatedSibling;
+  });
+
+  return nodes
+    .filter((n) => n.parentNode !== parentId)
+    .concat(reorderedSiblings);
+};
 
 // 노드별 공통 로직 Custom Hook으로 구현
 export function useCommonNodeActions<T extends BaseNodeData>({
@@ -34,18 +60,16 @@ export function useCommonNodeActions<T extends BaseNodeData>({
   const handleNodeClick = () => {
     setNodes((nds) => {
       const targetNode = nds.find((n) => n.id === id);
-      // 방어 코드: 노드나 데이터가 없으면 아무것도 하지 않음
       if (!targetNode || !targetNode.data) return nds;
 
       const newIsCollapsed = !targetNode.data.isCollapsed;
 
       // 1. 대상 노드의 isCollapsed 상태와 높이를 업데이트
-      const updatedNodes = nds.map((n) => {
+      let updatedNodes = nds.map((n) => {
         if (n.id === id) {
           const newHeight = newIsCollapsed
             ? DEFAULT_NODE_HEIGHT
-            : (NODE_HEIGHTS[n.type as keyof typeof NODE_HEIGHTS] ??
-              DEFAULT_NODE_HEIGHT);
+            : calculateNodeHeight(n);
           return {
             ...n,
             data: { ...n.data, isCollapsed: newIsCollapsed },
@@ -55,31 +79,12 @@ export function useCommonNodeActions<T extends BaseNodeData>({
         return n;
       });
 
-      // 2. 부모가 있는 경우에만 형제 노드 위치 재조정
-      if (!targetNode.parentNode) {
-        return updatedNodes; // 부모가 없으면 재조정 불필요
+      // 2. 부모가 있는 경우, 형제 노드 위치 재조정
+      if (targetNode.parentNode) {
+        updatedNodes = repositionSiblings(updatedNodes, targetNode.parentNode);
       }
 
-      const parentId = targetNode.parentNode;
-      const siblings = updatedNodes
-        .filter((n) => n.parentNode === parentId)
-        .sort((a, b) => a.position.y - b.position.y);
-
-      let yOffset = 110; // 자식 노드의 시작 Y 위치
-      const reorderedSiblings = siblings.map((sibling) => {
-        const updatedSibling = {
-          ...sibling,
-          position: { ...sibling.position, y: yOffset },
-        };
-        // 현재 노드의 높이를 기준으로 다음 노드의 yOffset 계산
-        yOffset += (updatedSibling.height ?? DEFAULT_NODE_HEIGHT) + NODE_GAP;
-        return updatedSibling;
-      });
-
-      // 3. 전체 노드 배열을 재구성하여 반환
-      return updatedNodes
-        .filter((n) => n.parentNode !== parentId)
-        .concat(reorderedSiblings);
+      return updatedNodes;
     });
   };
 
@@ -110,35 +115,21 @@ export function useCommonNodeActions<T extends BaseNodeData>({
           !allIdsToDelete.includes(e.source) &&
           !allIdsToDelete.includes(e.target),
       );
+      setNodes(nodesToKeep);
     } else {
       // 일반 노드(부모 있음) 삭제 시
       const parentId = nodeToDelete.parentNode;
       nodesToKeep = allNodes.filter((n) => n.id !== id) as Node<T>[];
 
       // 삭제 후 남은 형제 노드들의 위치 재정렬
-      const remainingSiblings = nodesToKeep
-        .filter((n) => n.parentNode === parentId)
-        .sort((a, b) => a.position.y - b.position.y);
+      const finalNodes = repositionSiblings(nodesToKeep, parentId);
+      setNodes(finalNodes);
 
-      let yOffset = BLOCK_START_Y;
-      const updatedSiblings = remainingSiblings.map((child) => {
-        const updated = {
-          ...child,
-          position: { ...child.position, y: yOffset },
-        };
-        yOffset += (child.height ?? DEFAULT_NODE_HEIGHT) + NODE_GAP;
-        return updated;
-      });
-
-      nodesToKeep = nodesToKeep
-        .filter((n) => n.parentNode !== parentId)
-        .concat(updatedSiblings);
       edgesToKeep = allEdges.filter(
         (edge) => edge.source !== id && edge.target !== id,
       );
     }
 
-    setNodes(nodesToKeep);
     setEdges(edgesToKeep);
   };
 
