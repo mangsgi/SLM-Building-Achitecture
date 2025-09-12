@@ -27,13 +27,13 @@ export interface GPT2Config extends BaseConfig {
 
 export interface Llama2Config extends BaseConfig {
   model: 'llama2';
-  n_layers: number;
+  n_blocks: number;
   hidden_dim: number;
 }
 
 export interface Llama3Config extends BaseConfig {
   model: 'llama3';
-  n_layers: number;
+  n_blocks: number;
   hidden_dim: number;
   n_kv_groups: number;
   rope_base: number;
@@ -76,7 +76,7 @@ const llama2Config: Omit<Llama2Config, 'model'> = {
   context_length: 128,
   emb_dim: 4096,
   n_heads: 32,
-  n_layers: 32,
+  n_blocks: 32,
   hidden_dim: 11008,
   dtype: 'bf16',
 };
@@ -88,7 +88,7 @@ const llama3Config: Omit<Llama3Config, 'model'> = {
   context_length: 128,
   emb_dim: 4096,
   n_heads: 32,
-  n_layers: 32,
+  n_blocks: 32,
   hidden_dim: 14336,
   n_kv_groups: 8,
   rope_base: 5000000,
@@ -120,7 +120,6 @@ const configMap: Record<string, string> = {
   n_blocks: 'Number of Blocks',
   drop_rate: 'Dropout Rate',
   qkv_bias: 'QKV Bias',
-  n_layers: 'Number of Layers',
   hidden_dim: 'Hidden Dimension',
   n_kv_groups: 'Number of KV Groups',
   rope_base: 'RoPE Base',
@@ -139,7 +138,6 @@ const configDescriptions: Record<string, string> = {
   n_blocks: '트랜스포머 블록의 개수입니다.',
   drop_rate: '드롭아웃 비율입니다. (0~1 사이의 값)',
   qkv_bias: 'Query, Key, Value 행렬에 편향을 추가할지 여부입니다.',
-  n_layers: 'Llama2 모델의 레이어 개수입니다.',
   hidden_dim: 'Llama2 모델의 히든 차원입니다.',
   n_kv_groups: 'Llama3 모델의 KV 그룹 개수입니다.',
   rope_base: 'RoPE 기본 값입니다.',

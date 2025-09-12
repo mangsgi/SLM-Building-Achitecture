@@ -25,7 +25,16 @@ export const MHAttentionLayer: React.FC<MHAttentionLayerProps> = ({ id }) => {
   // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
   const handleFieldChange = (field: keyof MHAttentionData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
-    const newValue = stringFields.includes(field) ? value : Number(value);
+
+    let newValue: string | number | boolean;
+    if (value === 'true' || value === 'false') {
+      newValue = value === 'true';
+    } else if (stringFields.includes(field as string)) {
+      newValue = value;
+    } else {
+      newValue = Number(value);
+    }
+
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {

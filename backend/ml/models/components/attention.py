@@ -223,10 +223,12 @@ class GroupedQueryAttention(nn.Module):
 # 3) PyTorch Scaled-Dot-Product Attention (SDPA) 백엔드
 # ------------------------------
 class MHAPyTorchScaledDotProduct(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, dtype=torch.float32):
+    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, is_rope=False, theta=10000.0, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
+        self.is_rope = is_rope
+        self.theta = float(theta)
         self.num_heads = num_heads
         self.context_length = context_length
         self.head_dim = d_out // num_heads
@@ -235,9 +237,26 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
         self.proj = nn.Linear(d_out, d_out, dtype=dtype)
         self.dropout = dropout  # float. SDPA에 전달
+        
+        # RoPE 준비(필요할 때만)
+        if self.is_rope:
+            if self.head_dim % 2 != 0:
+                raise ValueError(f"RoPE requires even head_dim, got {self.head_dim}.")
+            # mask는 SDPA에서 is_causal=True로 대체되므로 cos/sin만 사용
+            _mask, cos, sin = SharedBuffers.get_buffers(
+                self.context_length, self.head_dim, self.theta,
+                freq_config={"type": "default"}, dtype=dtype
+            )
+            self.register_buffer("cos", cos)  # (ctx_len, D/2)
+            self.register_buffer("sin", sin)  # (ctx_len, D/2)
 
     def forward(self, x):
         batch_size, num_tokens, embed_dim = x.shape
+        if self.is_rope and num_tokens > self.context_length:
+            # 버퍼 범위를 넘으면 명확히 실패(원하면 여기서 버퍼 재계산 로직 추가 가능)
+            raise ValueError(
+                f"Sequence length {num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
+            )
 
         # (b, T, E) -> (b, T, 3E)
         qkv = self.qkv(x)
@@ -249,7 +268,14 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         qkv = qkv.permute(2, 0, 3, 1, 4)
 
         # 3개 텐서로 분리
-        queries, keys, values = qkv  # each: (b, H, T, D)
+        queries, keys, values = qkv.unbind(0)  # each: (b, H, T, D)
+
+        # ★ RoPE: Q, K에만 적용
+        if self.is_rope:
+            cos = self.cos[:num_tokens]  # (T, D/2)
+            sin = self.sin[:num_tokens]  # (T, D/2)
+            queries = compute_rope(queries, cos, sin)
+            keys    = compute_rope(keys,    cos, sin)
 
         # 학습 중일 때만 드롭아웃 적용
         use_dropout = 0.0 if not self.training else self.dropout

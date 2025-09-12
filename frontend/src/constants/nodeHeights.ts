@@ -10,7 +10,7 @@ export const NODE_HEIGHTS = {
   feedForward: 240,
   dropout: 109,
   linear: 174,
-  mhAttention: 241,
+  mhAttention: 307,
   gqAttention: 241,
 } as const;
 

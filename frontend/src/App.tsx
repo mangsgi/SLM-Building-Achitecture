@@ -91,10 +91,17 @@ async function buildModelJSON(
   console.log('🔍 Nodes:', nodes);
   console.log('🔍 Edges:', edges);
 
-  // 2. in-degree 계산
+  // 2. in-degree 계산 (Residual Edge 제외)
   const inDegree = new Map<string, number>();
   nodes.forEach((n) => inDegree.set(n.id, 0));
   edges.forEach((edge) => {
+    // Residual 연결을 위한 엣지는 in-degree 계산에서 제외
+    if (
+      edge.sourceHandle === 'residual-source' ||
+      edge.targetHandle === 'residual-target'
+    ) {
+      return; // 이 엣지는 건너뜁니다.
+    }
     inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
   });
 
@@ -163,7 +170,7 @@ async function buildModelJSON(
   }
 
   // 5. 진입점에서부터 DFS 실행
-  // 5-1. 루트 노드 찾기
+  // 5-1. 루트 노드 찾기 (루트 노드는 진입점이 하나인 노드)
   const rootNodes = Array.from(inDegree.entries()).filter(
     ([id, deg]) => deg === 0 && !nodeMap.get(id)?.parentNode,
   );
@@ -226,7 +233,7 @@ function App() {
     initialFlowState().edges,
   );
 
-  // Save flow state to local storage whenever it changes
+  // 캔버스 상태를 로컬 스토리지에 저장
   useEffect(() => {
     try {
       const canvasState = JSON.stringify({ nodes, edges });

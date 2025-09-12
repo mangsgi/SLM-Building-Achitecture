@@ -45,7 +45,9 @@ export interface MHAttentionData extends BaseNodeData {
   dropoutRate: number;
   ctxLength: number;
   numHeads: number;
-  qkvBias: false;
+  qkvBias: boolean;
+  isRoPE?: boolean;
+  theta?: number;
 }
 
 export interface GQAttentionData extends BaseNodeData {

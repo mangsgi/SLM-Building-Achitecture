@@ -97,10 +97,12 @@ export const getNodeDataByType = (
         case 'mhAttention':
           return {
             ...data,
-            qkvBias: config.qkv_bias, // true, false
             numHeads: config.n_heads,
             ctxLength: config.context_length,
-            dropoutRate: config.drop_rate,
+            dropoutRate: 0.0,
+            qkvBias: true,
+            isRoPE: false, // GPT-2는 RoPE를 사용하지 않음
+            theta: 10000.0, // GPT-2는 RoPE의 theta를 사용하지 않음
           };
         case 'gqAttention':
           return {
@@ -124,10 +126,12 @@ export const getNodeDataByType = (
             vocabSize: config.vocab_size,
             embDim: config.emb_dim,
           };
-        case 'positionalEmbedding':
+        case 'positionalEmbedding': // Llama2는 Positional Embedding을 사용하지 않음
           return {
             ...data,
             ctxLength: config.context_length,
+            posType: 'Learned Positional Embedding',
+            vocabSize: config.vocab_size,
             embDim: config.emb_dim,
           };
         case 'feedForward':
@@ -141,6 +145,28 @@ export const getNodeDataByType = (
           return { ...data, outDim: config.vocab_size };
         case 'normalization':
           return { ...data, normType: 'Layer Normalization' };
+        case 'dropout':
+          return { ...data, dropoutRate: 0.1 };
+        case 'mhAttention':
+          return {
+            ...data,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0, // Llama2는 dropout을 사용하지 않음
+            qkvBias: false, // Llama2는 bias를 사용하지 않음
+            isRoPE: true,
+            theta: 10000.0,
+          };
+        case 'gqAttention':
+          return {
+            ...data,
+            qkvBias: false, // Llama2는 bias를 사용하지 않음
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.1, // Llama2는 dropout을 사용하지 않음
+          };
+        case 'transformerBlock':
+          return { ...data, numOfBlocks: config.n_blocks };
         default:
           break;
       }
@@ -167,7 +193,7 @@ export const getNodeDataByType = (
         embDim: config.emb_dim,
       };
     case 'linear':
-      return { ...data, outDim: config.vocab_size };
+      return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
     default:
       return data;
   }
@@ -461,7 +487,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       stringFields: ['label'],
       getFields: (data: BaseNodeData) => {
         const typed = data as MHAttentionData;
-        return [
+        const fields: FieldConfig[] = [
           {
             type: 'number',
             label: 'Number of Heads:',
@@ -480,13 +506,35 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
           },
           {
             type: 'select',
+            label: 'RoPE Enabled:',
+            name: 'isRoPE',
+            value: typed.isRoPE ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.mhAttention.isRoPE,
+          },
+        ];
+
+        if (typed.isRoPE) {
+          fields.push({
+            type: 'number',
+            label: 'Theta:',
+            name: 'theta',
+            value: typed.theta?.toString() || '10000.0',
+            placeholder: 'Enter theta value for RoPE',
+            info: nodeFieldInfo.mhAttention.theta,
+          });
+        } else {
+          fields.push({
+            type: 'select',
             label: 'QKV Bias:',
             name: 'qkvBias',
             value: typed.qkvBias ? 'true' : 'false',
             options: ['true', 'false'],
             info: nodeFieldInfo.mhAttention.qkvBias,
-          },
-        ];
+          });
+        }
+
+        return fields;
       },
     },
   ],

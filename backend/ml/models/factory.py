@@ -103,7 +103,13 @@ class NormalizationFactory:
     @staticmethod
     def create(data: Dict[str, Any], dtype=torch.float32) -> LayerNorm:
         d_model = data.get("embDim") or data.get("inDim") or data.get("outDim")
-        return LayerNorm(d_model, dtype=dtype)  # dtype 추가
+        
+        if data.get("normType", "Layer Normalization") == "Layer Normalization":
+            return LayerNorm(d_model, dtype=dtype)  # dtype 추가
+        elif data.get("normType", "Layer Normalization") == "RMS Normalization":
+            return RMSNorm(d_model, dtype=dtype)  # dtype 추가
+        else:
+            raise ValueError(f"Unknown normalization type: {data.get('normType', 'Layer Normalization')}")
 
 
 class AttentionFactory:
@@ -128,6 +134,8 @@ class AttentionFactory:
                     "num_heads": data["numHeads"],
                     "dropout": data.get("dropoutRate", 0.0),
                     "qkv_bias": data.get("qkvBias", False),
+                    "is_rope": data.get("isRoPE", False),
+                    "theta": data.get("theta", 10000.0),
                 }
             )
             return MHAPyTorchScaledDotProduct(**common_args)

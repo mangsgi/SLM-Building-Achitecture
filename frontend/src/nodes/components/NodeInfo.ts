@@ -172,6 +172,14 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       title: 'QKV Bias',
       description: '쿼리, 키, 값 변환에 편향을 사용할지 여부를 결정합니다.',
     },
+    isRoPE: {
+      title: 'RoPE Enabled',
+      description: 'RoPE를 사용할지 여부를 결정합니다.',
+    },
+    theta: {
+      title: 'Theta',
+      description: 'RoPE의 theta 값을 정의합니다.',
+    },
   },
   gqAttention: {
     numHeads: {
