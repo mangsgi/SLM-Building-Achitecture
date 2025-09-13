@@ -7,18 +7,23 @@ import {
 } from './statusSlice';
 import { RootState } from './index';
 
+// EventSource 연결을 미들웨어 외부에서 관리하여 참조를 유지합니다.
+let eventSource: EventSource | null = null;
+
 const sseMiddleware: Middleware<object, RootState> =
   (store) => (next) => (action) => {
-    // 현재 EventSource 연결을 저장하기 위한 변수
-    let eventSource: EventSource | null = null;
-
     // 다음 미들웨어/리듀서로 액션을 전달
     const result = next(action);
 
     // 'startTraining' 액션이 디스패치되었는지 확인
     if (startTraining.match(action)) {
       const { task_id } = action.payload;
-      if (!task_id) return;
+      if (!task_id) return result;
+
+      // 기존 연결이 있다면 중복 생성을 방지하기 위해 닫습니다.
+      if (eventSource) {
+        eventSource.close();
+      }
 
       // SSE 연결 URL 생성
       const sseUrl = `http://localhost:8000/api/v1/events/${task_id}`;
@@ -34,11 +39,7 @@ const sseMiddleware: Middleware<object, RootState> =
           console.log('[SSE] Received data:', parsedData);
 
           // 백엔드가 보낸 이벤트 타입 확인
-          if (
-            parsedData.event === 'finished' ||
-            (parsedData.event === 'status' &&
-              parsedData.data?.state === 'finished')
-          ) {
+          if (parsedData.event === 'finished') {
             console.log(
               '[SSE] Training complete event received. Dispatching completeTraining.',
             );
@@ -70,6 +71,7 @@ const sseMiddleware: Middleware<object, RootState> =
       // 에러 리스너
       eventSource.onerror = (error) => {
         console.error('[SSE] EventSource failed:', error);
+        store.dispatch(failTraining({ message: 'SSE connection failed.' }));
         eventSource?.close();
         eventSource = null;
       };

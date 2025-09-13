@@ -38,3 +38,8 @@ docker compose down
 # 컨테이너 + 네트워크 + 볼륨까지 삭제(실험 데이터도 지워짐 주의)
 docker compose down -v
 ```
+
+- 패키징 시 Llama-2 토크나이저로 인해 라이선스 파일을 함께 포함(licenses/LLAMA-2-LICENSE.txt) (라이선스 전문 동봉)
+- NOTICE 문구 유지 (파일명은 관례상 NOTICE 또는 NOTICE.txt)
+  - Llama 2 is licensed under the LLAMA 2 Community License,
+  - Copyright (c) Meta Platforms, Inc. All Rights Reserved.

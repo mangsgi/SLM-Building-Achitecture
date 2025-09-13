@@ -70,50 +70,59 @@ export const getNodeDataByType = (
         case 'tokenEmbedding':
           return {
             ...data,
-            vocabSize: config.vocab_size,
-            embDim: config.emb_dim,
+            vocabSize: baseData.vocabSize ?? config.vocab_size,
+            embDim: baseData.embDim ?? config.emb_dim,
           };
         case 'positionalEmbedding':
           return {
             ...data,
-            ctxLength: config.context_length,
-            posType: 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
-            vocabSize: config.vocab_size,
-            embDim: config.emb_dim,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            posType: baseData.posType ?? 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: baseData.vocabSize ?? config.vocab_size,
+            embDim: baseData.embDim ?? config.emb_dim,
           };
         case 'feedForward':
           return {
             ...data,
-            hiddenDim: 3072,
-            feedForwardType: 'Standard', // Standard, Gated
-            actFunc: 'GELU', // ReLU, GELU, SwiGLU, Mish
+            hiddenDim: baseData.hiddenDim ?? 3072,
+            feedForwardType: baseData.feedForwardType ?? 'Standard', // Standard, Gated
+            actFunc: baseData.actFunc ?? 'GELU', // ReLU, GELU, SwiGLU, Mish
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+          return { ...data, outDim: baseData.outDim ?? config.vocab_size };
         case 'normalization':
-          return { ...data, normType: 'Layer Normalization' }; // Layer Normalization, RMS Normalization
+          return {
+            ...data,
+            normType: baseData.normType ?? 'Layer Normalization', // Layer Normalization, RMS Normalization
+          };
         case 'dropout':
-          return { ...data, dropoutRate: config.drop_rate };
+          return {
+            ...data,
+            dropoutRate: baseData.dropoutRate ?? config.drop_rate,
+          };
         case 'mhAttention':
           return {
             ...data,
-            numHeads: config.n_heads,
-            ctxLength: config.context_length,
-            dropoutRate: 0.0,
-            qkvBias: true,
-            isRoPE: false, // GPT-2는 RoPE를 사용하지 않음
-            theta: 10000.0, // GPT-2는 RoPE의 theta를 사용하지 않음
+            numHeads: baseData.numHeads ?? config.n_heads,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            dropoutRate: baseData.dropoutRate ?? 0.1,
+            qkvBias: baseData.qkvBias ?? false,
+            isRoPE: baseData.isRoPE ?? false, // GPT-2는 RoPE 사용 안함
+            theta: baseData.theta ?? 10000.0, // GPT-2는 RoPE 사용 안함
           };
-        case 'gqAttention':
+        case 'gqAttention': // GPT-2는 GQAttention 사용 안함
           return {
             ...data,
-            qkvBias: config.qkv_bias, // true, false
-            numHeads: config.n_heads,
-            ctxLength: config.context_length,
-            dropoutRate: config.drop_rate,
+            qkvBias: baseData.qkvBias ?? config.qkv_bias,
+            numHeads: baseData.numHeads ?? config.n_heads,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            dropoutRate: baseData.dropoutRate ?? config.drop_rate,
           };
         case 'transformerBlock':
-          return { ...data, numOfBlocks: config.n_blocks };
+          return {
+            ...data,
+            numOfBlocks: baseData.numOfBlocks ?? config.n_blocks,
+          };
         default:
           break;
       }
@@ -123,50 +132,56 @@ export const getNodeDataByType = (
         case 'tokenEmbedding':
           return {
             ...data,
-            vocabSize: config.vocab_size,
-            embDim: config.emb_dim,
+            vocabSize: baseData.vocabSize ?? config.vocab_size,
+            embDim: baseData.embDim ?? config.emb_dim,
           };
-        case 'positionalEmbedding': // Llama2는 Positional Embedding을 사용하지 않음
+        case 'positionalEmbedding': // Llama2는 Positional Embedding 사용 안함
           return {
             ...data,
-            ctxLength: config.context_length,
-            posType: 'Learned Positional Embedding',
-            vocabSize: config.vocab_size,
-            embDim: config.emb_dim,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            posType: baseData.posType ?? 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: baseData.vocabSize ?? config.vocab_size,
+            embDim: baseData.embDim ?? config.emb_dim,
           };
         case 'feedForward':
           return {
             ...data,
-            hiddenDim: 3072,
-            feedForwardType: 'Standard',
-            actFunc: 'GELU',
+            hiddenDim: baseData.hiddenDim ?? 3072,
+            feedForwardType: baseData.feedForwardType ?? 'Gated', // Standard, Gated
+            actFunc: baseData.actFunc ?? 'GELU', // ReLU, GELU, SwiGLU, Mish
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size };
+          return { ...data, outDim: baseData.outDim ?? config.vocab_size }; // 일단 Linear Output 기준으로 초기화
         case 'normalization':
-          return { ...data, normType: 'Layer Normalization' };
+          return {
+            ...data,
+            normType: baseData.normType ?? 'RMS Normalization', // Layer Normalization, RMS Normalization
+          };
         case 'dropout':
-          return { ...data, dropoutRate: 0.1 };
+          return { ...data, dropoutRate: baseData.dropoutRate ?? 0.1 };
         case 'mhAttention':
           return {
             ...data,
-            numHeads: config.n_heads,
-            ctxLength: config.context_length,
-            dropoutRate: 0.0, // Llama2는 dropout을 사용하지 않음
-            qkvBias: false, // Llama2는 bias를 사용하지 않음
-            isRoPE: true,
-            theta: 10000.0,
+            numHeads: baseData.numHeads ?? config.n_heads,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            dropoutRate: baseData.dropoutRate ?? 0.0, // Llama2는 Dropout 사용 안함
+            qkvBias: baseData.qkvBias ?? false, // Llama2는 QKV Bias 사용 안함
+            isRoPE: baseData.isRoPE ?? true,
+            theta: baseData.theta ?? 10000.0,
           };
-        case 'gqAttention':
+        case 'gqAttention': // Llama2는 GQAttention 사용 안함
           return {
             ...data,
-            qkvBias: false, // Llama2는 bias를 사용하지 않음
-            numHeads: config.n_heads,
-            ctxLength: config.context_length,
-            dropoutRate: 0.1, // Llama2는 dropout을 사용하지 않음
+            qkvBias: baseData.qkvBias ?? false,
+            numHeads: baseData.numHeads ?? config.n_heads,
+            ctxLength: baseData.ctxLength ?? config.context_length,
+            dropoutRate: baseData.dropoutRate ?? 0.1,
           };
         case 'transformerBlock':
-          return { ...data, numOfBlocks: config.n_blocks };
+          return {
+            ...data,
+            numOfBlocks: baseData.numOfBlocks ?? config.n_blocks,
+          };
         default:
           break;
       }
@@ -185,15 +200,19 @@ export const getNodeDataByType = (
   // 모든 모델 타입에 공통적인 로직
   switch (nodeType) {
     case 'tokenEmbedding':
-      return { ...data, vocabSize: config.vocab_size, embDim: config.emb_dim };
+      return {
+        ...data,
+        vocabSize: baseData.vocabSize ?? config.vocab_size,
+        embDim: baseData.embDim ?? config.emb_dim,
+      };
     case 'positionalEmbedding':
       return {
         ...data,
-        ctxLength: config.context_length,
-        embDim: config.emb_dim,
+        ctxLength: baseData.ctxLength ?? config.context_length,
+        embDim: baseData.embDim ?? config.emb_dim,
       };
     case 'linear':
-      return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+      return { ...data, outDim: baseData.outDim ?? config.vocab_size }; // 일단 Linear Output 기준으로 초기화
     default:
       return data;
   }

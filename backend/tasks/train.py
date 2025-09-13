@@ -419,4 +419,4 @@ def train_and_infer_from_json(self, request_json: dict):
         }
         publish_event(task_id, "error", err_payload)
         publish_status(task_id, "error", message=str(e))
-        return {"status": "error", "message": str(e)}
+        raise

@@ -52,9 +52,30 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   config,
 }) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { getEdges } = useReactFlow();
+  const { getEdges, getViewport, setViewport } = useReactFlow();
   // onDrop 시 드롭된 노드의 정확한 위치를 계산하기 위해 DOM 요소 참조 & ReactFlowInstance 저장
   const { reactFlowInstance, setReactFlowInstance } = useContext(flowContext);
+
+  // 캔버스 초기화 시 뷰포트 복원 또는 fitView 실행
+  const onCanvasInit = useCallback(
+    (instance: any) => {
+      setReactFlowInstance(instance);
+      const viewportString = localStorage.getItem('canvasViewport');
+      if (viewportString) {
+        const savedViewport = JSON.parse(viewportString);
+        setViewport(savedViewport);
+      } else {
+        instance.fitView();
+      }
+    },
+    [setReactFlowInstance, setViewport],
+  );
+
+  // 캔버스 이동/줌 종료 시 뷰포트 정보 저장
+  const onMoveEnd = useCallback(() => {
+    const viewport = getViewport();
+    localStorage.setItem('canvasViewport', JSON.stringify(viewport));
+  }, [getViewport]);
 
   // Drag 중인 Node가 목표할 Node 설정
   const [target, setTarget] = useState<Node<BaseNodeData, string> | null>(null);
@@ -343,7 +364,8 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onInit={setReactFlowInstance} // Viewport가 초기화될 때 콜백 함수
+        onInit={onCanvasInit} // 뷰포트 복원/fitView 로직 연결
+        onMoveEnd={onMoveEnd} // 뷰포트 저장 로직 연결
         onDrop={onDrop}
         onDragOver={onDragOver}
         edgeTypes={edgeTypes}

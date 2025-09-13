@@ -2,6 +2,8 @@
 from __future__ import annotations
 from typing import Sequence, Optional
 import logging
+from pathlib import Path
+import os
 
 log = logging.getLogger(__name__)
 
@@ -56,13 +58,19 @@ def choose_tokenizer(model_name: str, spm_model_path: Optional[str] = None) -> B
         import tiktoken
         return TiktokenAdapter(tiktoken.get_encoding("cl100k_base"))
     elif name in ("llama2", "llama-2"):
+        # SentencePiece 로드
         if not spm_model_path:
-            raise ValueError("LLaMA-2 선택: tokenizer_model_path가 필요합니다.")
-        try:
-            import sentencepiece as spm
-        except ImportError as e:
-            raise RuntimeError("sentencepiece가 설치되어 있지 않습니다. pip install sentencepiece") from e
-        sp = spm.SentencePieceProcessor(model_file=spm_model_path)
+            raise ValueError(
+                "llama-2 토크나이저를 사용하려면 spm_model_path (예: '.../tokenizer.model')를 지정하세요."
+            )
+        if not os.path.isfile(spm_model_path):
+            raise FileNotFoundError(f"SentencePiece 모델 파일을 찾을 수 없습니다: {spm_model_path}")
+
+        import sentencepiece as spm
+        sp = spm.SentencePieceProcessor()
+        ok = sp.load(spm_model_path)
+        if not ok:
+            raise RuntimeError(f"SentencePiece 모델 로드 실패: {spm_model_path}")
         return SentencePieceAdapter(sp)
     else:
         # 기본값: gpt-2
@@ -73,5 +81,5 @@ def choose_tokenizer(model_name: str, spm_model_path: Optional[str] = None) -> B
 def choose_tokenizer_from_config(config: dict) -> BaseTokenizerAdapter:
     """config에서 model / tokenizer_model_path를 읽어 선택"""
     model_id = (config or {}).get("model", "gpt-2")
-    spm_path = (config or {}).get("tokenizer_model_path")
+    spm_path = str(Path(__file__).resolve().parent / "files" / "llama2-tokenizer.model")
     return choose_tokenizer(model_id, spm_path)
