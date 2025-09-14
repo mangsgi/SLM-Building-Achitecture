@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
 import torch
+import json
 from ml.models.factory import build_model_from_json
 from tasks.tokenizers import choose_tokenizer_from_config
 
@@ -18,21 +19,52 @@ class InferenceRequest(BaseModel):
 @router.post("/generate-text", tags=["Inference"])
 def generate_text_api(req: InferenceRequest):
     try:
-        # 1) 번들(.pt) 로드
-        model_path = Path("completed") / f"{req.model_name}.pt"
-        if not model_path.exists():
-            raise HTTPException(status_code=404, detail="모델 번들(.pt)을 찾을 수 없습니다.")
+        # 1) 모델 파일(.pt 또는 .pth) 로드
+        model_name = req.model_name
+        pt_path = Path("completed") / f"{model_name}.pt"
+        pth_path = Path("completed") / f"{model_name}.pth"
 
-        bundle = torch.load(model_path, map_location="cpu")
-        if not isinstance(bundle, dict):
-            raise HTTPException(status_code=400, detail="번들 포맷이 올바르지 않습니다(dict 아님).")
+        model_path = None
+        if pt_path.exists():
+            model_path = pt_path
+        elif pth_path.exists():
+            model_path = pth_path
+        
+        if model_path is None:
+            raise HTTPException(status_code=404, detail=f"모델 파일(.pt 또는 .pth)을 찾을 수 없습니다: {model_name}")
 
-        layers = bundle.get("layers")
-        config = bundle.get("config", {}) or {}
-        state_dict = bundle.get("state_dict")
+        loaded_data = torch.load(model_path, map_location="cpu")
 
-        if not isinstance(layers, list) or state_dict is None:
-            raise HTTPException(status_code=400, detail="번들에 layers/state_dict가 없습니다.")
+        # 시나리오 분기:
+        # 1) 번들(dict)인 경우: layers, config, state_dict 추출
+        # 2) state_dict만 있는 경우: json에서 layers, config 로드
+        if isinstance(loaded_data, dict) and "state_dict" in loaded_data and "layers" in loaded_data:
+            # 번들 시나리오
+            layers = loaded_data.get("layers")
+            config = loaded_data.get("config", {}) or {}
+            state_dict = loaded_data.get("state_dict")
+        else:
+            # state_dict 단독 시나리오
+            state_dict = loaded_data
+            
+            # 해당 모델의 구조(.json) 파일 찾기
+            structure_path = Path("temp_structures") / f"{model_name}.json"
+            if not structure_path.exists():
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"모델 구조 파일({structure_path.name})을 찾을 수 없습니다. "
+                           "이 모델은 state_dict만 포함하고 있어 구조 파일이 반드시 필요합니다."
+                )
+            
+            with open(structure_path, "r", encoding="utf-8") as f:
+                structure = json.load(f)
+            
+            # 구조 파일에서 config와 layers 분리
+            config = structure[0] if isinstance(structure, list) and len(structure) > 0 else {}
+            layers = structure[1:] if isinstance(structure, list) and len(structure) > 1 else []
+
+        if not isinstance(layers, list) or not layers or state_dict is None:
+            raise HTTPException(status_code=400, detail="모델 구조(layers) 또는 가중치(state_dict)를 로드할 수 없습니다.")
 
         dtype = config.get("dtype", "fp32")
         context_length = int(config.get("context_length", 128))

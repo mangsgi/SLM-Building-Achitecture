@@ -1,3 +1,5 @@
+import { nodeInformation } from '../../constants/nodeInformation';
+
 // 노드 정보 인터페이스
 export interface NodeInfo {
   title: string;
@@ -25,12 +27,11 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
   tokenEmbedding: {
     title: 'Token Embedding',
     description:
-      '입력 토큰을 고차원 벡터 공간으로 매핑하는 레이어입니다. 각 토큰을 연속적인 벡터로 변환하여 모델이 처리할 수 있는 형태로 만듭니다.',
+      '### 입력 토큰을 고차원 벡터 공간으로 매핑하는 레이어입니다. 각 토큰을 연속적인 벡터로 변환하여 모델이 처리할 수 있는 형태로 만듭니다.',
   },
   normalization: {
     title: 'Normalization',
-    description:
-      '레이어의 출력을 정규화하여 학습의 안정성을 높이는 레이어입니다. 주로 Layer Normalization이나 Batch Normalization을 사용합니다.',
+    description: nodeInformation.normalization.description,
   },
   feedForward: {
     title: 'Feed Forward',

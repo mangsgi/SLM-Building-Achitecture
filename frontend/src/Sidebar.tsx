@@ -119,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           }}
           onDragStart={onDragStart}
         />
-        <SidebarNodeItem
+        {/* <SidebarNodeItem
           nodeType={nodeRegistry.get('testBlock')?.type ?? ''}
           nodeData={{
             label: nodeRegistry.get('testBlock')?.label ?? '',
@@ -127,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
             outDim: 0,
           }}
           onDragStart={onDragStart}
-        />
+        /> */}
       </div>
 
       {/* 레퍼런스 모델 로드 버튼 */}

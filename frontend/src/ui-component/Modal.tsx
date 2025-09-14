@@ -1,6 +1,11 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+
+import 'katex/dist/katex.min.css';
 
 interface ModalProps {
   isOpen: boolean;
@@ -44,7 +49,10 @@ const Modal: React.FC<ModalProps> = ({
 
         {markdown ? (
           <article className="prose max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeRaw, rehypeKatex]}
+            >
               {markdown}
             </ReactMarkdown>
           </article>

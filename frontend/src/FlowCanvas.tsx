@@ -389,16 +389,9 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
         onClose={() =>
           setModalData({ isOpen: false, type: 'node', data: null })
         }
-      >
-        {modalData.data && (
-          <>
-            <h3 className="text-lg font-semibold mb-2">
-              {modalData.data.title}
-            </h3>
-            <p className="text-sm">{modalData.data.description}</p>
-          </>
-        )}
-      </Modal>
+        title={modalData.data?.title}
+        markdown={modalData.data?.description}
+      />
     </div>
   );
 };
