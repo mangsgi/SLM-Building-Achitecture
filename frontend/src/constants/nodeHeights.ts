@@ -23,13 +23,11 @@ export const BLOCK_START_Y = 110;
  */
 export const calculateNodeHeight = (node: Node): number => {
   if (!node.type) return DEFAULT_NODE_HEIGHT;
-  console.log('node.type', node.type);
   // getFields 함수를 사용하여 현재 데이터에 따른 필드 목록을 가져옴
   const fields = nodeRegistry.get(node.type)?.getFields(node.data) ?? [];
   const fieldCount = fields.length;
-  console.log('fieldCount', fieldCount);
+  // console.log('node.type: ', node.type, 'fieldCount: ', fieldCount);
   // 필드 개수에 따라 높이 계산
   const calculatedHeight = DEFAULT_NODE_HEIGHT + fieldCount * FIELD_ROW_HEIGHT;
-  console.log('calculatedHeight', calculatedHeight);
   return calculatedHeight;
 };

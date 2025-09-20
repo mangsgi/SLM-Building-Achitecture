@@ -3,14 +3,12 @@ import torch.nn as nn
 
 from .activation_function import get_activation
 
-
 class CustomFFN(nn.Module):
     def __init__(self, emb_dim: int, hidden_dim: int = 3072, activation: str = "GELU", is_gated: bool = False, dtype=torch.float32, bias: bool = False):
         super().__init__()
         act_key = activation.lower()
         if act_key in {"swiglu", "swi-glu"} and not is_gated:
             raise ValueError("SWiGLU 활성화를 쓰려면 is_gated=True 여야 합니다.")
-
 
         self.emb_dim = emb_dim
         self.hidden_dim = hidden_dim

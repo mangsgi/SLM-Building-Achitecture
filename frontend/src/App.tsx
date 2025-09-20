@@ -8,7 +8,14 @@ import CanvasHamburgerButton from './ui-component/CanvasHamburgerButton';
 import ConfigButton from './ui-component/ConfigButton';
 import SendModelButton from './ui-component/SendModelButton';
 import Sidebar from './Sidebar';
-import Config, { defaultConfig, ModelConfig } from './Config';
+import Config from './Config';
+import {
+  ModelConfig,
+  GPT2Config,
+  Llama2Config,
+  Llama3Config,
+  modelConfigs,
+} from './constants/modelConfigs';
 import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
 import Header from './ui-component/Header';
@@ -199,7 +206,20 @@ function App() {
   // Sideber와 Config 토글을 위한 상태 변수
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isConfigOpen, setIsConfigOpen] = useState(true);
-  const [config, setConfig] = useState<ModelConfig>(defaultConfig);
+
+  // 로컬 스토리지에서 모델 타입을 불러와 config 상태를 초기화
+  const [config, setConfig] = useState<ModelConfig>(() => {
+    const savedModelType = localStorage.getItem('modelType');
+    if (savedModelType === 'gpt-2') {
+      return { ...modelConfigs['GPT-2'], model: 'gpt-2' } as GPT2Config;
+    } else if (savedModelType === 'llama2') {
+      return { ...modelConfigs['Llama2'], model: 'llama2' } as Llama2Config;
+    } else if (savedModelType === 'llama3') {
+      return { ...modelConfigs['Llama3'], model: 'llama3' } as Llama3Config;
+    }
+    return { ...modelConfigs['GPT-2'], model: 'gpt-2' } as GPT2Config;
+  });
+
   const navigate = useNavigate();
 
   // 오류 모달 상태 추가
@@ -242,6 +262,13 @@ function App() {
       console.error('캔버스 상태를 저장하는 데 실패했습니다:', error);
     }
   }, [nodes, edges]);
+
+  // config가 변경될 때마다 모델 타입을 로컬 스토리지에 저장
+  useEffect(() => {
+    if (config && config.model) {
+      localStorage.setItem('modelType', config.model);
+    }
+  }, [config]);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
@@ -307,22 +334,15 @@ function App() {
       <div className="flex flex-grow relative min-h-0">
         <ReactFlowProvider>
           <ReactFlowContext>
-            {/* 사이드바가 열린 경우 Sidebar 랜더링*/}
             <div
-              className={`transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[250px]' : 'w-0'}`}
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isSidebarOpen ? 'w-[250px]' : 'w-0'
+              }`}
             >
               <Sidebar loadReferenceModel={loadReferenceModel} />
             </div>
-            {isConfigOpen && (
-              <Config
-                onToggle={toggleConfig}
-                config={config}
-                setConfig={setConfig}
-              />
-            )}
 
-            {/* flex-1으로 FlowCanvas가 화면에서 가능한 많은 공간을 차지할 수 있도록 처리 */}
-            <div className="flex-1 h-full">
+            <div className="flex-1 h-full relative">
               <FlowCanvas
                 nodes={nodes}
                 edges={edges}
@@ -334,27 +354,33 @@ function App() {
               />
             </div>
 
-            {/* 상단 왼쪽 버튼들 */}
+            <div
+              className={`absolute top-0 right-0 h-1/2 bg-white shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
+                isConfigOpen ? 'w-[250px]' : 'w-0'
+              }`}
+            >
+              <Config config={config} setConfig={setConfig} />
+            </div>
+
             <div
               className={`absolute top-2 z-10 flex items-center gap-2 transition-all duration-300 ease-in-out ${
                 isSidebarOpen ? 'left-[250px] ml-2' : 'left-4'
               }`}
+              onClick={toggleSidebar}
             >
-              <div onClick={toggleSidebar}>
-                <CanvasHamburgerButton />
-              </div>
+              <CanvasHamburgerButton />
             </div>
 
-            {/* Config가 닫힌 경우 우측 상단에 토글 버튼 */}
-            {!isConfigOpen && (
-              <div
-                onClick={toggleConfig}
-                className="absolute top-4 right-4 z-10"
-                aria-label="Open Config"
-              >
-                <ConfigButton />
-              </div>
-            )}
+            {/* Config 토글 버튼 */}
+            <div
+              onClick={toggleConfig}
+              className={`absolute top-2 z-10 transition-all duration-300 ease-in-out ${
+                isConfigOpen ? 'right-[250px] mr-2' : 'right-2'
+              }`}
+              aria-label="Toggle Config"
+            >
+              <ConfigButton />
+            </div>
           </ReactFlowContext>
         </ReactFlowProvider>
       </div>

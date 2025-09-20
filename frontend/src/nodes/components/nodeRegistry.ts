@@ -24,7 +24,7 @@ import LinearLayer from '../Linear';
 import TokenEmbeddingLayer from '../TokenEmbedding';
 import PositionalEmbeddingLayer from '../PositionalEmbedding';
 import TestBlock from '../TestBlock';
-import { ModelConfig } from '../../Config';
+import { ModelConfig } from '../../constants/modelConfigs';
 
 interface NodeDefinition {
   // 1. 기본 정보
@@ -63,6 +63,7 @@ export const getNodeDataByType = (
   config: ModelConfig,
   baseData: BaseNodeData,
 ): BaseNodeData => {
+  // 대부분의 LLM 모델에서는 inDim과 outDim이 emb_dim과 같음
   const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
   switch (config.model) {
     case 'gpt-2':
@@ -147,7 +148,7 @@ export const getNodeDataByType = (
         case 'feedForward':
           return {
             ...data,
-            hiddenDim: 3072,
+            hiddenDim: config.hidden_dim,
             feedForwardType: 'Gated', // Standard, Gated
             actFunc: 'SwiGLU', // ReLU, GELU, SwiGLU, Mish
             bias: false,
@@ -542,6 +543,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             options: ['true', 'false'],
             info: nodeFieldInfo.mhAttention.isRoPE,
           },
+          {
+            type: 'select',
+            label: 'QKV Bias:',
+            name: 'qkvBias',
+            value: typed.qkvBias ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.mhAttention.qkvBias,
+          },
         ];
 
         if (typed.isRoPE) {
@@ -554,24 +563,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             info: nodeFieldInfo.mhAttention.theta,
           });
         } else {
-          fields.push(
-            {
-              type: 'number',
-              label: 'Dropout Rate:',
-              name: 'dropoutRate',
-              value: typed.dropoutRate?.toString() || '',
-              placeholder: 'Enter dropout rate',
-              info: nodeFieldInfo.mhAttention.dropoutRate,
-            },
-            {
-              type: 'select',
-              label: 'QKV Bias:',
-              name: 'qkvBias',
-              value: typed.qkvBias ? 'true' : 'false',
-              options: ['true', 'false'],
-              info: nodeFieldInfo.mhAttention.qkvBias,
-            },
-          );
+          fields.push({
+            type: 'number',
+            label: 'Dropout Rate:',
+            name: 'dropoutRate',
+            value: typed.dropoutRate?.toString() || '',
+            placeholder: 'Enter dropout rate',
+            info: nodeFieldInfo.mhAttention.dropoutRate,
+          });
         }
 
         return fields;

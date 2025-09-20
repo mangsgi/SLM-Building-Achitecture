@@ -1,111 +1,17 @@
-import React, { useState } from 'react';
-import ConfigButton from './ui-component/ConfigButton';
+import React, { useState, useEffect } from 'react';
+import { useReactFlow, type Node } from 'reactflow';
 import { FiInfo } from 'react-icons/fi';
 import Modal from './ui-component/Modal';
-
-// --- 타입 정의 시작 ---
-type ModelType = 'GPT-2' | 'Llama2' | 'Llama3';
-
-// 공통 설정값 인터페이스
-interface BaseConfig {
-  epochs: number;
-  batch_size: number;
-  vocab_size: number;
-  context_length: number;
-  emb_dim: number;
-  n_heads: number;
-  dtype: string;
-}
-
-// 모델별 고유 설정값 인터페이스
-export interface GPT2Config extends BaseConfig {
-  model: 'gpt-2';
-  n_blocks: number;
-  drop_rate: number;
-  qkv_bias: boolean;
-}
-
-export interface Llama2Config extends BaseConfig {
-  model: 'llama2';
-  n_blocks: number;
-  hidden_dim: number;
-}
-
-export interface Llama3Config extends BaseConfig {
-  model: 'llama3';
-  n_blocks: number;
-  hidden_dim: number;
-  n_kv_groups: number;
-  rope_base: number;
-  rope_freq: {
-    factor: number;
-    low_freq_factor: number;
-    high_freq_factor: number;
-    original_context_length: number;
-  };
-}
-
-// 구별된 유니온 타입
-export type ModelConfig = GPT2Config | Llama2Config | Llama3Config;
-// --- 타입 정의 끝 ---
+import { repositionSiblings } from './nodes/components/useCommonNodeActions';
+import { getNodeDataByType } from './nodes/components/nodeRegistry';
+import { calculateNodeHeight } from './constants/nodeHeights';
+import { BaseNodeData } from './nodes/components/NodeData';
+import { ModelType, ModelConfig, modelConfigs } from './constants/modelConfigs';
 
 interface ConfigProps {
-  onToggle: () => void;
   config: ModelConfig;
   setConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
 }
-
-// --- 설정값 객체들 ---
-const gpt2Config: Omit<GPT2Config, 'model'> = {
-  epochs: 1,
-  batch_size: 1,
-  vocab_size: 50257,
-  context_length: 128,
-  emb_dim: 768,
-  n_heads: 12,
-  n_blocks: 12,
-  drop_rate: 0.1,
-  qkv_bias: true,
-  dtype: 'bf16',
-};
-
-const llama2Config: Omit<Llama2Config, 'model'> = {
-  epochs: 1,
-  batch_size: 1,
-  vocab_size: 32000,
-  context_length: 128,
-  emb_dim: 4096,
-  n_heads: 32,
-  n_blocks: 32,
-  hidden_dim: 11008,
-  dtype: 'bf16',
-};
-
-const llama3Config: Omit<Llama3Config, 'model'> = {
-  epochs: 1,
-  batch_size: 1,
-  vocab_size: 128256,
-  context_length: 128,
-  emb_dim: 4096,
-  n_heads: 32,
-  n_blocks: 32,
-  hidden_dim: 14336,
-  n_kv_groups: 8,
-  rope_base: 5000000,
-  rope_freq: {
-    factor: 8.0,
-    low_freq_factor: 1.0,
-    high_freq_factor: 4.0,
-    original_context_length: 8192,
-  },
-  dtype: 'bf16',
-};
-
-const modelConfigs: Record<ModelType, Omit<ModelConfig, 'model'>> = {
-  'GPT-2': gpt2Config,
-  Llama2: llama2Config,
-  Llama3: llama3Config,
-};
 
 // --- 기타 설정 맵 ---
 const configMap: Record<string, string> = {
@@ -144,13 +50,10 @@ const configDescriptions: Record<string, string> = {
   rope_freq: 'RoPE 주파수 스케일링 값입니다.',
 };
 
-// --- 기본 설정값 ---
-export const defaultConfig: Llama2Config = {
-  ...llama2Config,
-  model: 'llama2',
-};
+const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
+  const { setNodes } = useReactFlow();
 
-const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
+  // 모델 타입을 가져오는 함수
   const getModelTypeFromId = (modelId: ModelConfig['model']): ModelType => {
     if (modelId === 'gpt-2') return 'GPT-2';
     if (modelId === 'llama2') return 'Llama2';
@@ -167,6 +70,41 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
     description: string;
   } | null>(null);
   const dtypeOptions = ['bf16', 'fp16', 'fp32'];
+
+  useEffect(() => {
+    setSelectedModel(getModelTypeFromId(config.model));
+  }, [config]);
+
+  // config가 변경될 때마다 노드를 업데이트하는 useEffect
+  useEffect(() => {
+    setNodes((currentNodes) => {
+      let updatedNodes = currentNodes.map((node) => {
+        if (node.data.isLocked) {
+          return node;
+        }
+        const baseData = node.data;
+        const updatedData = getNodeDataByType(
+          node.type as string,
+          config,
+          baseData,
+        );
+        const newNode = { ...node, data: updatedData };
+        return {
+          ...newNode,
+          height: calculateNodeHeight(newNode),
+        } as Node<BaseNodeData>;
+      });
+
+      const parentIds = new Set(
+        updatedNodes.map((n) => n.parentNode).filter(Boolean),
+      );
+      parentIds.forEach((parentId) => {
+        updatedNodes = repositionSiblings(updatedNodes, parentId!) as Node[];
+      });
+
+      return updatedNodes;
+    });
+  }, [config, setNodes]);
 
   // 모델 변경 이벤트 핸들러
   const handleModelChange = (model: ModelType) => {
@@ -269,12 +207,9 @@ const Config: React.FC<ConfigProps> = ({ onToggle, config, setConfig }) => {
   const fractionalKeys: string[] = ['drop_rate'];
 
   return (
-    <aside className="absolute right-0 w-[250px] h-1/2 z-10 bg-white p-4 shadow overflow-auto">
+    <aside className="w-full h-full bg-white p-4 shadow overflow-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Model Configuration</h2>
-        <div onClick={onToggle} className="z-10" aria-label="Toggle Config">
-          <ConfigButton />
-        </div>
       </div>
 
       <div className="mt-4">

@@ -1,4 +1,5 @@
 services:
+  # redis 컨테이너
   redis:
     image: redis:7-alpine
     container_name: slm-redis
@@ -6,8 +7,9 @@ services:
     volumes: ["redis_data:/data"]
     restart: unless-stopped
 
+  # mlflow 컨테이너
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v3.3.2 # ← v 프리픽스 필수
+    image: ghcr.io/mlflow/mlflow:v3.3.2
     container_name: slm-mlflow
     command: >
       mlflow server --host 0.0.0.0 --port 5000
@@ -18,6 +20,7 @@ services:
     ports: ["5000:5000"]
     restart: unless-stopped
 
+  # backend 컨테이너
   backend:
     build:
       context: ./backend
@@ -38,6 +41,7 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
 
+  # worker 컨테이너
   worker:
     build:
       context: ./backend
@@ -59,16 +63,19 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all          # 모든 GPU 사용
+              count: all # 모든 GPU 사용
               capabilities: [gpu]
     command: >
       watchmedo auto-restart
       --directory=/app/backend
       --pattern="*.py"
-      --recursive --
+      --ignore-patterns="*.pyc;*~;__pycache__/*;*.log"
+      --recursive
+      --interval=1 --
       celery -A celery_worker.celery_app worker --loglevel=info
     restart: unless-stopped
 
+  # frontend 컨테이너
   frontend:
     build:
       context: ./frontend
@@ -80,7 +87,8 @@ services:
       - CHOKIDAR_USEPOLLING=true # WSL/도커 파일감시 보정
       - CHOKIDAR_INTERVAL=100
     volumes:
-      - ./frontend:/app/frontend\ # node_modules를 마운트하지 않고 새로 라이브러리 추가 시 재빌드
+      - ./frontend:/app/frontend # 덮어씀 방지
+      - frontend_node_modules:/app/frontend/node_modules
     depends_on: [backend]
     ports: ["5173:5173"]
     command: npm run dev -- --host 0.0.0.0

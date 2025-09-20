@@ -52,7 +52,7 @@ class LayerData(BaseModel):
     ctxLength: Optional[int] = None
     dropoutRate: Optional[float] = None     # for Dropout
     source: Optional[str] = None            # for Residual
-    normType: Optional[str] = None          # for Normalization
+    # normType: Optional[str] = None          # for Normalization
     bias: Optional[bool] = None             # for FeedForward, Linear
     hiddenDim: Optional[int] = None         # for FeedForward
     feedForwardType: Optional[str] = None   # for FeedForward

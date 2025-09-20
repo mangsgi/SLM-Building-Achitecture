@@ -309,14 +309,9 @@ class MHAPyTorchScaledDotProduct(nn.Module):
                 f"Sequence length {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
             )
 
-        # (b, T, E) -> (b, T, 3E)
-        qkv = self.qkv(x)
-
-        # (b, T, 3E) -> (b, T, 3, H, D)
-        qkv = qkv.view(batch_size, num_tokens, 3, self.num_heads, self.head_dim)
-
-        # (b, T, 3, H, D) -> (3, b, H, T, D)
-        qkv = qkv.permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x) # (b, T, E) -> (b, T, 3E)
+        qkv = qkv.view(batch_size, num_tokens, 3, self.num_heads, self.head_dim) # (b, T, 3E) -> (b, T, 3, H, D)
+        qkv = qkv.permute(2, 0, 3, 1, 4) # (b, T, 3, H, D) -> (3, b, H, T, D)
 
         # 3개 텐서로 분리
         queries, keys, values = qkv.unbind(0)  # each: (b, H, T, D)

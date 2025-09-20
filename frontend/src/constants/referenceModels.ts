@@ -472,8 +472,8 @@ export const referenceModels: Record<string, ModelData> = {
         id: 'tokenEmbedding-1757672995182',
         type: 'tokenEmbedding',
         position: {
-          x: 525,
-          y: -135,
+          x: 492,
+          y: -132,
         },
         data: {
           id: 'tokenEmbedding-1757672995182',
@@ -488,8 +488,8 @@ export const referenceModels: Record<string, ModelData> = {
         height: 175,
         selected: false,
         positionAbsolute: {
-          x: 525,
-          y: -135,
+          x: 492,
+          y: -132,
         },
         dragging: false,
       },
@@ -510,7 +510,7 @@ export const referenceModels: Record<string, ModelData> = {
           isLocked: true,
         },
         width: 320,
-        height: 431,
+        height: 894,
         selected: false,
         positionAbsolute: {
           x: 129,
@@ -522,8 +522,8 @@ export const referenceModels: Record<string, ModelData> = {
         id: 'normalization-1757673974430',
         type: 'normalization',
         position: {
-          x: 525,
-          y: 66,
+          x: 495,
+          y: 438,
         },
         data: {
           id: 'normalization-1757673974430',
@@ -537,8 +537,8 @@ export const referenceModels: Record<string, ModelData> = {
         height: 109,
         selected: false,
         positionAbsolute: {
-          x: 525,
-          y: 66,
+          x: 495,
+          y: 438,
         },
         dragging: false,
       },
@@ -546,8 +546,8 @@ export const referenceModels: Record<string, ModelData> = {
         id: 'linear-1757673979270',
         type: 'linear',
         position: {
-          x: 528,
-          y: 198,
+          x: 495,
+          y: 585,
         },
         data: {
           id: 'linear-1757673979270',
@@ -555,13 +555,14 @@ export const referenceModels: Record<string, ModelData> = {
           inDim: 4096,
           outDim: 32000,
           isLocked: true,
+          bias: false,
         },
         width: 300,
-        height: 109,
+        height: 175,
         selected: false,
         positionAbsolute: {
-          x: 528,
-          y: 198,
+          x: 495,
+          y: 585,
         },
         dragging: false,
       },
@@ -613,11 +614,11 @@ export const referenceModels: Record<string, ModelData> = {
           isRoPE: true,
           theta: 10000,
           hideHandles: true,
-          isCollapsed: true,
+          isCollapsed: false,
           isLocked: true,
         },
         width: 300,
-        height: 43,
+        height: 241,
         selected: false,
         positionAbsolute: {
           x: 139,
@@ -633,7 +634,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'residual',
         position: {
           x: 10,
-          y: 216,
+          y: 414,
         },
         data: {
           id: 'residual-1757673899044',
@@ -649,7 +650,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 87,
+          y: 285,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -661,7 +662,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'normalization',
         position: {
           x: 10,
-          y: 269,
+          y: 467,
         },
         data: {
           id: 'normalization-1757673905085',
@@ -678,7 +679,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 140,
+          y: 338,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -690,26 +691,27 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'feedForward',
         position: {
           x: 10,
-          y: 322,
+          y: 520,
         },
         data: {
           id: 'feedForward-1757673916413',
           label: 'Feed Forward',
           inDim: 4096,
           outDim: 4096,
-          hiddenDim: 3072,
+          hiddenDim: 11008,
           feedForwardType: 'Gated',
           actFunc: 'SwiGLU',
           hideHandles: true,
-          isCollapsed: true,
+          isCollapsed: false,
           isLocked: true,
+          bias: false,
         },
         width: 300,
-        height: 43,
-        selected: false,
+        height: 308,
+        selected: true,
         positionAbsolute: {
           x: 139,
-          y: 193,
+          y: 391,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -721,7 +723,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'residual',
         position: {
           x: 10,
-          y: 375,
+          y: 837,
         },
         data: {
           id: 'residual-1757673924082',
@@ -737,7 +739,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 443,
+          y: 708,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',

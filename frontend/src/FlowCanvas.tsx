@@ -87,21 +87,6 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
   const nodeTypes = useMemo(() => getNodeTypes(), []);
   const allowedTypes = useMemo(() => getAllowedParentBlocks(), []);
 
-  // Config 값이 변경될 때마다 Node의 Data 업데이트
-  useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.data.isLocked) {
-          return node;
-        }
-        return {
-          ...node,
-          data: getNodeDataByType(node.type || '', config as any, node.data),
-        };
-      }),
-    );
-  }, [config, setNodes]);
-
   // 노드 간 연결 이벤트 핸들
   const onConnect = useCallback(
     // 전달된 params를 기반으로 addEdge 헬퍼 함수를 사용해 현재 edges 상태에 새로운 edge를 추가
