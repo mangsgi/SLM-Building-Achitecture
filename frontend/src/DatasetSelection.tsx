@@ -6,7 +6,7 @@ import Header from './ui-component/Header';
 import Modal from './ui-component/Modal';
 import { ModelNode } from './App';
 import { RootState, AppDispatch } from './store';
-import { startTraining, resetStatus } from './store/statusSlice';
+import { startTraining, resetStatus, failTraining } from './store/statusSlice';
 
 // 임시 데이터셋 목록
 const datasets = [
@@ -114,7 +114,12 @@ function DatasetSelection() {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to submit model and dataset');
+        const errorData = await response.json();
+        const errorMessage =
+          errorData.message || 'Failed to submit model and dataset';
+        dispatch(failTraining({ message: errorMessage }));
+        navigate('/canvas');
+        return;
       }
 
       const result = await response.json();
@@ -127,10 +132,16 @@ function DatasetSelection() {
         console.log('Model and dataset submitted successfully');
         navigate('/canvas');
       } else {
-        throw new Error('MLFlow URL not found in response');
+        // 성공했지만 mlflow_url이 없는 경우
+        const errorMessage =
+          result.message || 'MLFlow URL not found in response';
+        dispatch(failTraining({ message: errorMessage }));
+        navigate('/canvas');
       }
     } catch (error) {
       console.error('Error submitting model and dataset:', error);
+      dispatch(failTraining({ message: (error as Error).message }));
+      navigate('/canvas');
     }
   };
 

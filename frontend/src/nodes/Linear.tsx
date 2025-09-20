@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
 import { NodeTitle } from './components/FieldComponents';
-import { BaseNodeData } from './components/NodeData';
+import { LinearData } from './components/NodeData';
 import { LayerWrapper } from './components/LayerWrapper';
 import NodeActionPanel from './components/ActionPanel';
 import { useCommonNodeActions } from './components/useCommonNodeActions';
@@ -10,11 +10,11 @@ import FieldRenderer from './components/FieldRenderer';
 import { nodeInfo } from './components/NodeInfo';
 import { nodeRegistry } from './components/nodeRegistry';
 
-interface LinearOutputLayerProps {
+interface LinearLayerProps {
   id: string;
 }
 
-export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
+export const LinearLayer: React.FC<LinearLayerProps> = ({ id }) => {
   const { setNodes, getNode } = useReactFlow();
   const [editMode, setEditMode] = useState<boolean>(false);
 
@@ -23,9 +23,18 @@ export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
   const typedData = node.type as string;
 
   // input 값 변경 시, 노드의 data에 직접 업데이트 + string 처리 for select
-  const handleFieldChange = (field: keyof BaseNodeData, value: string) => {
+  const handleFieldChange = (field: keyof LinearData, value: string) => {
     const stringFields = nodeRegistry.get(typedData)?.stringFields ?? [];
-    const newValue = stringFields.includes(field) ? value : Number(value);
+
+    let newValue: string | number | boolean;
+    if (value === 'true' || value === 'false') {
+      newValue = value === 'true';
+    } else if (stringFields.includes(field as string)) {
+      newValue = value;
+    } else {
+      newValue = Number(value);
+    }
+
     setNodes((nds) =>
       nds.map((nodeItem) => {
         if (nodeItem.id === id) {
@@ -50,7 +59,7 @@ export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
     handleNodeClick,
     handleInfoClick,
     handleLockToggle,
-  } = useCommonNodeActions<BaseNodeData>({ id, setEditMode });
+  } = useCommonNodeActions<LinearData>({ id, setEditMode });
 
   return (
     <LayerWrapper hideHandles={node.data.hideHandles}>
@@ -71,7 +80,7 @@ export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
             fields={nodeRegistry.get(typedData)?.getFields(node.data) ?? []}
             editMode={editMode}
             onChange={(name: string, value: string) =>
-              handleFieldChange(name as keyof BaseNodeData, value)
+              handleFieldChange(name as keyof LinearData, value)
             }
             onInfoClick={(info) => {
               // FlowCanvas의 필드 정보 모달을 열기 위한 이벤트 발생
@@ -85,4 +94,4 @@ export const LinearOutputLayer: React.FC<LinearOutputLayerProps> = ({ id }) => {
   );
 };
 
-export default LinearOutputLayer;
+export default LinearLayer;

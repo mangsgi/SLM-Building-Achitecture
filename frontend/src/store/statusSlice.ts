@@ -59,7 +59,6 @@ const statusSlice = createSlice({
       localStorage.removeItem('mlflowUrl');
       localStorage.removeItem('task_id');
     },
-    // 학습 실패 액션 추가
     failTraining: (state, action: PayloadAction<{ message: string }>) => {
       state.trainingStatus = 'COMPLETED'; // 상태는 완료(Blue)로 변경
       state.error = action.payload.message; // 에러 메시지 저장

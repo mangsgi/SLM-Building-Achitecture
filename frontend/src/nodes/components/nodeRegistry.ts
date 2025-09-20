@@ -9,6 +9,7 @@ import {
   TokenEmbeddingData,
   MHAttentionData,
   GQAttentionData,
+  LinearData,
 } from './NodeData';
 import { FieldConfig } from './FieldRenderer';
 import { nodeFieldInfo } from './NodeInfo';
@@ -19,7 +20,7 @@ import TransformerBlock from '../TransformerBlock';
 import FeedForwardLayer from '../FeedForward';
 import DropoutLayer from '../Dropout';
 import NormalizationLayer from '../Normalization';
-import LinearOutputLayer from '../LinearOutput';
+import LinearLayer from '../Linear';
 import TokenEmbeddingLayer from '../TokenEmbedding';
 import PositionalEmbeddingLayer from '../PositionalEmbedding';
 import TestBlock from '../TestBlock';
@@ -86,9 +87,10 @@ export const getNodeDataByType = (
             hiddenDim: 3072,
             feedForwardType: 'Standard', // Standard, Gated
             actFunc: 'GELU', // ReLU, GELU, SwiGLU, Mish
+            bias: true,
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size };
+          return { ...data, outDim: config.vocab_size, bias: false };
         case 'normalization':
           return {
             ...data,
@@ -148,9 +150,10 @@ export const getNodeDataByType = (
             hiddenDim: 3072,
             feedForwardType: 'Gated', // Standard, Gated
             actFunc: 'SwiGLU', // ReLU, GELU, SwiGLU, Mish
+            bias: false,
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+          return { ...data, outDim: config.vocab_size, bias: false }; // 일단 Linear Output 기준으로 초기화
         case 'normalization':
           return {
             ...data,
@@ -211,7 +214,7 @@ export const getNodeDataByType = (
         embDim: config.emb_dim,
       };
     case 'linear':
-      return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+      return { ...data, outDim: config.vocab_size, bias: false }; // 일단 Linear Output 기준으로 초기화
     default:
       return data;
   }
@@ -342,7 +345,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
     {
       type: 'linear',
       label: 'Linear',
-      component: LinearOutputLayer,
+      component: LinearLayer,
       defaultData: {
         inDim: 0,
         outDim: 0,
@@ -350,14 +353,23 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       },
       stringFields: ['label'],
       getFields: (data: BaseNodeData) => {
+        const typed = data as LinearData;
         return [
           {
             type: 'number',
             label: 'Output Dimension:',
             name: 'outDim',
-            value: data.outDim?.toString() || '',
+            value: typed.outDim?.toString() || '',
             placeholder: 'Enter output dimension',
             info: nodeFieldInfo.linear.outDim,
+          },
+          {
+            type: 'select',
+            label: 'Bias Enabled:',
+            name: 'bias',
+            value: typed.bias ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.linear.bias,
           },
         ];
       },
@@ -444,6 +456,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
                 .get('feedForward')
                 ?.typeOptions?.get('actFuncOptions') ?? [],
             info: nodeFieldInfo.feedForward.actFunc,
+          },
+          {
+            type: 'select',
+            label: 'Bias Enabled:',
+            name: 'bias',
+            value: typed.bias ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.feedForward.bias,
           },
         ];
       },

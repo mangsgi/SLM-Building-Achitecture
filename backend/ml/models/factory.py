@@ -216,12 +216,17 @@ class FeedForwardFactory:
             raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have an 'actFunc' field")
         if data.get("feedForwardType") is None:
             raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have a 'feedForwardType' field")
+        if data.get("bias") is None:
+            raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have a 'bias' field")
+        if data.get("hiddenDim") is None:
+            raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have a 'hiddenDim' field")
         
         return CustomFFN(
             emb_dim=data.get("outDim") or data.get("inDim"),
-            hidden_dim=data.get("hiddenDim", 3072),
+            hidden_dim=data.get("hiddenDim"),
             activation=data.get("actFunc"),
             is_gated=data.get("feedForwardType") == "Gated",
+            bias=data.get("bias"),
             dtype=dtype,  # dtype 이미 있음
         )
 
@@ -254,9 +259,12 @@ class LinearFactory:
     """선형 레이어 생성"""
     @staticmethod
     def create(data: Dict[str, Any], dtype=torch.float32) -> nn.Linear:
+        if data.get("bias") is None:
+            raise ValueError(f"Linear layer '{data.get('id', 'unknown')}' must have a 'bias' field")
         return nn.Linear(
             in_features=data["inDim"],
             out_features=data["outDim"],
+            bias=data.get("bias"),
             dtype=dtype,  # dtype 추가
         )
 

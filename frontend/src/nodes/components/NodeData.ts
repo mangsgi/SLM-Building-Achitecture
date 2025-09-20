@@ -23,10 +23,15 @@ export interface PositionalEmbeddingData extends BaseNodeData {
   embDim: number;
 }
 
+export interface LinearData extends BaseNodeData {
+  bias: boolean;
+}
+
 export interface FeedForwardData extends BaseNodeData {
   hiddenDim: number;
   feedForwardType: string;
   actFunc: string;
+  bias: boolean;
 }
 
 export interface DropoutData extends BaseNodeData {

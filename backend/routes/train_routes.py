@@ -47,19 +47,23 @@ class LayerData(BaseModel):
     label: Optional[str] = None
     inDim: Optional[int] = None
     outDim: Optional[int] = None
-    vocabSize: Optional[int] = None
+    vocabSize: Optional[int] = None         # for TokenEmbedding
     embDim: Optional[int] = None
     ctxLength: Optional[int] = None
-    dropoutRate: Optional[float] = None # for Dropout
-    numOfFactor: Optional[float] = None # for FeedForward
-    source: Optional[str] = None        # for Residual
-    numOfBlocks: Optional[int] = None   # for TransformerBlock
-    numHeads: Optional[int] = None      # for Attention
-    qkvBias: Optional[bool] = None      # GPT-2
-    isRoPE: Optional[bool] = None       # Llama2
-    theta: Optional[float] = None       # Llama2
-    numKvGroups: Optional[int] = None   # Llama3
-    normType: Optional[str] = None      # for Normalization
+    dropoutRate: Optional[float] = None     # for Dropout
+    source: Optional[str] = None            # for Residual
+    normType: Optional[str] = None          # for Normalization
+    bias: Optional[bool] = None             # for FeedForward, Linear
+    hiddenDim: Optional[int] = None         # for FeedForward
+    feedForwardType: Optional[str] = None   # for FeedForward
+    actFunc: Optional[str] = None           # for FeedForward
+    numHeads: Optional[int] = None          # for Attention
+    numOfBlocks: Optional[int] = None       # for TransformerBlock
+    qkvBias: Optional[bool] = None          # GPT-2
+    isRoPE: Optional[bool] = None           # Llama2
+    theta: Optional[float] = None           # Llama2
+    numKvGroups: Optional[int] = None       # Llama3
+
 
 class LayerNode(BaseModel):
     type: str

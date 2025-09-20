@@ -32,9 +32,9 @@ def validate_model_structure(layer_json):
         os.makedirs("/app/backend/model_structures", exist_ok=True)  # 볼륨 마운트 권장
         file_id = str(uuid.uuid4())[:8]
         filepath = f"/app/backend/model_structures/model_structure_{file_id}.json"
-
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(structure, f, indent=2, ensure_ascii=False)
+        print(f"Model structure saved to {filepath}")
 
         return {
             "status": "success",

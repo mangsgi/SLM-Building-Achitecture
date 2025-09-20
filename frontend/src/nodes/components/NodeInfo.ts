@@ -17,7 +17,7 @@ export interface NodeFieldInfo {
   [key: string]: FieldInfo;
 }
 
-// ✅ 노드 정보 저장소
+// 노드 정보 저장소
 export const nodeInfo: { [key: string]: NodeInfo } = {
   positionalEmbedding: {
     title: 'Positional Embedding',
@@ -143,6 +143,10 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       title: 'Hidden Dimension Size',
       description:
         '피드포워드 네트워크의 내부 차원을 지정합니다. 입력 차원에 이 값을 곱하여 내부 차원을 결정합니다.',
+    },
+    bias: {
+      title: 'Bias Enabled',
+      description: '피드포워드 네트워크에 편향을 사용할지 여부를 결정합니다.',
     },
   },
   dropout: {
