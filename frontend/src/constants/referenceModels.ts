@@ -510,7 +510,7 @@ export const referenceModels: Record<string, ModelData> = {
           isLocked: true,
         },
         width: 320,
-        height: 894,
+        height: 959,
         selected: false,
         positionAbsolute: {
           x: 129,
@@ -618,8 +618,8 @@ export const referenceModels: Record<string, ModelData> = {
           isLocked: true,
         },
         width: 300,
-        height: 241,
-        selected: false,
+        height: 307,
+        selected: true,
         positionAbsolute: {
           x: 139,
           y: 34,
@@ -634,7 +634,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'residual',
         position: {
           x: 10,
-          y: 414,
+          y: 480,
         },
         data: {
           id: 'residual-1757673899044',
@@ -650,7 +650,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 285,
+          y: 87,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -662,7 +662,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'normalization',
         position: {
           x: 10,
-          y: 467,
+          y: 533,
         },
         data: {
           id: 'normalization-1757673905085',
@@ -679,7 +679,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 338,
+          y: 140,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -691,7 +691,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'feedForward',
         position: {
           x: 10,
-          y: 520,
+          y: 586,
         },
         data: {
           id: 'feedForward-1757673916413',
@@ -707,11 +707,11 @@ export const referenceModels: Record<string, ModelData> = {
           bias: false,
         },
         width: 300,
-        height: 308,
-        selected: true,
+        height: 307,
+        selected: false,
         positionAbsolute: {
           x: 139,
-          y: 391,
+          y: 193,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',
@@ -723,7 +723,7 @@ export const referenceModels: Record<string, ModelData> = {
         type: 'residual',
         position: {
           x: 10,
-          y: 837,
+          y: 903,
         },
         data: {
           id: 'residual-1757673924082',
@@ -739,7 +739,7 @@ export const referenceModels: Record<string, ModelData> = {
         selected: false,
         positionAbsolute: {
           x: 139,
-          y: 708,
+          y: 510,
         },
         dragging: false,
         parentNode: 'transformerBlock-1757673618412',

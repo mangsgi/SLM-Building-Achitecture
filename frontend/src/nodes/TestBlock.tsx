@@ -68,7 +68,7 @@ export const TestBlock: React.FC<TestBlockProps> = ({ id }) => {
 
   return (
     <BlockWrapper
-      childNodesHeight={childNodesHeight}
+      childrenAreaHeight={childNodesHeight}
       isTarget={node.data.isTarget}
     >
       <div className="relative group">

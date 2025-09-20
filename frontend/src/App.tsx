@@ -335,8 +335,16 @@ function App() {
         <ReactFlowProvider>
           <ReactFlowContext>
             <div
+              className={`absolute top-2 z-10 flex items-center gap-2 transition-all duration-300 ease-in-out ${
+                isSidebarOpen ? 'left-[170px] ml-2' : 'left-4' // 250px -> 170px
+              }`}
+              onClick={toggleSidebar}
+            >
+              <CanvasHamburgerButton />
+            </div>
+            <div
               className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                isSidebarOpen ? 'w-[250px]' : 'w-0'
+                isSidebarOpen ? 'w-[220px]' : 'w-0' // 250px -> 220px
               }`}
             >
               <Sidebar loadReferenceModel={loadReferenceModel} />
@@ -354,32 +362,22 @@ function App() {
               />
             </div>
 
-            <div
-              className={`absolute top-0 right-0 h-1/2 bg-white shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
-                isConfigOpen ? 'w-[250px]' : 'w-0'
-              }`}
-            >
-              <Config config={config} setConfig={setConfig} />
-            </div>
-
-            <div
-              className={`absolute top-2 z-10 flex items-center gap-2 transition-all duration-300 ease-in-out ${
-                isSidebarOpen ? 'left-[250px] ml-2' : 'left-4'
-              }`}
-              onClick={toggleSidebar}
-            >
-              <CanvasHamburgerButton />
-            </div>
-
             {/* Config 토글 버튼 */}
             <div
               onClick={toggleConfig}
               className={`absolute top-2 z-10 transition-all duration-300 ease-in-out ${
-                isConfigOpen ? 'right-[250px] mr-2' : 'right-2'
+                isConfigOpen ? 'right-[220px] mr-2' : 'right-2'
               }`}
               aria-label="Toggle Config"
             >
               <ConfigButton />
+            </div>
+            <div
+              className={`absolute top-0 right-0 h-1/2 bg-white shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${
+                isConfigOpen ? 'w-[220px]' : 'w-0'
+              }`}
+            >
+              <Config config={config} setConfig={setConfig} />
             </div>
           </ReactFlowContext>
         </ReactFlowProvider>

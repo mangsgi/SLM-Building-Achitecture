@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../store';
-import { resetStatus, TrainingStatus } from '../store/statusSlice';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { TrainingStatus } from '../store/statusSlice';
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -58,20 +58,10 @@ const StatusIndicator: React.FC<{
 
 function Header({ children }: HeaderProps) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch: AppDispatch = useDispatch();
   // 5. Redux store에서 error 상태 가져오기
   const { trainingStatus, mlflowUrl, error } = useSelector(
     (state: RootState) => state.status,
   );
-
-  useEffect(() => {
-    // 페이지 경로가 변경될 때, 현재 상태가 'COMPLETED'이면 'IDLE'로 리셋합니다.
-    if (trainingStatus === 'COMPLETED') {
-      dispatch(resetStatus());
-    }
-    // 의존성 배열에서 trainingStatus를 제외하여, 페이지 이동 시에만 이 효과가 실행되도록 합니다.
-  }, [location.pathname, dispatch]);
 
   return (
     <header className="bg-white p-4 shadow flex justify-between items-center">

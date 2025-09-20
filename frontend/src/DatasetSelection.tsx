@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
@@ -59,6 +59,11 @@ function DatasetSelection() {
     model: ModelNode[];
     config: Record<string, any>;
   };
+
+  // 상태 초기화
+  useEffect(() => {
+    dispatch(resetStatus());
+  }, [dispatch]);
 
   const handleShowInfo = (e: React.MouseEvent, dataset: Dataset) => {
     e.stopPropagation();
