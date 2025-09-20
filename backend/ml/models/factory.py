@@ -104,12 +104,12 @@ class NormalizationFactory:
     def create(data: Dict[str, Any], dtype=torch.float32) -> LayerNorm:
         d_model = data.get("embDim") or data.get("inDim") or data.get("outDim")
         
-        if data.get("normType", "Layer Normalization") == "Layer Normalization":
+        if data.get("normType") == "Layer Normalization":
             return LayerNorm(d_model, dtype=dtype)  # dtype 추가
-        elif data.get("normType", "Layer Normalization") == "RMS Normalization":
+        elif data.get("normType") == "RMS Normalization":
             return RMSNorm(d_model, dtype=dtype)  # dtype 추가
         else:
-            raise ValueError(f"Unknown normalization type: {data.get('normType', 'Layer Normalization')}")
+            raise ValueError(f"Unknown normalization type: {data.get('normType')}")
 
 
 class AttentionFactory:
@@ -212,11 +212,16 @@ class FeedForwardFactory:
     """피드포워드 레이어 생성"""
     @staticmethod
     def create(data: Dict[str, Any], dtype=torch.float32) -> CustomFFN:
+        if data.get("actFunc") is None:
+            raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have an 'actFunc' field")
+        if data.get("feedForwardType") is None:
+            raise ValueError(f"FeedForward layer '{data.get('id', 'unknown')}' must have a 'feedForwardType' field")
+        
         return CustomFFN(
             emb_dim=data.get("outDim") or data.get("inDim"),
             hidden_dim=data.get("hiddenDim", 3072),
-            activation=data.get("actFunc", "GELU"),
-            is_gated=data.get("feedForwardType", "Standard") == "Gated",
+            activation=data.get("actFunc"),
+            is_gated=data.get("feedForwardType") == "Gated",
             dtype=dtype,  # dtype 이미 있음
         )
 
@@ -316,6 +321,20 @@ class CustomSequential(nn.Module):
             if hasattr(layer, "layer_id"):
                 cache[layer.layer_id] = x
         return x
+
+    def forward_cached(self, x, caches=None, start_pos=0, use_cache=True):
+        """캐시를 사용하여 레이어를 포워드 (Llama2 형식)"""
+        if caches is None: caches = {}
+        new_caches = {}
+        for i, layer in enumerate(self.layers):
+            if isinstance(layer, (MHAPyTorchScaledDotProduct, GroupedQueryAttention)):
+                out, new_cache = layer(x, start_pos=start_pos, kv_cache=caches.get(i), use_cache=use_cache, return_cache=True)
+                x = out
+                new_caches[i] = new_cache
+            else:
+                # 기존 토큰/상대/학습형 포지셔널 임베딩 합산 로직은 유지
+                x = layer(x)
+        return x, new_caches
 
 
 # ===== Public API =====

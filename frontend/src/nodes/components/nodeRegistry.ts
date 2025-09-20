@@ -63,65 +63,64 @@ export const getNodeDataByType = (
   baseData: BaseNodeData,
 ): BaseNodeData => {
   const data = { ...baseData, inDim: config.emb_dim, outDim: config.emb_dim };
-
   switch (config.model) {
     case 'gpt-2':
       switch (nodeType) {
         case 'tokenEmbedding':
           return {
             ...data,
-            vocabSize: baseData.vocabSize ?? config.vocab_size,
-            embDim: baseData.embDim ?? config.emb_dim,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
           };
         case 'positionalEmbedding':
           return {
             ...data,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            posType: baseData.posType ?? 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
-            vocabSize: baseData.vocabSize ?? config.vocab_size,
-            embDim: baseData.embDim ?? config.emb_dim,
+            ctxLength: config.context_length,
+            posType: 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
           };
         case 'feedForward':
           return {
             ...data,
-            hiddenDim: baseData.hiddenDim ?? 3072,
-            feedForwardType: baseData.feedForwardType ?? 'Standard', // Standard, Gated
-            actFunc: baseData.actFunc ?? 'GELU', // ReLU, GELU, SwiGLU, Mish
+            hiddenDim: 3072,
+            feedForwardType: 'Standard', // Standard, Gated
+            actFunc: 'GELU', // ReLU, GELU, SwiGLU, Mish
           };
         case 'linear':
-          return { ...data, outDim: baseData.outDim ?? config.vocab_size };
+          return { ...data, outDim: config.vocab_size };
         case 'normalization':
           return {
             ...data,
-            normType: baseData.normType ?? 'Layer Normalization', // Layer Normalization, RMS Normalization
+            normType: 'Layer Normalization', // Layer Normalization, RMS Normalization
           };
         case 'dropout':
           return {
             ...data,
-            dropoutRate: baseData.dropoutRate ?? config.drop_rate,
+            dropoutRate: config.drop_rate,
           };
         case 'mhAttention':
           return {
             ...data,
-            numHeads: baseData.numHeads ?? config.n_heads,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            dropoutRate: baseData.dropoutRate ?? 0.1,
-            qkvBias: baseData.qkvBias ?? false,
-            isRoPE: baseData.isRoPE ?? false, // GPT-2는 RoPE 사용 안함
-            theta: baseData.theta ?? 10000.0, // GPT-2는 RoPE 사용 안함
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.1,
+            qkvBias: true,
+            isRoPE: false, // GPT-2는 RoPE 사용 안함
+            theta: 10000.0, // GPT-2는 RoPE 사용 안함
           };
         case 'gqAttention': // GPT-2는 GQAttention 사용 안함
           return {
             ...data,
-            qkvBias: baseData.qkvBias ?? config.qkv_bias,
-            numHeads: baseData.numHeads ?? config.n_heads,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            dropoutRate: baseData.dropoutRate ?? config.drop_rate,
+            qkvBias: config.qkv_bias,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: config.drop_rate,
           };
         case 'transformerBlock':
           return {
             ...data,
-            numOfBlocks: baseData.numOfBlocks ?? config.n_blocks,
+            numOfBlocks: config.n_blocks,
           };
         default:
           break;
@@ -132,55 +131,55 @@ export const getNodeDataByType = (
         case 'tokenEmbedding':
           return {
             ...data,
-            vocabSize: baseData.vocabSize ?? config.vocab_size,
-            embDim: baseData.embDim ?? config.emb_dim,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
           };
         case 'positionalEmbedding': // Llama2는 Positional Embedding 사용 안함
           return {
             ...data,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            posType: baseData.posType ?? 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
-            vocabSize: baseData.vocabSize ?? config.vocab_size,
-            embDim: baseData.embDim ?? config.emb_dim,
+            ctxLength: config.context_length,
+            posType: 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
           };
         case 'feedForward':
           return {
             ...data,
-            hiddenDim: baseData.hiddenDim ?? 3072,
-            feedForwardType: baseData.feedForwardType ?? 'Gated', // Standard, Gated
-            actFunc: baseData.actFunc ?? 'GELU', // ReLU, GELU, SwiGLU, Mish
+            hiddenDim: 3072,
+            feedForwardType: 'Gated', // Standard, Gated
+            actFunc: 'SwiGLU', // ReLU, GELU, SwiGLU, Mish
           };
         case 'linear':
-          return { ...data, outDim: baseData.outDim ?? config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+          return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
         case 'normalization':
           return {
             ...data,
-            normType: baseData.normType ?? 'RMS Normalization', // Layer Normalization, RMS Normalization
+            normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
           };
         case 'dropout':
-          return { ...data, dropoutRate: baseData.dropoutRate ?? 0.1 };
+          return { ...data, dropoutRate: 0.1 };
         case 'mhAttention':
           return {
             ...data,
-            numHeads: baseData.numHeads ?? config.n_heads,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            dropoutRate: baseData.dropoutRate ?? 0.0, // Llama2는 Dropout 사용 안함
-            qkvBias: baseData.qkvBias ?? false, // Llama2는 QKV Bias 사용 안함
-            isRoPE: baseData.isRoPE ?? true,
-            theta: baseData.theta ?? 10000.0,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0, // Llama2는 Dropout 사용 안함
+            qkvBias: false, // Llama2의 qkv_bias는 무조건 false
+            isRoPE: true,
+            theta: 10000.0,
           };
         case 'gqAttention': // Llama2는 GQAttention 사용 안함
           return {
             ...data,
-            qkvBias: baseData.qkvBias ?? false,
-            numHeads: baseData.numHeads ?? config.n_heads,
-            ctxLength: baseData.ctxLength ?? config.context_length,
-            dropoutRate: baseData.dropoutRate ?? 0.1,
+            qkvBias: false,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.1,
           };
         case 'transformerBlock':
           return {
             ...data,
-            numOfBlocks: baseData.numOfBlocks ?? config.n_blocks,
+            numOfBlocks: config.n_blocks,
           };
         default:
           break;
@@ -202,17 +201,17 @@ export const getNodeDataByType = (
     case 'tokenEmbedding':
       return {
         ...data,
-        vocabSize: baseData.vocabSize ?? config.vocab_size,
-        embDim: baseData.embDim ?? config.emb_dim,
+        vocabSize: config.vocab_size,
+        embDim: config.emb_dim,
       };
     case 'positionalEmbedding':
       return {
         ...data,
-        ctxLength: baseData.ctxLength ?? config.context_length,
-        embDim: baseData.embDim ?? config.emb_dim,
+        ctxLength: config.context_length,
+        embDim: config.emb_dim,
       };
     case 'linear':
-      return { ...data, outDim: baseData.outDim ?? config.vocab_size }; // 일단 Linear Output 기준으로 초기화
+      return { ...data, outDim: config.vocab_size }; // 일단 Linear Output 기준으로 초기화
     default:
       return data;
   }

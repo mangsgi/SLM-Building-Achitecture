@@ -5,15 +5,15 @@
 /* Global CSS Variables for a modern look */
 
 @font-face {
-  font-family: 'Pretendard-Regular';
-  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff')
+  font-family: 'Pretendard';
+  src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@latest/Pretendard-Regular.woff')
     format('woff');
-  font-weight: 400;
+  font-weight: normal;
   font-style: normal;
 }
 
 :root {
-  --font-family-base: 'Pretendard-Regular', sans-serif;
+  --font-family-base: 'Pretendard', sans-serif;
   --font-size-base: 16px;
   --line-height-base: 1.5;
   --color-text: #333333;

@@ -26,24 +26,21 @@ class LeakyReLU(nn.Module):
         return F.leaky_relu(x, negative_slope=self.negative_slope)
 
 
-def get_activation(name: str) -> nn.Module:
-    name = name.lower()
-    if name == "relu":
-        return ReLU()
-    elif name == "gelu":
-        return GELU()
-    elif name == "silu":
-        return SiLU()
-    elif name == "leaky":
-        return LeakyReLU()
-    else:
-        raise ValueError(f"Unsupported activation function: {name}")
-
-
-# activation_map은 선택적으로 사용
-activation_map = {
-    "relu": ReLU(),
-    "gelu": GELU(),
-    "silu": SiLU(),
-    "leaky": LeakyReLU(),
+# 팩토리 맵 (새 인스턴스를 리턴)
+activation_factory = {
+    "relu":  lambda **kw: ReLU(),
+    "gelu":  lambda **kw: GELU(),
+    "silu":  lambda **kw: SiLU(),
+    "swish": lambda **kw: SiLU(),  # 별칭
+    "leaky": lambda **kw: LeakyReLU(kw.get("negative_slope", 0.01)),
 }
+
+# get_activation도 팩토리를 쓰도록 통일
+def get_activation(name: str, **kwargs) -> nn.Module:
+    key = name.lower()
+    # 별칭 처리
+    if key == "swish": key = "silu"
+    if key not in activation_factory:
+        raise ValueError(f"Unsupported activation function: {name}. "
+                         f"Available: {', '.join(sorted(activation_factory))}")
+    return activation_factory[key](**kwargs)

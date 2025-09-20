@@ -8,6 +8,7 @@ venv
 
 completed/
 temp_structures/
+model_structures/
 mlartifacts/
 mlruns/
 *.pt

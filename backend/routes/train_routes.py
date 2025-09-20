@@ -52,13 +52,14 @@ class LayerData(BaseModel):
     ctxLength: Optional[int] = None
     dropoutRate: Optional[float] = None # for Dropout
     numOfFactor: Optional[float] = None # for FeedForward
-    source: Optional[str] = None # for Residual
-    numOfBlocks: Optional[int] = None # for TransformerBlock
-    numHeads: Optional[int] = None # for Attention
-    qkvBias: Optional[bool] = None # GPT-2
-    isRoPE: Optional[bool] = None # Llama2
-    theta: Optional[float] = None # Llama2
-    numKvGroups: Optional[int] = None # Llama3
+    source: Optional[str] = None        # for Residual
+    numOfBlocks: Optional[int] = None   # for TransformerBlock
+    numHeads: Optional[int] = None      # for Attention
+    qkvBias: Optional[bool] = None      # GPT-2
+    isRoPE: Optional[bool] = None       # Llama2
+    theta: Optional[float] = None       # Llama2
+    numKvGroups: Optional[int] = None   # Llama3
+    normType: Optional[str] = None      # for Normalization
 
 class LayerNode(BaseModel):
     type: str

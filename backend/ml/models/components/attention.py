@@ -155,12 +155,14 @@ class GroupedQueryAttention(nn.Module):
         super().__init__()
         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
         assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"
-
+        assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
+        
         self.d_out = d_out
         self.num_heads = num_heads
         self.head_dim = d_out // num_heads
         self.num_kv_groups = num_kv_groups
         self.group_size = num_heads // num_kv_groups
+        self.context_length = context_length
 
         # GQA: Q는 H개, K/V는 그룹당 1개
         self.W_query = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
@@ -170,14 +172,37 @@ class GroupedQueryAttention(nn.Module):
 
         self.attn_dropout = nn.Dropout(dropout)
 
-        # SharedBuffers에서 받아와 버퍼로 등록(모듈과 함께 .to(device) 이동)
-        mask, cos, sin = SharedBuffers.get_buffers(context_length, self.head_dim, rope_base, rope_config, dtype)
-        self.register_buffer("mask", mask)
-        self.register_buffer("cos", cos)
-        self.register_buffer("sin", sin)
+        # SharedBuffers에서 받아와 버퍼로 등록 (모듈과 함께 .to(device) 이동)
+        mask, cos, sin = SharedBuffers.get_buffers(self.context_length, self.head_dim, rope_base, rope_config, dtype)
+        self.register_buffer("mask", mask) # (ctx_len, ctx_len) - T와 T_k가 같을 때 사용(캐주얼 마스크)
+        self.register_buffer("cos", cos)   # (ctx_len, D/2)
+        self.register_buffer("sin", sin)   # (ctx_len, D/2)
 
-    def forward(self, x):
+    @torch.no_grad()
+    def _build_causal_mask(self, T_q: int, T_k: int, device: torch.device):
+        """
+        T_q x T_k 마스크를 생성.
+        - 캐시가 없으면 (T_q == T_k) 이고, self.mask[:T_q, :T_q] 사용.
+        - 캐시가 있으면 마지막 T_q x T_q 블록에만 상삼각 마스크를 적용.
+        """
+        if T_k == T_q:
+            return self.mask[:T_q, :T_q]  # (T, T) bool
+
+        # 일반화된 마스크: [zeros(T, T_k - T_q) | upper-tri(T, T_q)]
+        m = torch.zeros(T_q, T_k, dtype=torch.bool, device=device)
+        m[:, -T_q:] = self.mask[:T_q, :T_q]
+        return m  # (T_q, T_k) bool
+
+    def forward(self, x, start_pos: int = 0, kv_cache=None, use_cache: bool = False, return_cache: bool = False):
+        """
+        x: (B, T, E)
+        kv_cache: (k_cache_g, v_cache_g) where k_cache_g/v_cache_g are (B, G, T_cache, D)
+        """
         batch_size, num_tokens, _ = x.shape
+        if (start_pos + num_tokens) > self.cos.size(0):
+            raise ValueError(
+                f"Sequence end {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
+            )
 
         # Q, K, V 계산
         queries = self.W_query(x)  # (b, T, d_out)
@@ -195,35 +220,59 @@ class GroupedQueryAttention(nn.Module):
         values  = values.transpose(1, 2)
 
         # RoPE (Q, K에만)
-        keys    = compute_rope(keys, self.cos, self.sin)
-        queries = compute_rope(queries, self.cos, self.sin)
+        cos = self.cos[start_pos : start_pos+num_tokens]  # (T, D/2)
+        sin = self.sin[start_pos : start_pos+num_tokens]  # (T, D/2)
+        keys    = compute_rope(keys, cos, sin)
+        queries = compute_rope(queries, cos, sin)
+
+        # (변수 이름을 분리해 두는 게 안전)
+        k_g = keys
+        v_g = values
+
+        # 캐시 결합 (그룹 기준)
+        if use_cache and kv_cache is not None:
+            k_cache_g, v_cache_g = kv_cache              # (B, G, T_cache, D)
+            k_g = torch.cat([k_cache_g, k_g], dim=2)     # (B, G, T_k, D)
+            v_g = torch.cat([v_cache_g, v_g], dim=2)
+
+        # 컨텍스트 길이 초과 시 꼬리만 유지 (그룹 기준에서)
+        if k_g.size(2) > self.context_length:
+            k_g = k_g[:, :, -self.context_length:, :]
+            v_g = v_g[:, :, -self.context_length:, :]
 
         # GQA: K/V를 group_size만큼 복제하여 H개에 매핑
-        keys   = keys.repeat_interleave(self.group_size, dim=1)   # (b, H, T, D)
-        values = values.repeat_interleave(self.group_size, dim=1) # (b, H, T, D)
+        keys_h   = k_g.repeat_interleave(self.group_size, dim=1)   # (b, H, T, D)
+        values_h = v_g.repeat_interleave(self.group_size, dim=1) # (b, H, T, D)
+        T_k = keys_h.size(2)
+
 
         # 점수/마스킹/스케일링
-        attn_scores = queries @ keys.transpose(-2, -1)  # (b, H, T, T)
-        fill_value = torch.finfo(attn_scores.dtype).min
-        causal = self.mask[:num_tokens, :num_tokens]
-        attn_scores = attn_scores.masked_fill(causal, fill_value)
+        attn_scores = torch.matmul(queries, keys_h.transpose(-2, -1))   # (b, H, T, T)
         attn_scores = attn_scores / math.sqrt(self.head_dim)
 
-        attn_weights = torch.softmax(attn_scores, dim=-1)
-        attn_weights = self.attn_dropout(attn_weights)
+        # 일반화된 캐주얼 마스크 생성 및 적용
+        causal = self._build_causal_mask(num_tokens, T_k, device=attn_scores.device)  # (T, T_k) bool
+        attn_scores = attn_scores.masked_fill(causal.unsqueeze(0).unsqueeze(0), torch.finfo(attn_scores.dtype).min)
 
-        # 컨텍스트
-        context_vec = attn_weights @ values  # (b, H, T, D)
-        context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
-        context_vec = self.out_proj(context_vec)
-        return context_vec
+        attn_weights = torch.softmax(attn_scores, dim=-1)
+        attn_weights = self.attn_dropout(attn_weights)  # eval()에서는 자동 no-op
+
+        # 컨텍스트 & 출력
+        context = torch.matmul(attn_weights, values_h)  # (B, H, T, D)
+        context = context.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
+        out = self.out_proj(context)
+
+        if return_cache:
+            # 그룹 기준 캐시를 반환해야 메모리 효율적
+            return out, (k_g, v_g)
+        return out
 
 
 # ------------------------------
 # 3) PyTorch Scaled-Dot-Product Attention (SDPA) 백엔드
 # ------------------------------
 class MHAPyTorchScaledDotProduct(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, is_rope=False, theta=10000.0, dtype=torch.float32):
+    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.1, qkv_bias=True, is_rope=False, theta=10000.0, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
@@ -235,11 +284,13 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         self.d_out = d_out
 
         self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
-        self.proj = nn.Linear(d_out, d_out, dtype=dtype)
+        proj_bias = (False if is_rope else qkv_bias)
+        self.proj = nn.Linear(d_out, d_out, bias=proj_bias, dtype=dtype)
         self.dropout = dropout  # float. SDPA에 전달
         
         # RoPE 준비(필요할 때만)
         if self.is_rope:
+            self.dropout = 0.0
             if self.head_dim % 2 != 0:
                 raise ValueError(f"RoPE requires even head_dim, got {self.head_dim}.")
             # mask는 SDPA에서 is_causal=True로 대체되므로 cos/sin만 사용
@@ -250,12 +301,12 @@ class MHAPyTorchScaledDotProduct(nn.Module):
             self.register_buffer("cos", cos)  # (ctx_len, D/2)
             self.register_buffer("sin", sin)  # (ctx_len, D/2)
 
-    def forward(self, x):
+    def forward(self, x, start_pos: int = 0, kv_cache=None, use_cache: bool = False, return_cache: bool = False):
         batch_size, num_tokens, embed_dim = x.shape
-        if self.is_rope and num_tokens > self.context_length:
+        if self.is_rope and (start_pos + num_tokens) > self.context_length:            
             # 버퍼 범위를 넘으면 명확히 실패(원하면 여기서 버퍼 재계산 로직 추가 가능)
             raise ValueError(
-                f"Sequence length {num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
+                f"Sequence length {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
             )
 
         # (b, T, E) -> (b, T, 3E)
@@ -272,13 +323,25 @@ class MHAPyTorchScaledDotProduct(nn.Module):
 
         # ★ RoPE: Q, K에만 적용
         if self.is_rope:
-            cos = self.cos[:num_tokens]  # (T, D/2)
-            sin = self.sin[:num_tokens]  # (T, D/2)
+            cos = self.cos[start_pos : start_pos + num_tokens] # (T, D/2)
+            sin = self.sin[start_pos : start_pos + num_tokens] # (T, D/2)
             queries = compute_rope(queries, cos, sin)
             keys    = compute_rope(keys,    cos, sin)
 
+        # 캐시 결합
+        if use_cache and kv_cache is not None:
+            keys = torch.cat([kv_cache[0], keys], dim=2)
+            values = torch.cat([kv_cache[1], values], dim=2)
+        else:
+            pass
+        
+        # context_length 초과 시 꼬리만 유지
+        if keys.size(2) > self.context_length:
+            keys   = keys[:, :, -self.context_length:, :]
+            values = values[:, :, -self.context_length:, :]
+
         # 학습 중일 때만 드롭아웃 적용
-        use_dropout = 0.0 if not self.training else self.dropout
+        use_dropout = self.dropout if (self.training and self.dropout > 0.0) else 0.0
 
         # PyTorch 2.x SDPA: 내부에서 스케일/마스킹/최적화(플래시/트라이턴)까지 처리
         context_vec = nn.functional.scaled_dot_product_attention(
@@ -291,4 +354,7 @@ class MHAPyTorchScaledDotProduct(nn.Module):
         # (b, H, T, D) -> (b, T, H, D) -> (b, T, E)
         context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
         context_vec = self.proj(context_vec)
+        
+        if return_cache:
+            return context_vec, (keys, values)
         return context_vec

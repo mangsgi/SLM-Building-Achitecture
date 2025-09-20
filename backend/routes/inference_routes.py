@@ -113,9 +113,34 @@ def generate_text_api(req: InferenceRequest):
 
         # 7) 생성 루프
         with torch.no_grad():
-            for _ in range(gen_length):
-                # 항상 최근 context_length 토큰만 모델에 투입 (메모리/성능 안정)
+            # (안전) 최대 생성 길이 재계산: 프롬프트 길이를 뺀 나머지
+            prompt_len = input_ids.size(1)
+            gen_length = min(max_len_req, max(0, context_length - prompt_len))
+
+            # 캐시 사용 가능 여부 확인: 모델에 forward_cached가 있으면 사용
+            use_cached_path = hasattr(model, "forward_cached")
+            
+            caches = None           # 레이어별 KV 캐시를 dict나 tuple로 보관(모델 구현에 따름)
+            start_pos = 0           # RoPE 오프셋(프리필 시작은 0)
+            logits = None            
+
+            # ---- 7-1) 프리필: 프롬프트 전체를 한 번에 통과시키며 캐시 채우기 ----
+            if use_cached_path:
+                # 모델 쪽 forward_cached가 어텐션 레이어들에 start_pos/kv_cache를 전파해 준다는 전제
+                logits, caches = model.forward_cached(
+                    input_ids,            # (B, T_prompt)
+                    caches=None,          # 처음엔 캐시 없음
+                    start_pos=start_pos,  # 0부터 시작
+                    use_cache=True,       # 캐시 채우기/유지
+                    return_logits=True    # (필요하면) 마지막 출력 반환
+                )
+                start_pos = prompt_len   # 다음 스텝의 시작 위치는 프롬프트 길이
+            else:
+                # 기존 방식(비효율)으로도 동작 가능하게 폴백
                 logits = model(input_ids[:, -context_length:])
+                                    
+            # ---- 7-2) 증분: 토큰을 1개씩 만들며 KV 캐시 재사용 ----
+            for _ in range(gen_length):
                 next_token_logits = logits[:, -1, :]
 
                 # top-k 필터링
@@ -131,11 +156,30 @@ def generate_text_api(req: InferenceRequest):
                 # temperature/샘플링
                 if temperature > 0:
                     probs = torch.softmax(next_token_logits / temperature, dim=-1)
-                    next_token = torch.multinomial(probs, 1)
+                    next_token = torch.multinomial(probs, 1)    # (B, 1)
                 else:
                     next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
 
+                # 시퀀스에 새 토큰 붙이기
                 input_ids = torch.cat([input_ids, next_token], dim=1)
+
+                if use_cached_path:
+                    # 증분 스텝: 새 토큰 1개만 모델에 넣고, 캐시와 start_pos를 넘김
+                    logits, caches = model.forward_cached(
+                        next_token,         # (B, 1)
+                        caches=caches,      # 이전 캐시 재사용
+                        start_pos=start_pos,# 지금까지 쌓인 전체 길이(프리필 길이 + 생성 토큰 수)
+                        use_cache=True,
+                        return_logits=True
+                    )
+                    start_pos += 1         # 다음 스텝은 위치 1 증가
+                else:
+                    # 폴백: 기존처럼 마지막 context_length만 잘라서 전체 재계산(느림)
+                    logits = model(input_ids[:, -context_length:])
+
+                # (옵션) 컨텍스트 초과 방지: 초과하면 중단
+                if input_ids.size(1) >= context_length:
+                    break
 
         # 8) 디코딩 (CPU로 이동 후 디코딩 권장)
         output_ids = input_ids[0].detach().cpu().tolist()

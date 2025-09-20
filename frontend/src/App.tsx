@@ -264,17 +264,17 @@ function App() {
   // 모델 전송 함수
   const handleSendModel = async () => {
     // 모델 다운로드 (Reference 생성 시 주석 해제)
-    // const flowState = { nodes, edges };
-    // const jsonString = JSON.stringify(flowState, null, 2);
-    // const blob = new Blob([jsonString], { type: 'application/json' });
-    // const url = URL.createObjectURL(blob);
-    // const link = document.createElement('a');
-    // link.href = url;
-    // link.download = 'reactflow-state.json';
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-    // URL.revokeObjectURL(url);
+    const flowState = { nodes, edges };
+    const jsonString = JSON.stringify(flowState, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'reactflow-state.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     try {
       const model = await buildModelJSON(nodes, edges, config);

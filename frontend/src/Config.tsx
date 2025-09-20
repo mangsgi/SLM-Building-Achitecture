@@ -65,7 +65,7 @@ const gpt2Config: Omit<GPT2Config, 'model'> = {
   n_heads: 12,
   n_blocks: 12,
   drop_rate: 0.1,
-  qkv_bias: false,
+  qkv_bias: true,
   dtype: 'bf16',
 };
 

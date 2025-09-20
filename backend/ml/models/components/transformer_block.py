@@ -24,4 +24,4 @@ class TrasnformerBlock(nn.Module):
             for j, layer in enumerate(self.sequence):
                 layer_str = repr(layer).replace('\n', '\n    ')
                 lines.append(f"    ({j}): {layer_str}")
-        return "TrasnformerBlock(\n" + "\n".join(lines) + "\n)"
+        return "TransformerBlock(\n" + "\n".join(lines) + "\n)"

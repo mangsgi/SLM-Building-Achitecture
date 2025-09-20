@@ -1,3 +1,6 @@
+import os
+import json
+import uuid
 from celery_app import celery_app
 from ml.models.factory import build_model_from_json
 
@@ -11,8 +14,8 @@ def validate_model_structure(layer_json):
         structure = []
         for idx, (name, module) in enumerate(model.named_children()):
             r = repr(module)
-            if len(r) > 500:  # 너무 길면 잘라서 전달
-                r = r[:500] + " ... (truncated)"
+            # if len(r) > 500:  # 너무 길면 잘라서 전달
+            #     r = r[:500] + " ... (truncated)"
             info = {
                 "index": idx,
                 "layer_id": getattr(module, "layer_id", None),
@@ -21,9 +24,17 @@ def validate_model_structure(layer_json):
             }
             structure.append(info)
 
-        # 선택: 파라미터 수 요약(디버깅 편의)
+        # 파라미터 수 요약 (디버깅 편의)
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        
+        # --- 전체 구조를 JSON 파일로 저장 ---
+        os.makedirs("/app/backend/model_structures", exist_ok=True)  # 볼륨 마운트 권장
+        file_id = str(uuid.uuid4())[:8]
+        filepath = f"/app/backend/model_structures/model_structure_{file_id}.json"
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(structure, f, indent=2, ensure_ascii=False)
 
         return {
             "status": "success",
