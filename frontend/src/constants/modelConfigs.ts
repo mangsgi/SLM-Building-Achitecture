@@ -7,6 +7,7 @@ interface BaseConfig {
   batch_size: number;
   vocab_size: number;
   context_length: number;
+  stride: number;
   emb_dim: number;
   n_heads: number;
   dtype: string;
@@ -50,6 +51,7 @@ const gpt2Config: Omit<GPT2Config, 'model'> = {
   batch_size: 1,
   vocab_size: 50257,
   context_length: 128,
+  stride: 64, // context_length / 2
   emb_dim: 768,
   n_heads: 12,
   n_blocks: 12,
@@ -63,6 +65,7 @@ const llama2Config: Omit<Llama2Config, 'model'> = {
   batch_size: 1,
   vocab_size: 32000,
   context_length: 128,
+  stride: 64, // context_length / 2
   emb_dim: 4096,
   n_heads: 32,
   n_blocks: 32,
@@ -75,6 +78,7 @@ const llama3Config: Omit<Llama3Config, 'model'> = {
   batch_size: 1,
   vocab_size: 128256,
   context_length: 128,
+  stride: 128, // context_length를 기준으로 지정
   emb_dim: 4096,
   n_heads: 32,
   n_blocks: 32,

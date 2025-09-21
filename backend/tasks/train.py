@@ -24,7 +24,6 @@ import requests  # noqa: F401
 logger = get_task_logger(__name__)
 
 # ===================== 유틸 =====================
-
 def _as_int(x, default):
     if x is None:
         return int(default)
@@ -145,7 +144,7 @@ def train_and_infer_from_json(self, request_json: dict):
     batch_size     = _as_int(config.get("batch_size"), 4)
     epochs         = _as_int(config.get("epochs"), 5)
     seq_max_length = _as_int(config.get("context_length"), 32)
-    stride         = int(config.get("stride", max(1, seq_max_length // 2)))
+    stride         = _as_int(config.get("stride", seq_max_length))
     dtype          = _as_str(config.get("dtype"), "fp32")
 
     # step 로깅 주기 / SSE 스텝 이벤트 토글 / 완료 알림 URL
@@ -263,7 +262,7 @@ def train_and_infer_from_json(self, request_json: dict):
                     epoch_loss, batch_count = 0.0, 0
 
                     for step_idx, (input_batch, target_batch) in enumerate(train_loader, start=1):
-                        # 🛑 협력적 중단: 매 스텝 직전에 플래그 확인
+                        # 협력적 중단: 매 스텝 직전에 플래그 확인
                         if _should_stop(task_id):
                             # 학습 중단 처리
                             try:

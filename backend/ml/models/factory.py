@@ -11,8 +11,7 @@ from .components.positional_embedding import (
     RotaryPositionalEmbedding,
 )
 from .components.attention import (
-    MultiHeadAttentionCombinedQKV,
-    MHAPyTorchScaledDotProduct,
+    MultiHeadAttentionUsingSDP,
     GroupedQueryAttention,
 )
 from .components.normalization import LayerNorm, RMSNorm
@@ -132,32 +131,21 @@ class AttentionFactory:
             common_args.update(
                 {
                     "num_heads": data["numHeads"],
-                    "dropout": data.get("dropoutRate", 0.0),
-                    "qkv_bias": data.get("qkvBias", False),
-                    "is_rope": data.get("isRoPE", False),
+                    "dropout": data.get("dropoutRate"),
+                    "qkv_bias": data.get("qkvBias"),
+                    "is_rope": data.get("isRoPE"),
                     "theta": data.get("theta", 10000.0),
                 }
             )
-            return MHAPyTorchScaledDotProduct(**common_args)
-
-        elif layer_type == "flashAttention":
-            # Flash Attention (SDPA 백엔드 사용)
-            common_args.update(
-                {
-                    "num_heads": data["numHeads"],
-                    "dropout": data.get("dropoutRate", 0.0),
-                    "qkv_bias": data.get("qkvBias", False),
-                }
-            )
-            return MHAPyTorchScaledDotProduct(**common_args)
+            return MultiHeadAttentionUsingSDP(**common_args)
 
         elif layer_type == "gqaAttention":
             # Grouped Query Attention (+ RoPE)
             common_args.update(
                 {
                     "num_heads": data["numHeads"],
-                    "dropout": data.get("dropoutRate", 0.0),
-                    "qkv_bias": data.get("qkvBias", False),  # 일단 받되…
+                    "dropout": data.get("dropoutRate"),
+                    "qkv_bias": data.get("qkvBias"),  # 일단 받되…
                 }
             )
             # GQA는 qkv_bias 인자를 사용하지 않으므로 제거
@@ -173,7 +161,7 @@ class AttentionFactory:
             return GroupedQueryAttention(
                 **common_args,
                 num_kv_groups=data["numKvGroups"],
-                rope_base=data.get("ropeBase", 10000),
+                rope_base=data.get("ropeBase"),
                 rope_config=data.get("ropeConfig"),
             )
 
@@ -182,15 +170,13 @@ class AttentionFactory:
             common_args.update(
                 {
                     "num_heads": data["num_heads"],
-                    "dropout": data.get("dropout", 0.0),
-                    "qkv_bias": data.get("qkv_bias", False),
+                    "dropout": data.get("dropoutRate"),
+                    "qkv_bias": data.get("qkv_bias"),
                 }
             )
 
-            if attn_type == "default":
-                return MultiHeadAttentionCombinedQKV(**common_args)
-            elif attn_type == "flash":
-                return MHAPyTorchScaledDotProduct(**common_args)
+            if attn_type == "default" or attn_type == "mha":
+                return MultiHeadAttentionUsingSDP(**common_args)
             elif attn_type == "gqa":
                 # 레거시 키 이름을 쓰는 경우도 동일 처리
                 head_dim = (common_args["d_out"] // common_args["num_heads"])
@@ -201,7 +187,7 @@ class AttentionFactory:
                 return GroupedQueryAttention(
                     **{k: v for k, v in common_args.items() if k != "qkv_bias"},
                     num_kv_groups=data["num_kv_groups"],
-                    rope_base=data.get("rope_base", 10000),
+                    rope_base=data.get("rope_base"),
                     rope_config=data.get("rope_config"),
                 )
             else:
@@ -261,12 +247,21 @@ class LinearFactory:
     def create(data: Dict[str, Any], dtype=torch.float32) -> nn.Linear:
         if data.get("bias") is None:
             raise ValueError(f"Linear layer '{data.get('id', 'unknown')}' must have a 'bias' field")
-        return nn.Linear(
+        if data.get("weightTying") is None:
+            raise ValueError(f"Linear layer '{data.get('id', 'unknown')}' must have a 'weightTying' field")
+        
+        layer = nn.Linear(
             in_features=data["inDim"],
             out_features=data["outDim"],
             bias=data.get("bias"),
             dtype=dtype,  # dtype 추가
         )
+        
+        # 🔑 이후 tying 단계에서 인식할 수 있도록 플래그와 메타정보 부착
+        layer._weight_tying = bool(data.get("weightTying"))   # <-- 추가
+        layer._declared_inDim = data["inDim"]                 # <-- 추가
+        layer._declared_outDim = data["outDim"]               # <-- 추가
+        return layer
 
 
 class DropoutFactory:
@@ -289,7 +284,7 @@ class CustomSequential(nn.Module):
         prev_out = None
         for i, layer in enumerate(self.layers):
             # 1) TokenEmbedding → PositionalEmbedding(learned/sinusoidal/relative) 자동 합산
-            #    RotaryPositionalEmbedding 은 제외 (RoPE는 어텐션 내부에서 처리됨)
+            #    RotaryPositionalEmbedding은 제외 (RoPE는 어텐션 내부에서 처리됨)
             if (
                 i > 0
                 and isinstance(self.layers[i - 1], TokenEmbedding)
@@ -335,7 +330,7 @@ class CustomSequential(nn.Module):
         if caches is None: caches = {}
         new_caches = {}
         for i, layer in enumerate(self.layers):
-            if isinstance(layer, (MHAPyTorchScaledDotProduct, GroupedQueryAttention)):
+            if isinstance(layer, (MultiHeadAttentionUsingSDP, GroupedQueryAttention)):
                 out, new_cache = layer(x, start_pos=start_pos, kv_cache=caches.get(i), use_cache=use_cache, return_cache=True)
                 x = out
                 new_caches[i] = new_cache

@@ -32,6 +32,7 @@ class ModelConfig(BaseModel):
     batch_size: int
     vocab_size: int
     context_length: int
+    stride: int
     emb_dim: int
     n_heads: int
     n_blocks: int
@@ -59,6 +60,7 @@ class LayerData(BaseModel):
     actFunc: Optional[str] = None           # for FeedForward
     numHeads: Optional[int] = None          # for Attention
     numOfBlocks: Optional[int] = None       # for TransformerBlock
+    weightTying: Optional[bool] = None      # Linear
     qkvBias: Optional[bool] = None          # GPT-2
     isRoPE: Optional[bool] = None           # Llama2
     theta: Optional[float] = None           # Llama2

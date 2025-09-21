@@ -80,7 +80,7 @@ export const nodeInfo: { [key: string]: NodeInfo } = {
   },
 };
 
-// ✅ 노드별 필드 정보 저장소
+// 노드별 필드 정보 저장소
 export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
   positionalEmbedding: {
     ctxLength: {
@@ -161,6 +161,14 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       title: 'Output Dimension',
       description:
         '출력 벡터의 차원을 정의합니다. 이는 다음 레이어의 입력 차원과 일치해야 합니다. 마지막 레이어로 사용되는 경우 모델의 출력 차원(사전 크기)과 일치해야 합니다.',
+    },
+    weightTying: {
+      title: 'Weight Tying',
+      description: '가중치 행렬을 공유할지 여부를 결정합니다.',
+    },
+    bias: {
+      title: 'Bias Enabled',
+      description: '선형 변환에 편향을 사용할지 여부를 결정합니다.',
     },
   },
   mhAttention: {

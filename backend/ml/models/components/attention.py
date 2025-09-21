@@ -79,60 +79,91 @@ def compute_rope(x, cos, sin):
 
 
 # ------------------------------
-# 1) 전형적 MHA (QKV 통합 프로젝션, 캐주얼 마스크)
+# 1) Multi-Head Attention Using Scaled-Dot-Product Attention (SDPA) 백엔드
 # ------------------------------
-class MultiHeadAttentionCombinedQKV(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.0, qkv_bias=False, dtype=torch.float32):
+class MultiHeadAttentionUsingSDP(nn.Module):
+    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.1, qkv_bias=True, is_rope=False, theta=10000.0, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
+        self.is_rope = is_rope
+        self.theta = float(theta)
         self.num_heads = num_heads
         self.context_length = context_length
         self.head_dim = d_out // num_heads
+        self.d_out = d_out
 
         self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
-        self.proj = nn.Linear(d_out, d_out, dtype=dtype)
-        self.dropout = nn.Dropout(dropout)
+        
+        if proj_bias is None:
+            proj_bias = qkv_bias
+        self.proj = nn.Linear(d_out, d_out, bias=proj_bias, dtype=dtype)
+        self.dropout = dropout  # float. SDPA에 전달
+        
+        # RoPE 준비(필요할 때만)
+        if self.is_rope:
+            self.dropout = 0.0
+            if self.head_dim % 2 != 0:  
+                raise ValueError(f"RoPE requires even head_dim, got {self.head_dim}.")
+            # mask는 SDPA에서 is_causal=True로 대체되므로 cos/sin만 사용
+            _mask, cos, sin = SharedBuffers.get_buffers(
+                self.context_length, self.head_dim, self.theta,
+                freq_config={"type": "default"}, dtype=dtype
+            )
+            self.register_buffer("cos", cos)  # (ctx_len, D/2)
+            self.register_buffer("sin", sin)  # (ctx_len, D/2)
 
-        # 캐주얼 마스크 (bool)
-        mask = torch.triu(torch.ones(context_length, context_length, dtype=torch.bool), diagonal=1)
-        self.register_buffer("mask", mask)
-
-    def forward(self, x):
+    def forward(self, x, start_pos: int = 0, kv_cache=None, use_cache: bool = False, return_cache: bool = False):
         batch_size, num_tokens, embed_dim = x.shape
+        if self.is_rope and (start_pos + num_tokens) > self.context_length:            
+            # 버퍼 범위를 넘으면 명확히 실패(원하면 여기서 버퍼 재계산 로직 추가 가능)
+            raise ValueError(
+                f"Sequence length {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
+            )
 
-        # (b, T, E) -> (b, T, 3E)
-        qkv = self.qkv(x)
-
-        # (b, T, 3E) -> (b, T, 3, H, D)
-        qkv = qkv.view(batch_size, num_tokens, 3, self.num_heads, self.head_dim)
-
-        # (b, T, 3, H, D) -> (3, b, H, T, D)
-        qkv = qkv.permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x) # (b, T, E) -> (b, T, 3E)
+        qkv = qkv.view(batch_size, num_tokens, 3, self.num_heads, self.head_dim) # (b, T, 3E) -> (b, T, 3, H, D)
+        qkv = qkv.permute(2, 0, 3, 1, 4) # (b, T, 3, H, D) -> (3, b, H, T, D)
 
         # 3개 텐서로 분리
         queries, keys, values = qkv.unbind(0)  # each: (b, H, T, D)
 
-        # scaled dot product
-        attn_scores = queries @ keys.transpose(-2, -1)  # (b, H, T, T)
+        # ★ RoPE: Q, K에만 적용
+        if self.is_rope:
+            cos = self.cos[start_pos : start_pos + num_tokens] # (T, D/2)
+            sin = self.sin[start_pos : start_pos + num_tokens] # (T, D/2)
+            queries = compute_rope(queries, cos, sin)
+            keys    = compute_rope(keys,    cos, sin)
 
-        # 안전한 마스킹 값 (dtype별 최소값)
-        fill_value = torch.finfo(attn_scores.dtype).min
-        causal = self.mask[:num_tokens, :num_tokens]  # (T, T)
-        attn_scores = attn_scores.masked_fill(causal, fill_value)
+        # 캐시 결합
+        if use_cache and kv_cache is not None:
+            keys = torch.cat([kv_cache[0], keys], dim=2)
+            values = torch.cat([kv_cache[1], values], dim=2)
+        else:
+            pass
+        
+        # context_length 초과 시 꼬리만 유지
+        if keys.size(2) > self.context_length:
+            keys   = keys[:, :, -self.context_length:, :]
+            values = values[:, :, -self.context_length:, :]
 
-        # 정석 스케일링: / sqrt(D)
-        attn_scores = attn_scores / math.sqrt(self.head_dim)
+        # 학습 중일 때만 드롭아웃 적용
+        use_dropout = self.dropout if (self.training and self.dropout > 0.0) else 0.0
 
-        attn_weights = torch.softmax(attn_scores, dim=-1)
-        attn_weights = self.dropout(attn_weights)
-
-        # (b, H, T, T) @ (b, H, T, D) -> (b, H, T, D)
-        context_vec = attn_weights @ values
+        # PyTorch 2.x SDPA: 내부에서 스케일/마스킹/최적화(플래시/트라이턴)까지 처리
+        context_vec = nn.functional.scaled_dot_product_attention(
+            queries, keys, values,
+            attn_mask=None,
+            dropout_p=use_dropout,
+            is_causal=True
+        )  # (b, H, T, D)
 
         # (b, H, T, D) -> (b, T, H, D) -> (b, T, E)
-        context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.num_heads * self.head_dim)
+        context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
         context_vec = self.proj(context_vec)
+        
+        if return_cache:
+            return context_vec, (keys, values)
         return context_vec
 
 
@@ -146,16 +177,15 @@ class GroupedQueryAttention(nn.Module):
         d_out,
         context_length,
         num_heads,
-        num_kv_groups,      # GQA 그룹 수
-        rope_base=10_000,   # RoPE 기본값
-        rope_config=None,   # RoPE 추가 설정 (dict)
+        num_kv_groups,          # GQA 그룹 수
+        rope_base=500_000.0,    # RoPE 기본값
+        rope_config=None,       # RoPE 추가 설정 (dict)
         dropout=0.0,
         dtype=torch.float32,
     ):
         super().__init__()
         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
         assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"
-        assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
         
         self.d_out = d_out
         self.num_heads = num_heads
@@ -163,6 +193,7 @@ class GroupedQueryAttention(nn.Module):
         self.num_kv_groups = num_kv_groups
         self.group_size = num_heads // num_kv_groups
         self.context_length = context_length
+        assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
 
         # GQA: Q는 H개, K/V는 그룹당 1개
         self.W_query = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
@@ -245,7 +276,6 @@ class GroupedQueryAttention(nn.Module):
         values_h = v_g.repeat_interleave(self.group_size, dim=1) # (b, H, T, D)
         T_k = keys_h.size(2)
 
-
         # 점수/마스킹/스케일링
         attn_scores = torch.matmul(queries, keys_h.transpose(-2, -1))   # (b, H, T, T)
         attn_scores = attn_scores / math.sqrt(self.head_dim)
@@ -268,88 +298,4 @@ class GroupedQueryAttention(nn.Module):
         return out
 
 
-# ------------------------------
-# 3) PyTorch Scaled-Dot-Product Attention (SDPA) 백엔드
-# ------------------------------
-class MHAPyTorchScaledDotProduct(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.1, qkv_bias=True, is_rope=False, theta=10000.0, dtype=torch.float32):
-        super().__init__()
-        assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
-        self.is_rope = is_rope
-        self.theta = float(theta)
-        self.num_heads = num_heads
-        self.context_length = context_length
-        self.head_dim = d_out // num_heads
-        self.d_out = d_out
-
-        self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias, dtype=dtype)
-        proj_bias = (False if is_rope else qkv_bias)
-        self.proj = nn.Linear(d_out, d_out, bias=proj_bias, dtype=dtype)
-        self.dropout = dropout  # float. SDPA에 전달
-        
-        # RoPE 준비(필요할 때만)
-        if self.is_rope:
-            self.dropout = 0.0
-            if self.head_dim % 2 != 0:
-                raise ValueError(f"RoPE requires even head_dim, got {self.head_dim}.")
-            # mask는 SDPA에서 is_causal=True로 대체되므로 cos/sin만 사용
-            _mask, cos, sin = SharedBuffers.get_buffers(
-                self.context_length, self.head_dim, self.theta,
-                freq_config={"type": "default"}, dtype=dtype
-            )
-            self.register_buffer("cos", cos)  # (ctx_len, D/2)
-            self.register_buffer("sin", sin)  # (ctx_len, D/2)
-
-    def forward(self, x, start_pos: int = 0, kv_cache=None, use_cache: bool = False, return_cache: bool = False):
-        batch_size, num_tokens, embed_dim = x.shape
-        if self.is_rope and (start_pos + num_tokens) > self.context_length:            
-            # 버퍼 범위를 넘으면 명확히 실패(원하면 여기서 버퍼 재계산 로직 추가 가능)
-            raise ValueError(
-                f"Sequence length {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
-            )
-
-        qkv = self.qkv(x) # (b, T, E) -> (b, T, 3E)
-        qkv = qkv.view(batch_size, num_tokens, 3, self.num_heads, self.head_dim) # (b, T, 3E) -> (b, T, 3, H, D)
-        qkv = qkv.permute(2, 0, 3, 1, 4) # (b, T, 3, H, D) -> (3, b, H, T, D)
-
-        # 3개 텐서로 분리
-        queries, keys, values = qkv.unbind(0)  # each: (b, H, T, D)
-
-        # ★ RoPE: Q, K에만 적용
-        if self.is_rope:
-            cos = self.cos[start_pos : start_pos + num_tokens] # (T, D/2)
-            sin = self.sin[start_pos : start_pos + num_tokens] # (T, D/2)
-            queries = compute_rope(queries, cos, sin)
-            keys    = compute_rope(keys,    cos, sin)
-
-        # 캐시 결합
-        if use_cache and kv_cache is not None:
-            keys = torch.cat([kv_cache[0], keys], dim=2)
-            values = torch.cat([kv_cache[1], values], dim=2)
-        else:
-            pass
-        
-        # context_length 초과 시 꼬리만 유지
-        if keys.size(2) > self.context_length:
-            keys   = keys[:, :, -self.context_length:, :]
-            values = values[:, :, -self.context_length:, :]
-
-        # 학습 중일 때만 드롭아웃 적용
-        use_dropout = self.dropout if (self.training and self.dropout > 0.0) else 0.0
-
-        # PyTorch 2.x SDPA: 내부에서 스케일/마스킹/최적화(플래시/트라이턴)까지 처리
-        context_vec = nn.functional.scaled_dot_product_attention(
-            queries, keys, values,
-            attn_mask=None,
-            dropout_p=use_dropout,
-            is_causal=True
-        )  # (b, H, T, D)
-
-        # (b, H, T, D) -> (b, T, H, D) -> (b, T, E)
-        context_vec = context_vec.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
-        context_vec = self.proj(context_vec)
-        
-        if return_cache:
-            return context_vec, (keys, values)
-        return context_vec

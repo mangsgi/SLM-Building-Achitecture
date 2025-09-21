@@ -93,7 +93,7 @@ const TestPage: React.FC = () => {
       <Header />
       <div className="flex flex-grow bg-gray-50">
         {/* Model List Sidebar */}
-        <aside className="w-1/4 bg-white p-4 border-r">
+        <aside className="w-1/6 bg-white p-4 border-r">
           <h2 className="text-xl font-bold mb-4 text-gray-800">Models</h2>
           <ul className="space-y-2">
             {models.map((model) => (

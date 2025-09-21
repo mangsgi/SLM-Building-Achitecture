@@ -91,7 +91,12 @@ export const getNodeDataByType = (
             bias: true,
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size, bias: false };
+          return {
+            ...data,
+            outDim: config.vocab_size,
+            bias: false,
+            weightTying: false,
+          };
         case 'normalization':
           return {
             ...data,
@@ -154,7 +159,12 @@ export const getNodeDataByType = (
             bias: false,
           };
         case 'linear':
-          return { ...data, outDim: config.vocab_size, bias: false }; // 일단 Linear Output 기준으로 초기화
+          return {
+            ...data,
+            outDim: config.vocab_size,
+            bias: false,
+            weightTying: false,
+          }; // 일단 Linear Output 기준으로 초기화
         case 'normalization':
           return {
             ...data,
@@ -215,7 +225,12 @@ export const getNodeDataByType = (
         embDim: config.emb_dim,
       };
     case 'linear':
-      return { ...data, outDim: config.vocab_size, bias: false }; // 일단 Linear Output 기준으로 초기화
+      return {
+        ...data,
+        outDim: config.vocab_size,
+        bias: false,
+        weightTying: false,
+      }; // 일단 Linear Output 기준으로 초기화
     default:
       return data;
   }
@@ -352,7 +367,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
         outDim: 0,
         label: 'Linear',
       },
-      stringFields: ['label'],
+      stringFields: ['label', 'weightTying'],
       getFields: (data: BaseNodeData) => {
         const typed = data as LinearData;
         return [
@@ -371,6 +386,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             value: typed.bias ? 'true' : 'false',
             options: ['true', 'false'],
             info: nodeFieldInfo.linear.bias,
+          },
+          {
+            type: 'select',
+            label: 'Weight Tying:',
+            name: 'weightTying',
+            value: typed.weightTying ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.linear.weightTying,
           },
         ];
       },
@@ -551,6 +574,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             options: ['true', 'false'],
             info: nodeFieldInfo.mhAttention.qkvBias,
           },
+          {
+            type: 'number',
+            label: 'Dropout Rate:',
+            name: 'dropoutRate',
+            value: typed.dropoutRate?.toString() || '',
+            placeholder: 'Enter dropout rate',
+            info: nodeFieldInfo.mhAttention.dropoutRate,
+          },
         ];
 
         if (typed.isRoPE) {
@@ -562,17 +593,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             placeholder: 'Enter theta value for RoPE',
             info: nodeFieldInfo.mhAttention.theta,
           });
-        } else {
-          fields.push({
-            type: 'number',
-            label: 'Dropout Rate:',
-            name: 'dropoutRate',
-            value: typed.dropoutRate?.toString() || '',
-            placeholder: 'Enter dropout rate',
-            info: nodeFieldInfo.mhAttention.dropoutRate,
-          });
         }
-
         return fields;
       },
     },

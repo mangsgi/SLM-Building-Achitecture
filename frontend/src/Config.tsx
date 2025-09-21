@@ -18,6 +18,7 @@ const configMap: Record<string, string> = {
   model: 'Model',
   epochs: 'Epochs',
   batch_size: 'Batch Size',
+  stride: 'Stride',
   dtype: 'Data Type',
   vocab_size: 'Vocabulary Size',
   context_length: 'Context Length',
@@ -36,6 +37,8 @@ const configDescriptions: Record<string, string> = {
   model: '모델 유형을 선택합니다.',
   epochs: '모델 학습을 반복할 횟수입니다.',
   batch_size: '한 번에 처리할 데이터의 크기입니다.',
+  stride:
+    '데이터 슬라이딩 윈도우에서의 길이 L(context_length)인 윈도우를 텍스트 위로 옮길 때, 한 번에 몇 토큰을 건너뛸지를 지정합니다.',
   dtype: '모델의 데이터 타입을 지정합니다. (bf16, fp16, fp32)',
   vocab_size: '어휘 사전의 크기입니다.',
   context_length: '입력 시퀀스의 최대 길이입니다.',
