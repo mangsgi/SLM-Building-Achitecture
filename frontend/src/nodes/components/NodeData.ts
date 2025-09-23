@@ -1,8 +1,8 @@
 // 모든 노드에 공통으로 필요한 속성을 포함하는 Base interface
 export interface BaseNodeData {
   label: string; // Node 이름
-  isCollapsed?: boolean; // 노드 접힘/펼침 상태
-  hideHandles?: boolean; // 노드 핸들 숨김 여부
+  isCollapsed?: boolean; // 노드 접힘/펼침 상태 (자식만 가짐)
+  hideHandles?: boolean; // 노드 핸들 숨김 여부 (자식만 가짐)
   isTarget?: boolean; // 모델 타겟 노드 여부
   isLocked?: boolean; // 노드 잠금 여부
   inDim: number; // 입력 차원
@@ -51,15 +51,26 @@ export interface MHAttentionData extends BaseNodeData {
   ctxLength: number;
   numHeads: number;
   qkvBias: boolean;
-  isRoPE?: boolean;
-  theta?: number;
+  isRoPE: boolean;
+  ropeBase: number;
+}
+
+export interface RopeConfig {
+  factor: number;
+  low_freq_factor: number;
+  high_freq_factor: number;
+  original_context_length: number;
 }
 
 export interface GQAttentionData extends BaseNodeData {
   dropoutRate: number;
   ctxLength: number;
   numHeads: number;
-  qkvBias?: false;
+  qkvBias: boolean;
+  numKvGroups: number;
+  isRoPE: boolean;
+  ropeBase: number;
+  ropeConfig: RopeConfig;
 }
 
 export interface TransformerBlockData extends BaseNodeData {
@@ -69,9 +80,4 @@ export interface TransformerBlockData extends BaseNodeData {
 export interface TestBlockData extends BaseNodeData {
   testType: number;
   // sdpAttention?: SDPAttentionData | null;
-}
-
-export interface GPT2TransformerBlockData extends BaseNodeData {
-  numLayers: number;
-  // 레이어 이름별 true/false 값 딕셔너리 추가
 }

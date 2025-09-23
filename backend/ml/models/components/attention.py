@@ -36,22 +36,68 @@ class SharedBuffers:
 def precompute_rope_params(head_dim, rope_base, context_length, freq_config=None):
     """
     cos/sin은 (seq_len, head_dim/2) 형태로 반환한다.
+    - default: 전통적인 RoPE inv_freq
+    - llama3_scaled: rope_freq(=freq_config)로 주파수를 구간별/스무딩 스케일
     """
-    if freq_config is None:
-        freq_config = {"type": "default"}
+    assert head_dim % 2 == 0, "head_dim must be even"
+    device = torch.device("cpu")
+    dtype = torch.float32
 
-    if freq_config["type"] == "default":
-        # inv_freq: (head_dim/2,)
-        inv_freq = 1.0 / (rope_base ** (torch.arange(0, head_dim, 2).float() / head_dim))
-        # t: (seq_len,)
-        t = torch.arange(context_length, dtype=inv_freq.dtype, device=inv_freq.device)
-        # freqs: (seq_len, head_dim/2)
-        freqs = torch.einsum("i,j->ij", t, inv_freq)
-        cos = freqs.cos()  # (seq_len, head_dim/2)
-        sin = freqs.sin()  # (seq_len, head_dim/2)
-    else:
-        raise ValueError(f"Unknown frequency config type: {freq_config['type']}")
+    # base inv_freq (D/2,)
+    inv_freq = 1.0 / (rope_base ** (torch.arange(0, head_dim, 2, device=device, dtype=torch.float32) / head_dim))
 
+    # detect llama3-style config
+    use_llama3 = False
+    if isinstance(freq_config, dict):
+        if freq_config.get("type") == "llama3_scaled":
+            use_llama3 = True
+        else:
+            # 키가 그대로 넘어오는 경우(factor/low_freq_factor/high_freq_factor/original_context_length)
+            needed = {"factor", "low_freq_factor", "high_freq_factor", "original_context_length"}
+            if needed.issubset(set(freq_config.keys())):
+                use_llama3 = True
+
+    if use_llama3:
+        # 파라미터 읽기
+        factor = float(freq_config["factor"])
+        low_f  = float(freq_config["low_freq_factor"])
+        high_f = float(freq_config["high_freq_factor"])
+        L0     = float(freq_config["original_context_length"])
+
+        # 파장(wavelength) 기반 스무딩 스케일
+        # wavelen = 2*pi / inv_freq
+        wavelen = 2 * torch.pi / inv_freq  # (D/2,)
+
+        low_wavelen  = L0 / low_f
+        high_wavelen = L0 / high_f
+
+        # 세 영역: 저주파(> low), 중간 빈도([high, low]), 고주파(< high)
+        inv_freq_scaled = inv_freq.clone()
+
+        # 저주파: 전부 factor로 나눔
+        low_mask = wavelen > low_wavelen
+        inv_freq_scaled = torch.where(low_mask, inv_freq / factor, inv_freq_scaled)
+
+        # 중간: 선형 스무딩
+        mid_mask = (wavelen <= low_wavelen) & (wavelen >= high_wavelen)
+        # smooth_factor \in [0,1]로 보정
+        smooth = (L0 / wavelen - low_f) / (high_f - low_f)
+        smooth = torch.clamp(smooth, 0.0, 1.0)
+        smoothed = (1.0 - smooth) * (inv_freq / factor) + smooth * inv_freq
+        inv_freq_scaled = torch.where(mid_mask, smoothed, inv_freq_scaled)
+
+        # 고주파 구간은 원래 inv_freq 유지
+        inv_freq = inv_freq_scaled
+
+    # positions (T,)
+    t = torch.arange(context_length, device=inv_freq.device, dtype=inv_freq.dtype)
+
+    # (T, D/2)
+    freqs = torch.einsum("i,j->ij", t, inv_freq)
+
+    # cos/sin (T, D/2)
+    cos = freqs.cos()
+    sin = freqs.sin()
     return cos, sin
 
 
@@ -82,12 +128,14 @@ def compute_rope(x, cos, sin):
 # 1) Multi-Head Attention Using Scaled-Dot-Product Attention (SDPA) 백엔드
 # ------------------------------
 class MultiHeadAttentionUsingSDP(nn.Module):
-    def __init__(self, d_in, d_out, num_heads, context_length, dropout=0.1, qkv_bias=True, is_rope=False, theta=10000.0, dtype=torch.float32):
+    def __init__(self, 
+                 d_in, d_out, num_heads, context_length, 
+                 dropout=0.1, qkv_bias=True, proj_bias=None, is_rope=False, rope_base=10000.0, dtype=torch.float32):
         super().__init__()
         assert d_out % num_heads == 0, "embed_dim is indivisible by num_heads"
 
         self.is_rope = is_rope
-        self.theta = float(theta)
+        self.rope_base = float(rope_base)
         self.num_heads = num_heads
         self.context_length = context_length
         self.head_dim = d_out // num_heads
@@ -102,12 +150,11 @@ class MultiHeadAttentionUsingSDP(nn.Module):
         
         # RoPE 준비(필요할 때만)
         if self.is_rope:
-            self.dropout = 0.0
             if self.head_dim % 2 != 0:  
                 raise ValueError(f"RoPE requires even head_dim, got {self.head_dim}.")
             # mask는 SDPA에서 is_causal=True로 대체되므로 cos/sin만 사용
             _mask, cos, sin = SharedBuffers.get_buffers(
-                self.context_length, self.head_dim, self.theta,
+                self.context_length, self.head_dim, self.rope_base,
                 freq_config={"type": "default"}, dtype=dtype
             )
             self.register_buffer("cos", cos)  # (ctx_len, D/2)
@@ -180,8 +227,11 @@ class GroupedQueryAttention(nn.Module):
         num_kv_groups,          # GQA 그룹 수
         rope_base=500_000.0,    # RoPE 기본값
         rope_config=None,       # RoPE 추가 설정 (dict)
-        dropout=0.0,
+        dropout=0.0,            # attention dropout 확률로 사용
         dtype=torch.float32,
+        is_rope: bool = True,          # RoPE 사용 여부(범용성을 위해 옵션화)
+        qkv_bias: bool = False,         # Q/K/V에 bias 사용할지
+        out_proj_bias: bool = False     # 출력 프로젝션 bias
     ):
         super().__init__()
         assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
@@ -193,21 +243,30 @@ class GroupedQueryAttention(nn.Module):
         self.num_kv_groups = num_kv_groups
         self.group_size = num_heads // num_kv_groups
         self.context_length = context_length
-        assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
+
+        # RoPE는 선택 사항. 사용할 때만 짝수 차원 요구.
+        self.use_rope = bool(is_rope)
+        if self.use_rope:
+            assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
 
         # GQA: Q는 H개, K/V는 그룹당 1개
-        self.W_query = nn.Linear(d_in, d_out, bias=False, dtype=dtype)
-        self.W_key   = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
-        self.W_value = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=False, dtype=dtype)
-        self.out_proj = nn.Linear(d_out, d_out, bias=False, dtype=dtype)
+        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias, dtype=dtype)
+        self.W_key   = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
+        self.W_value = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
+        self.out_proj = nn.Linear(d_out, d_out, bias=out_proj_bias, dtype=dtype)
 
+        # attention dropout (훈련 시에만 작동; residual dropout은 블록 바깥에서 처리)
         self.attn_dropout = nn.Dropout(dropout)
 
         # SharedBuffers에서 받아와 버퍼로 등록 (모듈과 함께 .to(device) 이동)
+        # 마스크는 항상 필요. RoPE는 use_rope일 때만 사용.
+        if rope_config is not None:
+            rope_config = {"type": "llama3_scaled", **rope_config}
         mask, cos, sin = SharedBuffers.get_buffers(self.context_length, self.head_dim, rope_base, rope_config, dtype)
         self.register_buffer("mask", mask) # (ctx_len, ctx_len) - T와 T_k가 같을 때 사용(캐주얼 마스크)
-        self.register_buffer("cos", cos)   # (ctx_len, D/2)
-        self.register_buffer("sin", sin)   # (ctx_len, D/2)
+        if self.use_rope:
+            self.register_buffer("cos", cos)   # (ctx_len, D/2)
+            self.register_buffer("sin", sin)   # (ctx_len, D/2)
 
     @torch.no_grad()
     def _build_causal_mask(self, T_q: int, T_k: int, device: torch.device):
@@ -230,7 +289,7 @@ class GroupedQueryAttention(nn.Module):
         kv_cache: (k_cache_g, v_cache_g) where k_cache_g/v_cache_g are (B, G, T_cache, D)
         """
         batch_size, num_tokens, _ = x.shape
-        if (start_pos + num_tokens) > self.cos.size(0):
+        if self.use_rope and (start_pos + num_tokens) > self.context_length:
             raise ValueError(
                 f"Sequence end {start_pos + num_tokens} exceeds RoPE buffer (context_length={self.context_length})."
             )
@@ -250,11 +309,12 @@ class GroupedQueryAttention(nn.Module):
         keys    = keys.transpose(1, 2)
         values  = values.transpose(1, 2)
 
-        # RoPE (Q, K에만)
-        cos = self.cos[start_pos : start_pos+num_tokens]  # (T, D/2)
-        sin = self.sin[start_pos : start_pos+num_tokens]  # (T, D/2)
-        keys    = compute_rope(keys, cos, sin)
-        queries = compute_rope(queries, cos, sin)
+        # RoPE (Q, K에만) — 선택 적용
+        if self.use_rope:
+            cos = self.cos[start_pos : start_pos + num_tokens]  # (T, D/2)
+            sin = self.sin[start_pos : start_pos + num_tokens]  # (T, D/2)
+            keys    = compute_rope(keys, cos, sin)
+            queries = compute_rope(queries, cos, sin)
 
         # (변수 이름을 분리해 두는 게 안전)
         k_g = keys
@@ -273,11 +333,11 @@ class GroupedQueryAttention(nn.Module):
 
         # GQA: K/V를 group_size만큼 복제하여 H개에 매핑
         keys_h   = k_g.repeat_interleave(self.group_size, dim=1)   # (b, H, T, D)
-        values_h = v_g.repeat_interleave(self.group_size, dim=1) # (b, H, T, D)
+        values_h = v_g.repeat_interleave(self.group_size, dim=1)   # (b, H, T, D)
         T_k = keys_h.size(2)
 
         # 점수/마스킹/스케일링
-        attn_scores = torch.matmul(queries, keys_h.transpose(-2, -1))   # (b, H, T, T)
+        attn_scores = torch.matmul(queries, keys_h.transpose(-2, -1))   # (b, H, T, T_k)
         attn_scores = attn_scores / math.sqrt(self.head_dim)
 
         # 일반화된 캐주얼 마스크 생성 및 적용
@@ -296,6 +356,7 @@ class GroupedQueryAttention(nn.Module):
             # 그룹 기준 캐시를 반환해야 메모리 효율적
             return out, (k_g, v_g)
         return out
+
 
 
 

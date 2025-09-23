@@ -36,7 +36,7 @@ class LayerFactory:
             "attention": AttentionFactory,
             "mhAttention": AttentionFactory,
             "flashAttention": AttentionFactory,
-            "gqaAttention": AttentionFactory,
+            "gqAttention": AttentionFactory,
             "feedForward": FeedForwardFactory,
             "residual": ResidualFactory,
             "transformerBlock": TransformerBlockFactory,
@@ -134,44 +134,39 @@ class AttentionFactory:
                     "dropout": data.get("dropoutRate"),
                     "qkv_bias": data.get("qkvBias"),
                     "is_rope": data.get("isRoPE"),
-                    "theta": data.get("theta", 10000.0),
+                    "rope_base": data.get("ropeBase", 10000.0),
                 }
             )
             return MultiHeadAttentionUsingSDP(**common_args)
 
-        elif layer_type == "gqaAttention":
+        elif layer_type == "gqAttention":
             # Grouped Query Attention (+ RoPE)
             common_args.update(
                 {
                     "num_heads": data["numHeads"],
                     "dropout": data.get("dropoutRate"),
-                    "qkv_bias": data.get("qkvBias"),  # 일단 받되…
+                    "qkv_bias": data.get("qkvBias"),
+                    "is_rope": data.get("isRoPE"),
+                    "rope_base": data.get("ropeBase"),
+                    "rope_config": data.get("ropeConfig"),
+                    "num_kv_groups": data["numKvGroups"],
                 }
             )
-            # GQA는 qkv_bias 인자를 사용하지 않으므로 제거
-            common_args.pop("qkv_bias", None)
+            
+            return GroupedQueryAttention(**common_args)
 
-            # RoPE는 head_dim= d_out/num_heads가 짝수여야 함
-            head_dim = (common_args["d_out"] // common_args["num_heads"])
-            if head_dim % 2 != 0:
-                raise ValueError(
-                    f"head_dim({head_dim}) must be even for RoPE (GQA)."
-                )
-
-            return GroupedQueryAttention(
-                **common_args,
-                num_kv_groups=data["numKvGroups"],
-                rope_base=data.get("ropeBase"),
-                rope_config=data.get("ropeConfig"),
-            )
-
-        else:  # 기존 attention 타입 (하위 호환성)
+        else:  
+            # 기존 attention 타입 (하위 호환성)
             attn_type = data.get("attn_type", "default")
             common_args.update(
                 {
-                    "num_heads": data["num_heads"],
+                    "num_heads": data["numHeads"],
                     "dropout": data.get("dropoutRate"),
-                    "qkv_bias": data.get("qkv_bias"),
+                    "qkv_bias": data.get("qkvBias"),
+                    "is_rope": data.get("isRoPE"),
+                    "rope_base": data.get("ropeBase"),
+                    "rope_config": data.get("ropeConfig"),
+                    "num_kv_groups": data["numKvGroups"],
                 }
             )
 
@@ -179,16 +174,16 @@ class AttentionFactory:
                 return MultiHeadAttentionUsingSDP(**common_args)
             elif attn_type == "gqa":
                 # 레거시 키 이름을 쓰는 경우도 동일 처리
-                head_dim = (common_args["d_out"] // common_args["num_heads"])
+                head_dim = (common_args["d_out"] // common_args["numHeads"])
                 if head_dim % 2 != 0:
                     raise ValueError(
                         f"head_dim({head_dim}) must be even for RoPE (GQA)."
                     )
                 return GroupedQueryAttention(
-                    **{k: v for k, v in common_args.items() if k != "qkv_bias"},
-                    num_kv_groups=data["num_kv_groups"],
-                    rope_base=data.get("rope_base"),
-                    rope_config=data.get("rope_config"),
+                    **{k: v for k, v in common_args.items() if k != "qkvBias"},
+                    num_kv_groups=data["numKvGroups"],
+                    rope_base=data.get("ropeBase"),
+                    rope_config=data.get("ropeConfig"),
                 )
             else:
                 raise ValueError(f"Unknown attention type: {attn_type}")
@@ -357,16 +352,51 @@ def build_model_from_json(
         id_map[node["data"]["id"]] = node
 
     layers = []
-    print("--- Starting model build loop ---")  # 디버깅용 print 추가
     for node in layer_nodes:
-        node_id = node.get("data", {}).get("id", "N/A")
-        print(f"--- Creating layer for node: {node_id} ---")  # 디버깅용 print 추가
-
         layer = LayerFactory.create_layer(node, dtype=torch_dtype)
         if "id" in node["data"]:
             layer.layer_id = node["data"]["id"]
             id_to_module[layer.layer_id] = layer
         layers.append(layer)
 
-    print("--- Model build loop finished ---")  # 디버깅용 print 추가
+    # === Weight tying 단계 추가 ===
+    # 1) 기준이 될 TokenEmbedding을 찾음 (가장 먼저/마지막으로 등장한 것을 선택)
+    token_emb = None
+    for m in layers:
+        if isinstance(m, TokenEmbedding):
+            token_emb = m   # 여러 개면 마지막 것을 사용
+
+    if token_emb is not None:
+        # TokenEmbedding 내부 weight 접근 (TokenEmbedding.weight 또는 TokenEmbedding.embedding.weight 케이스 모두 처리)
+        emb_w = getattr(token_emb, "weight", None)
+        if emb_w is None and hasattr(token_emb, "embedding"):
+            emb_w = getattr(token_emb.embedding, "weight", None)
+
+        if emb_w is None:
+            raise RuntimeError("TokenEmbedding weight not found for tying.")
+
+        vocab_size, emb_dim = emb_w.shape
+
+        for m in layers:
+            if isinstance(m, torch.nn.Linear) and getattr(m, "_weight_tying", False):
+                # 크기 검증
+                if m._declared_inDim != emb_dim or m._declared_outDim != vocab_size:
+                    raise ValueError(
+                        f"Weight tying size mismatch: Linear(in={m._declared_inDim}, out={m._declared_outDim}) "
+                        f"vs Embedding(vocab={vocab_size}, emb={emb_dim})"
+                    )
+                # 실제 tying: 같은 Parameter를 참조하게 함
+                m.weight = emb_w
+                print(f"--- Weight tying: {m.layer_id} ---")
+
+                # (선택) lm_head bias를 쓰지 않도록 권장
+                # if m.bias is not None:
+                #     with torch.no_grad():
+                #         m.bias.zero_()
+    else:
+        # 모델 안에 TokenEmbedding이 없는데 weightTying True인 Linear가 있으면 에러로 안내
+        for m in layers:
+            if isinstance(m, torch.nn.Linear) and getattr(m, "_weight_tying", False):
+                raise ValueError("Linear(weightTying=True) found but no TokenEmbedding layer exists.")
+
     return CustomSequential(layers, id_to_module)

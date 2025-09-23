@@ -144,7 +144,7 @@ def train_and_infer_from_json(self, request_json: dict):
     batch_size     = _as_int(config.get("batch_size"), 4)
     epochs         = _as_int(config.get("epochs"), 5)
     seq_max_length = _as_int(config.get("context_length"), 32)
-    stride         = _as_int(config.get("stride", seq_max_length))
+    stride         = _as_int(config.get("stride"), seq_max_length)
     dtype          = _as_str(config.get("dtype"), "fp32")
 
     # step 로깅 주기 / SSE 스텝 이벤트 토글 / 완료 알림 URL

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
 import Header from './ui-component/Header';
+import Spinner from './ui-component/Spinner';
 import Modal from './ui-component/Modal';
 import { ModelNode } from './App';
 import { RootState, AppDispatch } from './store';
@@ -48,6 +49,7 @@ function DatasetSelection() {
     title: string;
     description: string;
   } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 스피너 상태
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
@@ -62,8 +64,10 @@ function DatasetSelection() {
 
   // 상태 초기화
   useEffect(() => {
-    dispatch(resetStatus());
-  }, [dispatch]);
+    if (trainingStatus === 'COMPLETED') {
+      dispatch(resetStatus());
+    }
+  }, [dispatch, trainingStatus]);
 
   const handleShowInfo = (e: React.MouseEvent, dataset: Dataset) => {
     e.stopPropagation();
@@ -86,6 +90,7 @@ function DatasetSelection() {
     const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
     if (!selectedDataset) return;
 
+    setIsSubmitting(true);
     try {
       const response = await fetch(
         'http://localhost:8000/api/v1/train-complete-model',
@@ -123,29 +128,22 @@ function DatasetSelection() {
         const errorMessage =
           errorData.message || 'Failed to submit model and dataset';
         dispatch(failTraining({ message: errorMessage }));
-        navigate('/canvas');
-        return;
-      }
-
-      const result = await response.json();
-      const mlflowUrl = result.mlflow_url; // 백엔드 응답에서 mlflow_url 추출
-      console.log(result);
-
-      // 성공 시 처리
-      if (mlflowUrl) {
-        dispatch(startTraining({ mlflowUrl, task_id: result.task_id }));
-        console.log('Model and dataset submitted successfully');
-        navigate('/canvas');
       } else {
-        // 성공했지만 mlflow_url이 없는 경우
-        const errorMessage =
-          result.message || 'MLFlow URL not found in response';
-        dispatch(failTraining({ message: errorMessage }));
-        navigate('/canvas');
+        const result = await response.json();
+        const mlflowUrl = result.mlflow_url; // 백엔드 응답에서 mlflow_url 추출
+        console.log(result);
+        if (mlflowUrl) {
+          dispatch(startTraining({ mlflowUrl, task_id: result.task_id }));
+        } else {
+          const errorMessage =
+            result.message || 'MLFlow URL not found in response';
+          dispatch(failTraining({ message: errorMessage }));
+        }
       }
     } catch (error) {
-      console.error('Error submitting model and dataset:', error);
       dispatch(failTraining({ message: (error as Error).message }));
+    } finally {
+      setIsSubmitting(false);
       navigate('/canvas');
     }
   };
@@ -153,8 +151,6 @@ function DatasetSelection() {
   // 학습 취소 함수
   const handleCancel = async () => {
     try {
-      // dispatch(resetStatus());
-      // 백엔드에 학습 중단 요청
       const response = await fetch(
         'http://localhost:8000/api/v1/stop-training',
         {
@@ -164,24 +160,16 @@ function DatasetSelection() {
           },
           body: JSON.stringify({
             task_id: localStorage.getItem('task_id') ?? null,
-            force_kill: true,
+            force_kill: false,
           }),
         },
-      );
-      console.log(
-        JSON.stringify({
-          task_id: localStorage.getItem('task_id') ?? null,
-          force_kill: false,
-        }),
       );
 
       if (!response.ok) {
         throw new Error('Failed to cancel training');
       }
 
-      // 성공 시 상태 초기화
       dispatch(resetStatus());
-      console.log('Training cancelled successfully');
     } catch (error) {
       console.error('Error cancelling training:', error);
     }
@@ -189,6 +177,7 @@ function DatasetSelection() {
 
   return (
     <div className="flex flex-col w-full h-screen">
+      {isSubmitting && <Spinner />}
       <Header />
 
       <div className="flex-1 p-8">
@@ -258,15 +247,19 @@ function DatasetSelection() {
               disabled={
                 !selectedDatasetId ||
                 !modelName ||
-                trainingStatus === 'TRAINING'
+                trainingStatus === 'TRAINING' ||
+                isSubmitting
               }
               className={`px-6 py-2 rounded-md ${
-                selectedDatasetId && modelName && trainingStatus !== 'TRAINING'
+                selectedDatasetId &&
+                modelName &&
+                trainingStatus !== 'TRAINING' &&
+                !isSubmitting
                   ? 'bg-black text-white hover:bg-gray-600'
                   : 'bg-gray-300 text-gray-600 cursor-not-allowed'
               }`}
             >
-              Submit
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </div>

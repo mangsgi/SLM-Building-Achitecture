@@ -1,4 +1,6 @@
 // --- 타입 정의 시작 ---
+import { RopeConfig } from '../nodes/components/NodeData';
+
 export type ModelType = 'GPT-2' | 'Llama2' | 'Llama3';
 
 // 공통 설정값 인터페이스
@@ -10,35 +12,28 @@ interface BaseConfig {
   stride: number;
   emb_dim: number;
   n_heads: number;
+  n_blocks: number;
   dtype: string;
 }
 
 // 모델별 고유 설정값 인터페이스
 export interface GPT2Config extends BaseConfig {
   model: 'gpt-2';
-  n_blocks: number;
   drop_rate: number;
   qkv_bias: boolean;
 }
 
 export interface Llama2Config extends BaseConfig {
   model: 'llama2';
-  n_blocks: number;
   hidden_dim: number;
 }
 
 export interface Llama3Config extends BaseConfig {
   model: 'llama3';
-  n_blocks: number;
   hidden_dim: number;
   n_kv_groups: number;
   rope_base: number;
-  rope_freq: {
-    factor: number;
-    low_freq_factor: number;
-    high_freq_factor: number;
-    original_context_length: number;
-  };
+  rope_freq: RopeConfig;
 }
 
 // 구별된 유니온 타입

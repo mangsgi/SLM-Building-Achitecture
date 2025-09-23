@@ -25,7 +25,7 @@ def _can_connect_http(uri: str, timeout: float = 1.5) -> bool:
     except Exception:
         return False
 
-# ===== 요청 모델 =====
+# ===== 모델 구성요소 =====
 class ModelConfig(BaseModel):
     model: str
     epochs: int
@@ -38,11 +38,13 @@ class ModelConfig(BaseModel):
     n_blocks: int
     qkv_bias: Optional[bool] = None   # GPT-2
     drop_rate: Optional[float] = None # GPT-2
-    hidden_dim: Optional[int] = None  # Llama2
-    multiple_of: Optional[int] = None # Llama3
-    n_kv_heads: Optional[int] = None  # Llama3 GQA
+    hidden_dim: Optional[int] = None  # Llama2, Llama3
+    rope_base: Optional[float] = None # Llama3 GQA
+    rope_config: Optional[dict] = None # Llama3 GQA
+    n_kv_groups: Optional[int] = None  # Llama3 GQA
     dtype: str
 
+# ===== 노드 구성요소 =====
 class LayerData(BaseModel):
     id: str
     label: Optional[str] = None
@@ -51,7 +53,7 @@ class LayerData(BaseModel):
     vocabSize: Optional[int] = None         # for TokenEmbedding
     embDim: Optional[int] = None
     ctxLength: Optional[int] = None
-    dropoutRate: Optional[float] = None     # for Dropout
+    dropoutRate: Optional[float] = None     # for Dropout, Attention
     source: Optional[str] = None            # for Residual
     normType: Optional[str] = None          # for Normalization
     bias: Optional[bool] = None             # for FeedForward, Linear
@@ -60,12 +62,13 @@ class LayerData(BaseModel):
     actFunc: Optional[str] = None           # for FeedForward
     numHeads: Optional[int] = None          # for Attention
     numOfBlocks: Optional[int] = None       # for TransformerBlock
-    weightTying: Optional[bool] = None      # Linear
-    qkvBias: Optional[bool] = None          # GPT-2
-    isRoPE: Optional[bool] = None           # Llama2
-    theta: Optional[float] = None           # Llama2
-    numKvGroups: Optional[int] = None       # Llama3
-
+    weightTying: Optional[bool] = None      # for Linear
+    qkvBias: Optional[bool] = None          # for Attention
+    projBias: Optional[bool] = None         # for Attention (미구현)
+    isRoPE: Optional[bool] = None           # for RoPE in Attention
+    ropeBase: Optional[float] = None        # for RoPE in Attention
+    ropeConfig: Optional[dict] = None       # for RoPE in Attention
+    numKvGroups: Optional[int] = None       # for Grouped Query Attention (미구현)
 
 class LayerNode(BaseModel):
     type: str

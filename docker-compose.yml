@@ -6,7 +6,11 @@ services:
     ports: ["6379:6379"]
     volumes: ["redis_data:/data"]
     restart: unless-stopped
-
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   # mlflow 컨테이너
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.3.2
@@ -17,9 +21,15 @@ services:
       --default-artifact-root /mlflow/artifacts
     volumes:
       - mlflow_data:/mlflow
+    tmpfs:
+      - /mlflow/artifacts:size=8g,mode=1777
     ports: ["5000:5000"]
     restart: unless-stopped
-
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   # backend 컨테이너
   backend:
     build:
@@ -36,11 +46,17 @@ services:
       - ./backend:/app/backend # 코드 저장 시 즉시 반영 (uvicorn --reload)
       - ./backend/model_structures:/app/backend/model_structures # 모델 구조를 로컬에서도 확인
       - mlflow_data:/mlflow:rw # (필요 시) mlflow 경로 공유
+    tmpfs:
+      - /app/backend/completed:size=2g,mode=1777
     depends_on: [redis, mlflow]
     ports: ["8000:8000"]
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
-
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   # worker 컨테이너
   worker:
     build:
@@ -57,6 +73,8 @@ services:
       - ./backend:/app/backend # 코드 변경 시 자동 재시작 감지
       - ./backend/model_structures:/app/backend/model_structures # 모델 구조를 로컬에서도 확인
       - mlflow_data:/mlflow:rw
+    tmpfs:
+      - /app/backend/completed:size=2g,mode=1777
     depends_on: [redis, mlflow, backend]
     deploy:
       resources:
@@ -74,7 +92,11 @@ services:
       --interval=1 --
       celery -A celery_worker.celery_app worker --loglevel=info
     restart: unless-stopped
-
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   # frontend 컨테이너
   frontend:
     build:
@@ -93,6 +115,11 @@ services:
     ports: ["5173:5173"]
     command: npm run dev -- --host 0.0.0.0
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   redis_data:

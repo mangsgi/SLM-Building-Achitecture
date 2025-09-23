@@ -4,7 +4,9 @@ import { BaseNodeData } from './nodes/components/NodeData';
 import { nodeRegistry } from './nodes/components/nodeRegistry';
 
 interface SidebarProps {
-  loadReferenceModel: (modelName: 'GPT-2' | 'Llama2' | 'Llama3') => void;
+  loadReferenceModel: (
+    modelName: 'GPT-2' | 'Llama2' | 'Llama3' | 'Qwen3',
+  ) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
@@ -150,9 +152,17 @@ const Sidebar: React.FC<SidebarProps> = ({ loadReferenceModel }) => {
           </button>
           <button
             onClick={() => loadReferenceModel('Llama3')}
-            className="flex-1 px-2 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="flex-1 px-2 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Llama3
+          </button>
+        </div>
+        <div className="flex gap-1 mt-2">
+          <button
+            onClick={() => loadReferenceModel('Qwen3')}
+            className="w-1/3 px-2 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Qwen3
           </button>
         </div>
       </div>

@@ -53,6 +53,25 @@ const configDescriptions: Record<string, string> = {
   rope_freq: 'RoPE 주파수 스케일링 값입니다.',
 };
 
+// 데이터 타입 옵션
+const dtypeOptions = ['bf16', 'fp16', 'fp32'];
+// 분수 키 목록
+const fractionalKeys: string[] = ['drop_rate'];
+// 정수 키 목록
+const integerKeys: string[] = [
+  'batch_size',
+  'epochs',
+  'vocab_size',
+  'context_length',
+  'emb_dim',
+  'n_heads',
+  'n_blocks',
+  'n_kv_groups',
+  'rope_base',
+  'stride',
+  'hidden_dim',
+];
+
 const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
   const { setNodes } = useReactFlow();
 
@@ -72,7 +91,6 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
     title: string;
     description: string;
   } | null>(null);
-  const dtypeOptions = ['bf16', 'fp16', 'fp32'];
 
   useEffect(() => {
     setSelectedModel(getModelTypeFromId(config.model));
@@ -206,9 +224,6 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
     );
   };
 
-  // 분수 키 목록
-  const fractionalKeys: string[] = ['drop_rate'];
-
   return (
     <aside className="w-full h-full bg-white p-4 shadow overflow-auto">
       <div className="flex items-center justify-between">
@@ -258,6 +273,7 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
                   </button>
                 </div>
 
+                {/* dtype 타입 */}
                 {key === 'dtype' ? (
                   <select
                     value={value.toString()}
@@ -270,12 +286,13 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
                       </option>
                     ))}
                   </select>
-                ) : fractionalKeys.includes(key) &&
-                  typeof value === 'number' ? (
+                ) : // 실수(0~1) 타입
+                fractionalKeys.includes(key) && typeof value === 'number' ? (
                   renderFractionInput(key, value, (k, v) =>
                     setConfig((prev) => ({ ...prev, [k]: v }) as ModelConfig),
                   )
-                ) : typeof value === 'boolean' ? (
+                ) : // 이진 타입
+                typeof value === 'boolean' ? (
                   <select
                     value={value.toString()}
                     onChange={(e) => handleChange(key, e.target.value)}
@@ -284,23 +301,25 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
                     <option value="true">true</option>
                     <option value="false">false</option>
                   </select>
-                ) : typeof value === 'number' ? (
+                ) : // 숫자 타입
+                typeof value === 'number' ? (
                   key === 'vocab_size' ? (
                     <input
-                      type="text"
+                      type={integerKeys.includes(key) ? 'text' : 'number'}
                       value={value}
                       readOnly
                       className="border p-2 rounded bg-gray-100 cursor-not-allowed"
                     />
                   ) : (
                     <input
-                      type="text"
+                      type={integerKeys.includes(key) ? 'text' : 'number'}
                       value={value}
                       onChange={(e) => handleChange(key, e.target.value)}
                       className="border p-2 rounded"
                     />
                   )
-                ) : typeof value === 'object' &&
+                ) : // 객체 타입
+                typeof value === 'object' &&
                   value !== null &&
                   !Array.isArray(value) ? (
                   <div className="pl-4 mt-2 border-l-2 border-gray-200 space-y-2">
@@ -310,7 +329,9 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
                           {childKey.replace(/_/g, ' ')}
                         </label>
                         <input
-                          type="text"
+                          type={
+                            integerKeys.includes(childKey) ? 'text' : 'number'
+                          }
                           value={childValue as any}
                           onChange={(e) =>
                             handleNestedChange(key, childKey, e.target.value)

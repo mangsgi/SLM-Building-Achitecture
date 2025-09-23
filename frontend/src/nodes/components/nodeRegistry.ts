@@ -200,10 +200,70 @@ export const getNodeDataByType = (
       }
       break;
     case 'llama3':
-      // Llama 타입이 보장되므로, llama 전용 속성에 안전하게 접근 가능
       switch (nodeType) {
-        // case 'gqAttention': // 예시: llama 모델은 gqAttention을 사용
-        //   return { ...data, numKvGroups: config.n_kv_groups };
+        case 'tokenEmbedding':
+          return {
+            ...data,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
+          };
+        case 'positionalEmbedding': // Llama3는 Positional Embedding 사용 안함
+          return {
+            ...data,
+            ctxLength: config.context_length,
+            posType: 'Learned Positional Embedding', // Learned Positional Embedding, Sinusoidal Positional Embedding, Relative Positional Embedding, Rotary Positional Embedding
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
+          };
+        case 'feedForward':
+          return {
+            ...data,
+            hiddenDim: config.hidden_dim,
+            feedForwardType: 'Gated', // Standard, Gated
+            actFunc: 'SwiGLU', // ReLU, GELU, SwiGLU, Mish
+            bias: false,
+          };
+        case 'linear':
+          return {
+            ...data,
+            outDim: config.vocab_size,
+            bias: false,
+            weightTying: true, // Llama3.2는 Linear Weight Tying 사용
+          }; // 일단 Linear Output 기준으로 초기화
+        case 'normalization':
+          return {
+            ...data,
+            normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
+          };
+        case 'dropout':
+          return { ...data, dropoutRate: 0.1 };
+        case 'mhAttention': // Llama3는 MHAttention 사용 안함
+          return {
+            ...data,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0,
+            qkvBias: false,
+            isRoPE: true,
+            ropeBase: 10000.0,
+          };
+        case 'gqAttention': // Llama3는 GQAttention 사용
+          return {
+            ...data,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0,
+            qkvBias: false,
+            isRoPE: true,
+            ropeBase: config.rope_base,
+            ropeConfig: config.rope_freq,
+            numKvGroups: config.n_kv_groups,
+          };
+        case 'transformerBlock':
+          return {
+            ...data,
+            numOfBlocks: config.n_blocks,
+          };
         default:
           break;
       }
@@ -587,11 +647,11 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
         if (typed.isRoPE) {
           fields.push({
             type: 'number',
-            label: 'Theta:',
-            name: 'theta',
-            value: typed.theta?.toString() || '10000.0',
-            placeholder: 'Enter theta value for RoPE',
-            info: nodeFieldInfo.mhAttention.theta,
+            label: 'Rope Base:',
+            name: 'ropeBase',
+            value: typed.ropeBase?.toString() || '10000.0',
+            placeholder: 'Enter rope base value for RoPE',
+            info: nodeFieldInfo.mhAttention.ropeBase,
           });
         }
         return fields;
@@ -612,7 +672,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
       stringFields: ['label'],
       getFields: (data: BaseNodeData) => {
         const typed = data as GQAttentionData;
-        return [
+        const fields: FieldConfig[] = [
           {
             type: 'number',
             label: 'Number of Heads:',
@@ -645,7 +705,26 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             options: ['true', 'false'],
             info: nodeFieldInfo.gqAttention.qkvBias,
           },
+          {
+            type: 'select',
+            label: 'RoPE Enabled:',
+            name: 'isRoPE',
+            value: typed.isRoPE ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.gqAttention.isRoPE,
+          },
         ];
+        if (typed.isRoPE) {
+          fields.push({
+            type: 'number',
+            label: 'Rope Base:',
+            name: 'ropeBase',
+            value: typed.ropeBase?.toString() || '10000.0',
+            placeholder: 'Enter rope base value for RoPE',
+            info: nodeFieldInfo.gqAttention.ropeBase,
+          });
+        }
+        return fields;
       },
     },
   ],
