@@ -353,6 +353,7 @@ def build_model_from_json(
 
     layers = []
     for node in layer_nodes:
+        print(f"Creating layer: {node['data']['id']}")
         layer = LayerFactory.create_layer(node, dtype=torch_dtype)
         if "id" in node["data"]:
             layer.layer_id = node["data"]["id"]

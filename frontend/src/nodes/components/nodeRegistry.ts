@@ -115,7 +115,7 @@ export const getNodeDataByType = (
             dropoutRate: 0.1,
             qkvBias: true,
             isRoPE: false, // GPT-2는 RoPE 사용 안함
-            theta: 10000.0, // GPT-2는 RoPE 사용 안함
+            ropeBase: 10000.0, // GPT-2는 RoPE 사용 안함
           };
         case 'gqAttention': // GPT-2는 GQAttention 사용 안함
           return {
@@ -180,7 +180,7 @@ export const getNodeDataByType = (
             dropoutRate: 0.0, // Llama2는 Dropout 사용 안함
             qkvBias: false, // Llama2의 qkv_bias는 무조건 false
             isRoPE: true,
-            theta: 10000.0,
+            ropeBase: 10000.0,
           };
         case 'gqAttention': // Llama2는 GQAttention 사용 안함
           return {

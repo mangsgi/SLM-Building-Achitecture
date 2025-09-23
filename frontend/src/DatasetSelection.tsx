@@ -16,24 +16,28 @@ const datasets = [
     name: 'Tiny shakespeare',
     description: 'Tiny shakespeare dataset',
     path: 'tiny_shakespeare',
+    config: 'default',
   },
   {
     id: 2,
-    name: 'Dataset 2',
-    description: 'Second sample dataset',
-    path: 'dataset2',
+    name: 'OpenWebText-10k',
+    description: 'OpenWebText 1만 샘플 슬라이스',
+    path: 'stas/openwebtext-10k',
+    config: 'plain_text',
   },
   {
     id: 3,
-    name: 'Dataset 3',
-    description: 'Third sample dataset',
-    path: 'dataset3',
+    name: 'TinyStories',
+    description: '단어 분포가 단순한 합성 동화 텍스트',
+    path: 'roneneldan/TinyStories',
+    config: 'default',
   },
   {
     id: 4,
-    name: 'Dataset 4',
-    description: 'Fourth sample dataset',
-    path: 'dataset4',
+    name: 'C4',
+    description: 'T5 계열이 썼던 대형 웹코퍼스의 원조',
+    path: 'allenai/c4',
+    config: 'en',
   },
 ];
 
@@ -64,7 +68,7 @@ function DatasetSelection() {
 
   // 상태 초기화
   useEffect(() => {
-    if (trainingStatus === 'COMPLETED') {
+    if (trainingStatus !== 'TRAINING') {
       dispatch(resetStatus());
     }
   }, [dispatch, trainingStatus]);
@@ -102,12 +106,9 @@ function DatasetSelection() {
           body: JSON.stringify({
             config: config,
             model: model,
-            dataset: selectedDataset.path,
             modelName: modelName,
-            dataset_config:
-              selectedDataset.path === 'tiny_shakespeare'
-                ? 'default'
-                : 'default',
+            dataset: selectedDataset.path,
+            dataset_config: selectedDataset.config,
           }),
         },
       );
@@ -116,10 +117,9 @@ function DatasetSelection() {
         JSON.stringify({
           config: config,
           model: model,
-          dataset: selectedDataset.path,
           modelName: modelName,
-          dataset_config:
-            selectedDataset.path === 'tiny_shakespeare' ? 'default' : 'default',
+          dataset: selectedDataset.path,
+          dataset_config: selectedDataset.config,
         }),
       );
 

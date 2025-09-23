@@ -31,6 +31,7 @@ const configMap: Record<string, string> = {
   n_kv_groups: 'Number of KV Groups',
   rope_base: 'RoPE Base',
   rope_freq: 'RoPE Frequency',
+  qk_norm: 'QK Normalization',
 };
 
 const configDescriptions: Record<string, string> = {
@@ -51,6 +52,7 @@ const configDescriptions: Record<string, string> = {
   n_kv_groups: 'Llama3 모델의 KV 그룹 개수입니다.',
   rope_base: 'RoPE 기본 값입니다.',
   rope_freq: 'RoPE 주파수 스케일링 값입니다.',
+  qk_norm: 'QK 정규화 여부입니다.',
 };
 
 // 데이터 타입 옵션
@@ -80,6 +82,7 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
     if (modelId === 'gpt-2') return 'GPT-2';
     if (modelId === 'llama2') return 'Llama2';
     if (modelId === 'llama3') return 'Llama3';
+    if (modelId === 'qwen3') return 'Qwen3';
     return 'GPT-2'; // Fallback
   };
 
@@ -250,6 +253,7 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
           <option value="GPT-2">GPT-2</option>
           <option value="Llama2">Llama2</option>
           <option value="Llama3">Llama3</option>
+          <option value="Qwen3">Qwen3</option>
         </select>
       </div>
 
