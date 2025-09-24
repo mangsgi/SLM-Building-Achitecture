@@ -189,9 +189,9 @@ def train_and_infer_from_json(self, request_json: dict):
 
         # ---------- 4) 데이터 로드/분할 ----------
         logger.info(f"Loading dataset: {dataset_name}/{dataset_config}")
-        if dataset_name == "allenai/c4":
+        if dataset_name == "allenai/c4" or dataset_name == "roneneldan/TinyStories":
             training_text = load_training_data(dataset_name, dataset_config,
-                                   split="train[:1%]",  # 또는 "validation[:10%]"
+                                   split="train", 
                                    streaming=True, max_rows=200_000)
         else:
             training_text = load_training_data(dataset_name, dataset_config)

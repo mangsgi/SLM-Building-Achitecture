@@ -71,6 +71,9 @@ export interface GQAttentionData extends BaseNodeData {
   isRoPE: boolean;
   ropeBase: number;
   ropeConfig: RopeConfig;
+  qkNorm: boolean;
+  qkNormEps: number;
+  headDim: number;
 }
 
 export interface TransformerBlockData extends BaseNodeData {

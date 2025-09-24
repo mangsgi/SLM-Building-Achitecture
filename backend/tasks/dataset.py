@@ -37,31 +37,22 @@ class DatasetV1(Dataset):
         add_eos_between_docs: bool = True,
         bos_id: Optional[int] = None,
         eos_id: Optional[int] = None,
+        max_total_tokens: int | None = None
     ):
-        """
-        tokenizer: encode(str) -> list[int], decode(list[int]) -> str, n_vocab 속성 가정
-        txt: 단일 문자열 또는 문서 리스트
-        add_bos: 각 문서 앞에 BOS 토큰 삽입
-        add_eos_between_docs: 문서 경계마다 EOS 삽입
-        bos_id/eos_id: 명시하지 않으면 토크나이저 어댑터가 제공(가능한 경우)
-        """
         self.tokenizer = tokenizer
-        self.input_ids = []
-        self.target_ids = []
+        self.max_length = max_length
+        self.stride = stride
 
-        # 토크나이저가 노출하는 BOS/EOS ID가 있으면 기본값으로 사용
         if bos_id is None:
             bos_id = _maybe_id(tokenizer, "bos_token_id")
         if eos_id is None:
             eos_id = _maybe_id(tokenizer, "eos_token_id")
 
-        # txt를 문서 리스트로 정규화
         if isinstance(txt, str):
             docs: List[str] = [txt]
         else:
             docs = list(txt)
 
-        # 문서별 토큰화 → (옵션) BOS/EOS 삽입 → 하나로 이어붙이기
         flat_ids: List[int] = []
         total_chars = 0
         for doc in docs:
@@ -70,28 +61,33 @@ class DatasetV1(Dataset):
             if add_bos and bos_id is not None:
                 flat_ids.append(bos_id)
             flat_ids.extend(ids)
+            # 토큰을 누적하되 상한을 넘지 않도록
+            for tid in ids:
+                flat_ids.append(tid)
+                if max_total_tokens is not None and len(flat_ids) >= max_total_tokens + 1:
+                    break
             if add_eos_between_docs and eos_id is not None:
                 flat_ids.append(eos_id)
+            if max_total_tokens is not None and len(flat_ids) >= max_total_tokens + 1:
+                break
+        
+        # 전체 토큰을 하나의 긴 텐서로 저장 (메모리 효율적)
+        self.token_ids = torch.tensor(flat_ids, dtype=torch.long)
+        print(f"토큰화된 텍스트 길이: {len(self.token_ids)} (문자 길이 합: {total_chars})")
 
-        token_ids = flat_ids
-        print(f"토큰화된 텍스트 길이: {len(token_ids)} (문자 길이 합: {total_chars})")
-
-        # 슬라이딩 윈도우로 (max_length) 시퀀스 생성
-        # causal LM 표준: 입력 x[0:T] → 타깃 y[1:T+1]
-        N = len(token_ids)
-        for i in range(0, max(0, N - max_length), stride):
-            input_chunk = token_ids[i:i + max_length]
-            target_chunk = token_ids[i + 1: i + max_length + 1]
-            self.input_ids.append(torch.tensor(input_chunk, dtype=torch.long))
-            self.target_ids.append(torch.tensor(target_chunk, dtype=torch.long))
-
-        print(f"생성된 데이터셋 크기: {len(self.input_ids)} 샘플")
+        # 데이터셋의 총 샘플 수 미리 계산
+        self.num_samples = (len(self.token_ids) - self.max_length) // self.stride
+        print(f"생성된 데이터셋 크기: {self.num_samples} 샘플")
 
     def __len__(self):
-        return len(self.input_ids)
+        return self.num_samples
 
     def __getitem__(self, idx):
-        return self.input_ids[idx], self.target_ids[idx]
+        # 요청된 idx에 해당하는 데이터 조각을 동적으로 생성
+        start_idx = idx * self.stride
+        input_chunk = self.token_ids[start_idx : start_idx + self.max_length]
+        target_chunk = self.token_ids[start_idx + 1 : start_idx + self.max_length + 1]
+        return input_chunk, target_chunk
 
 
 def create_dataloader_v1(
@@ -108,6 +104,7 @@ def create_dataloader_v1(
     add_eos_between_docs: bool = True,
     bos_id: Optional[int] = None,
     eos_id: Optional[int] = None,
+    max_total_tokens: int | None = None,
 ):
     """
     tokenizer를 외부에서 주입받아 사용.
@@ -136,6 +133,7 @@ def create_dataloader_v1(
         add_eos_between_docs=add_eos_between_docs,
         bos_id=bos_id,
         eos_id=eos_id,
+        max_total_tokens=max_total_tokens,
     )
     print(f"데이터셋 생성 완료. 샘플 수: {len(dataset)}")
 

@@ -1,5 +1,4 @@
 services:
-  # redis 컨테이너
   redis:
     image: redis:7-alpine
     container_name: slm-redis
@@ -11,7 +10,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # mlflow 컨테이너
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.3.2
     container_name: slm-mlflow
@@ -30,7 +28,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # backend 컨테이너
   backend:
     build:
       context: ./backend
@@ -42,22 +39,26 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - HF_HOME=/data/hf
+      - HF_DATASETS_CACHE=/data/hf/datasets
+      - TRANSFORMERS_CACHE=/data/hf/transformers
     volumes:
       - ./backend:/app/backend # 코드 저장 시 즉시 반영 (uvicorn --reload)
       - ./backend/model_structures:/app/backend/model_structures # 모델 구조를 로컬에서도 확인
       - mlflow_data:/mlflow:rw # (필요 시) mlflow 경로 공유
+      - hf_cache:/data/hf
     tmpfs:
       - /app/backend/completed:size=2g,mode=1777
     depends_on: [redis, mlflow]
     ports: ["8000:8000"]
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-  # worker 컨테이너
   worker:
     build:
       context: ./backend
@@ -69,20 +70,25 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - REDIS_URL=redis://redis:6379/0
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - HF_HOME=/data/hf
+      - HF_DATASETS_CACHE=/data/hf/datasets
+      - TRANSFORMERS_CACHE=/data/hf/transformers
     volumes:
       - ./backend:/app/backend # 코드 변경 시 자동 재시작 감지
       - ./backend/model_structures:/app/backend/model_structures # 모델 구조를 로컬에서도 확인
       - mlflow_data:/mlflow:rw
+      - hf_cache:/data/hf
     tmpfs:
       - /app/backend/completed:size=2g,mode=1777
     depends_on: [redis, mlflow, backend]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all # 모든 GPU 사용
-              capabilities: [gpu]
+    gpus: all
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all # 모든 GPU 사용
+    #           capabilities: [gpu]
     command: >
       watchmedo auto-restart
       --directory=/app/backend
@@ -97,7 +103,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-  # frontend 컨테이너
   frontend:
     build:
       context: ./frontend
@@ -125,3 +130,4 @@ volumes:
   redis_data:
   mlflow_data:
   frontend_node_modules:
+  hf_cache:

@@ -1,6 +1,10 @@
 import math
 import torch
 import torch.nn as nn
+from typing import Optional
+
+from .normalization import RMSNorm
+
 
 
 # ------------------------------
@@ -224,49 +228,64 @@ class GroupedQueryAttention(nn.Module):
         d_out,
         context_length,
         num_heads,
-        num_kv_groups,          # GQA 그룹 수
-        rope_base=500_000.0,    # RoPE 기본값
-        rope_config=None,       # RoPE 추가 설정 (dict)
-        dropout=0.0,            # attention dropout 확률로 사용
+        num_kv_groups,                  # GQA 그룹 수
+        head_dim: Optional[int] = None,
+        rope_base=500_000.0,            # RoPE 기본값
+        rope_config=None,               # RoPE 추가 설정 (dict)
+        dropout=0.0,                    # attention dropout 확률로 사용
         dtype=torch.float32,
-        is_rope: bool = True,          # RoPE 사용 여부(범용성을 위해 옵션화)
+        is_rope: bool = True,           # RoPE 사용 여부(범용성을 위해 옵션화)
         qkv_bias: bool = False,         # Q/K/V에 bias 사용할지
-        out_proj_bias: bool = False     # 출력 프로젝션 bias
+        out_proj_bias: bool = False,    # 출력 프로젝션 bias
+        qk_norm: bool = False,          # "rms" | "layer" | None
+        qk_norm_eps: float = 1e-6,
     ):
         super().__init__()
-        assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
+        # assert d_out % num_heads == 0, "d_out must be divisible by num_heads" # Qwen3처럼 num_heads * head_dim != d_out인 모델도 고려
         assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"
         
         self.d_out = d_out
+        self.head_dim = head_dim if head_dim is not None else (d_out // num_heads)
         self.num_heads = num_heads
-        self.head_dim = d_out // num_heads
         self.num_kv_groups = num_kv_groups
         self.group_size = num_heads // num_kv_groups
         self.context_length = context_length
 
         # RoPE는 선택 사항. 사용할 때만 짝수 차원 요구.
         self.use_rope = bool(is_rope)
-        if self.use_rope:
-            assert self.head_dim % 2 == 0, "RoPE requires even head_dim (got odd)."
+        if self.use_rope and (self.head_dim % 2 != 0):
+            raise ValueError("RoPE requires even head_dim.")
 
-        # GQA: Q는 H개, K/V는 그룹당 1개
-        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias, dtype=dtype)
-        self.W_key   = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
-        self.W_value = nn.Linear(d_in, num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
-        self.out_proj = nn.Linear(d_out, d_out, bias=out_proj_bias, dtype=dtype)
+        # Q: (E -> H*D), K/V: (E -> G*D), out: (H*D -> E) / Q는 H개, K/V는 그룹당 1개
+        self.W_query = nn.Linear(d_in, self.num_heads * self.head_dim, bias=qkv_bias, dtype=dtype)
+        self.W_key   = nn.Linear(d_in, self.num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
+        self.W_value = nn.Linear(d_in, self.num_kv_groups * self.head_dim, bias=qkv_bias, dtype=dtype)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, d_out, bias=out_proj_bias, dtype=dtype)
 
         # attention dropout (훈련 시에만 작동; residual dropout은 블록 바깥에서 처리)
         self.attn_dropout = nn.Dropout(dropout)
 
-        # SharedBuffers에서 받아와 버퍼로 등록 (모듈과 함께 .to(device) 이동)
-        # 마스크는 항상 필요. RoPE는 use_rope일 때만 사용.
-        if rope_config is not None:
-            rope_config = {"type": "llama3_scaled", **rope_config}
-        mask, cos, sin = SharedBuffers.get_buffers(self.context_length, self.head_dim, rope_base, rope_config, dtype)
-        self.register_buffer("mask", mask) # (ctx_len, ctx_len) - T와 T_k가 같을 때 사용(캐주얼 마스크)
+        # 마스크는 직접 만든다 (항상 필요)
+        mask = torch.triu(torch.ones(self.context_length, self.context_length, dtype=torch.bool), diagonal=1)
+        self.register_buffer("mask", mask)
+
+        # RoPE가 켜진 경우에만 cos/sin 준비
         if self.use_rope:
-            self.register_buffer("cos", cos)   # (ctx_len, D/2)
-            self.register_buffer("sin", sin)   # (ctx_len, D/2)
+            rope_cfg = {"type": "llama3_scaled", **(rope_config or {})} if rope_config else {"type": "default"}
+            _mask, cos, sin = SharedBuffers.get_buffers(self.context_length, self.head_dim, rope_base, rope_cfg, dtype)
+            self.register_buffer("cos", cos)
+            self.register_buffer("sin", sin)
+ 
+        # QK 정규화
+        self.qk_norm = qk_norm
+        self.qk_norm_eps = qk_norm_eps
+        if self.qk_norm:
+            # 마지막 차원(head_dim) 기준 RMSNorm
+            self.q_norm = RMSNorm(self.head_dim, eps=qk_norm_eps, dtype=dtype)
+            self.k_norm = RMSNorm(self.head_dim, eps=qk_norm_eps, dtype=dtype)
+        else:
+            self.q_norm = self.k_norm = None    
+        
 
     @torch.no_grad()
     def _build_causal_mask(self, T_q: int, T_k: int, device: torch.device):
@@ -316,6 +335,13 @@ class GroupedQueryAttention(nn.Module):
             keys    = compute_rope(keys, cos, sin)
             queries = compute_rope(queries, cos, sin)
 
+        # QK-Norm (per-head, pre-dot-product)
+        if self.q_norm is not None:
+            # (B, H(or G), T, D) → head_dim 기준 정규화
+            queries = self.q_norm(queries)
+        if self.k_norm is not None:
+            keys    = self.k_norm(keys)
+
         # (변수 이름을 분리해 두는 게 안전)
         k_g = keys
         v_g = values
@@ -349,7 +375,9 @@ class GroupedQueryAttention(nn.Module):
 
         # 컨텍스트 & 출력
         context = torch.matmul(attn_weights, values_h)  # (B, H, T, D)
-        context = context.transpose(1, 2).contiguous().view(batch_size, num_tokens, self.d_out)
+        context = context.transpose(1, 2).contiguous()  # (B, T, H, D)
+        # Qwen3처럼 num_heads * head_dim != d_out인 모델도 고려
+        context = context.view(batch_size, num_tokens, self.num_heads * self.head_dim) # (B, T, H * D)
         out = self.out_proj(context)
 
         if return_cache:

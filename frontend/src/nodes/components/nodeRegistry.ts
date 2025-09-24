@@ -124,6 +124,16 @@ export const getNodeDataByType = (
             numHeads: config.n_heads,
             ctxLength: config.context_length,
             dropoutRate: config.drop_rate,
+            ropeBase: 10000.0,
+            ropeConfig: {
+              factor: 8.0,
+              low_freq_factor: 1.0,
+              high_freq_factor: 4.0,
+              original_context_length: 8192,
+            },
+            numKvGroups: 8,
+            qkNorm: false,
+            qkNormEps: 1e-6,
           };
         case 'transformerBlock':
           return {
@@ -189,6 +199,16 @@ export const getNodeDataByType = (
             numHeads: config.n_heads,
             ctxLength: config.context_length,
             dropoutRate: 0.1,
+            ropeBase: 10000.0,
+            ropeConfig: {
+              factor: 8.0,
+              low_freq_factor: 1.0,
+              high_freq_factor: 4.0,
+              original_context_length: 8192,
+            },
+            numKvGroups: 8,
+            qkNorm: false,
+            qkNormEps: 1e-6,
           };
         case 'transformerBlock':
           return {
@@ -258,6 +278,8 @@ export const getNodeDataByType = (
             ropeBase: config.rope_base,
             ropeConfig: config.rope_freq,
             numKvGroups: config.n_kv_groups,
+            qkNorm: false, // Llama3는 QK Normalization 사용 안함
+            qkNormEps: 1e-6, // Llama3는 QK Normalization 사용 안함
           };
         case 'transformerBlock':
           return {
@@ -268,32 +290,80 @@ export const getNodeDataByType = (
           break;
       }
       break;
-  }
-
-  // 모든 모델 타입에 공통적인 로직
-  switch (nodeType) {
-    case 'tokenEmbedding':
-      return {
-        ...data,
-        vocabSize: config.vocab_size,
-        embDim: config.emb_dim,
-      };
-    case 'positionalEmbedding':
-      return {
-        ...data,
-        ctxLength: config.context_length,
-        embDim: config.emb_dim,
-      };
-    case 'linear':
-      return {
-        ...data,
-        outDim: config.vocab_size,
-        bias: false,
-        weightTying: false,
-      }; // 일단 Linear Output 기준으로 초기화
+    case 'qwen3':
+      switch (nodeType) {
+        case 'tokenEmbedding':
+          return {
+            ...data,
+            vocabSize: config.vocab_size,
+            embDim: config.emb_dim,
+          };
+        case 'positionalEmbedding':
+          return {
+            ...data,
+            ctxLength: config.context_length,
+            embDim: config.emb_dim,
+          };
+        case 'linear':
+          return {
+            ...data,
+            outDim: config.vocab_size,
+            bias: false,
+            weightTying: true, // Qwen3는 Linear Weight Tying 사용
+          };
+        case 'normalization':
+          return {
+            ...data,
+            normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
+          };
+        case 'dropout':
+          return { ...data, dropoutRate: 0.1 };
+        case 'feedForward':
+          return {
+            ...data,
+            hiddenDim: config.hidden_dim,
+            feedForwardType: 'Gated', // Standard, Gated
+            actFunc: 'SwiGLU', // ReLU, GELU, SwiGLU, Mish
+            bias: false,
+          };
+        case 'mhAttention': // Qwen3는 MHAttention 사용 안함
+          return {
+            ...data,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0,
+            qkvBias: false,
+            isRoPE: true,
+            ropeBase: 10000.0,
+          };
+        case 'gqAttention': // Qwen3는 GQAttention 사용
+          return {
+            ...data,
+            numHeads: config.n_heads,
+            ctxLength: config.context_length,
+            dropoutRate: 0.0,
+            qkvBias: false,
+            isRoPE: true,
+            ropeBase: config.rope_base,
+            ropeConfig: {
+              factor: 8.0,
+              low_freq_factor: 1.0,
+              high_freq_factor: 4.0,
+              original_context_length: 8192,
+            },
+            numKvGroups: config.n_kv_groups,
+            qkNorm: true, // Qwen3는 QK Normalization 사용
+            qkNormEps: 1e-6, // Qwen3는 QK Normalization 사용
+            headDim: config.head_dim,
+          };
+        default:
+          break;
+      }
+      break;
     default:
-      return data;
+      break;
   }
+  return data;
 };
 
 export const nodeRegistry: Map<string, NodeDefinition> = new Map([
@@ -669,7 +739,7 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
         outDim: 0,
         label: 'GQ Attention',
       },
-      stringFields: ['label'],
+      stringFields: ['label', 'qkvBias', 'qkNorm', 'isRoPE'],
       getFields: (data: BaseNodeData) => {
         const typed = data as GQAttentionData;
         const fields: FieldConfig[] = [
@@ -713,16 +783,76 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
             options: ['true', 'false'],
             info: nodeFieldInfo.gqAttention.isRoPE,
           },
+          {
+            type: 'select',
+            label: 'QK Normalization:',
+            name: 'qkNorm',
+            value: typed.qkNorm ? 'true' : 'false',
+            options: ['true', 'false'],
+            info: nodeFieldInfo.gqAttention.qkNorm,
+          },
         ];
         if (typed.isRoPE) {
-          fields.push({
-            type: 'number',
-            label: 'Rope Base:',
-            name: 'ropeBase',
-            value: typed.ropeBase?.toString() || '10000.0',
-            placeholder: 'Enter rope base value for RoPE',
-            info: nodeFieldInfo.gqAttention.ropeBase,
-          });
+          fields.push(
+            {
+              type: 'number',
+              label: 'Rope Base:',
+              name: 'ropeBase',
+              value: typed.ropeBase?.toString() || '10000.0',
+              placeholder: 'Enter rope base value for RoPE',
+              info: nodeFieldInfo.gqAttention.ropeBase,
+            },
+            // {
+            //   type: 'number',
+            //   label: 'Rope Factor:',
+            //   name: 'ropeFactor',
+            //   value: typed.ropeFactor?.toString() || '8.0',
+            //   placeholder: 'Enter rope factor value for RoPE',
+            //   info: nodeFieldInfo.gqAttention.ropeFactor,
+            // },
+            // {
+            //   type: 'number',
+            //   label: 'Rope Low Frequency Factor:',
+            //   name: 'ropeLowFreqFactor',
+            //   value: typed.ropeLowFreqFactor?.toString() || '1.0',
+            //   placeholder: 'Enter rope low frequency factor value for RoPE',
+            //   info: nodeFieldInfo.gqAttention.ropeLowFreqFactor,
+            // },
+            // {
+            //   type: 'number',
+            //   label: 'Rope High Frequency Factor:',
+            //   name: 'ropeHighFreqFactor',
+            //   value: typed.ropeHighFreqFactor?.toString() || '4.0',
+            //   placeholder: 'Enter rope high frequency factor value for RoPE',
+            //   info: nodeFieldInfo.gqAttention.ropeHighFreqFactor,
+            // },
+            // {
+            //   type: 'number',
+            //   label: 'Rope Original Context Length:',
+            //   name: 'ropeOriginalContextLength',
+            //   value: typed.ropeOriginalContextLength?.toString() || '8192',
+            //   placeholder: 'Enter rope original context length value for RoPE',
+            //   info: nodeFieldInfo.gqAttention.ropeOriginalContextLength,
+            // },
+          );
+        }
+        if (typed.qkNorm) {
+          fields.push(
+            {
+              type: 'number',
+              label: 'QK Normalization Eps:',
+              name: 'qkNormEps',
+              value: typed.qkNormEps?.toString() || '1e-6',
+            },
+            // {
+            //   type: 'number',
+            //   label: 'Head Dimension:',
+            //   name: 'headDim',
+            //   value: typed.headDim?.toString() || '',
+            //   placeholder: 'Enter head dimension value for QK Normalization',
+            //   info: nodeFieldInfo.gqAttention.headDim,
+            // },
+          );
         }
         return fields;
       },

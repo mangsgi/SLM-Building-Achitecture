@@ -20,10 +20,10 @@ const datasets = [
   },
   {
     id: 2,
-    name: 'OpenWebText-10k',
-    description: 'OpenWebText 1만 샘플 슬라이스',
-    path: 'stas/openwebtext-10k',
-    config: 'plain_text',
+    name: 'OpenWebText-100k',
+    description: 'OpenWebText 10만 샘플 슬라이스',
+    path: 'mychen76/openwebtext-100k',
+    config: 'default',
   },
   {
     id: 3,

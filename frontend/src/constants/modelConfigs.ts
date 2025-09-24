@@ -1,7 +1,7 @@
 // --- 타입 정의 시작 ---
 import { RopeConfig } from '../nodes/components/NodeData';
 
-export type ModelType = 'GPT-2' | 'Llama2' | 'Llama3' | 'Qwen3';
+export type ModelType = 'GPT-2' | 'Llama2' | 'Llama3' | 'Qwen3' | 'SmolLM3';
 
 // 공통 설정값 인터페이스
 interface BaseConfig {
@@ -39,9 +39,15 @@ export interface Llama3Config extends BaseConfig {
 export interface Qwen3Config extends BaseConfig {
   model: 'qwen3';
   hidden_dim: number;
+  head_dim: number;
   qk_norm: boolean;
   n_kv_groups: number;
   rope_base: number;
+}
+
+export interface SmolLM3Config extends BaseConfig {
+  model: 'smollm3';
+  hidden_dim: number;
 }
 
 // 구별된 유니온 타입
@@ -49,7 +55,8 @@ export type ModelConfig =
   | GPT2Config
   | Llama2Config
   | Llama3Config
-  | Qwen3Config;
+  | Qwen3Config
+  | SmolLM3Config;
 // --- 타입 정의 끝 ---
 
 // --- 설정값 객체들 ---
@@ -110,14 +117,29 @@ const qwen3Config: Omit<Qwen3Config, 'model'> = {
   batch_size: 1,
   vocab_size: 151_936,
   context_length: 40_960,
+  stride: 40_960, // == context_length
+  emb_dim: 1024,
+  n_heads: 16,
+  n_blocks: 28,
+  hidden_dim: 3072,
+  head_dim: 128,
+  qk_norm: true,
+  n_kv_groups: 8,
+  rope_base: 1_000_000.0,
+  dtype: 'bf16',
+};
+
+const smollm3Config: Omit<SmolLM3Config, 'model'> = {
+  // 0.6B SmolLM3
+  epochs: 1,
+  batch_size: 1,
+  vocab_size: 151_936,
+  context_length: 40_960,
   stride: 131_072, // == context_length
   emb_dim: 1024,
   n_heads: 16,
   n_blocks: 28,
   hidden_dim: 3072,
-  qk_norm: true,
-  n_kv_groups: 8,
-  rope_base: 1_000_000.0,
   dtype: 'bf16',
 };
 
@@ -126,4 +148,5 @@ export const modelConfigs: Record<ModelType, Omit<ModelConfig, 'model'>> = {
   Llama2: llama2Config,
   Llama3: llama3Config,
   Qwen3: qwen3Config,
+  SmolLM3: smollm3Config,
 };

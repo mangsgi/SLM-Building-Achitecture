@@ -1,3 +1,4 @@
+# ml/models/factory.py
 import torch
 import torch.nn as nn
 from typing import Dict, Any, Union, List
@@ -140,54 +141,43 @@ class AttentionFactory:
             return MultiHeadAttentionUsingSDP(**common_args)
 
         elif layer_type == "gqAttention":
-            # Grouped Query Attention (+ RoPE)
+            # Grouped Query Attention (+ RoPE + QK-Norm)
+            if data.get("isRoPE") is None:
+                raise ValueError(f"Grouped Query Attention layer '{data.get('id', 'unknown')}' must have a 'isRoPE' field")
+            if data.get("qkNorm") is None:
+                raise ValueError(f"Grouped Query Attention layer '{data.get('id', 'unknown')}' must have a 'qkNorm' field")
+            
             common_args.update(
                 {
                     "num_heads": data["numHeads"],
                     "dropout": data.get("dropoutRate"),
                     "qkv_bias": data.get("qkvBias"),
                     "is_rope": data.get("isRoPE"),
-                    "rope_base": data.get("ropeBase"),
-                    "rope_config": data.get("ropeConfig"),
                     "num_kv_groups": data["numKvGroups"],
                 }
             )
             
+            if data.get("isRoPE"):
+                common_args.update(
+                    {
+                        "rope_base": data.get("ropeBase"),
+                        "rope_config": data.get("ropeConfig"),
+                    }
+                )
+            
+            if data.get("qkNorm"):
+                common_args.update(
+                    {
+                        "qk_norm": data.get("qkNorm"),
+                        "qk_norm_eps": data.get("qkNormEps", 1e-6),
+                        "head_dim": data.get("headDim"),
+                    }
+                )
+            
             return GroupedQueryAttention(**common_args)
 
         else:  
-            # 기존 attention 타입 (하위 호환성)
-            attn_type = data.get("attn_type", "default")
-            common_args.update(
-                {
-                    "num_heads": data["numHeads"],
-                    "dropout": data.get("dropoutRate"),
-                    "qkv_bias": data.get("qkvBias"),
-                    "is_rope": data.get("isRoPE"),
-                    "rope_base": data.get("ropeBase"),
-                    "rope_config": data.get("ropeConfig"),
-                    "num_kv_groups": data["numKvGroups"],
-                }
-            )
-
-            if attn_type == "default" or attn_type == "mha":
-                return MultiHeadAttentionUsingSDP(**common_args)
-            elif attn_type == "gqa":
-                # 레거시 키 이름을 쓰는 경우도 동일 처리
-                head_dim = (common_args["d_out"] // common_args["numHeads"])
-                if head_dim % 2 != 0:
-                    raise ValueError(
-                        f"head_dim({head_dim}) must be even for RoPE (GQA)."
-                    )
-                return GroupedQueryAttention(
-                    **{k: v for k, v in common_args.items() if k != "qkvBias"},
-                    num_kv_groups=data["numKvGroups"],
-                    rope_base=data.get("ropeBase"),
-                    rope_config=data.get("ropeConfig"),
-                )
-            else:
-                raise ValueError(f"Unknown attention type: {attn_type}")
-
+            raise ValueError(f"Unknown attention type: {layer_type}")
 
 class FeedForwardFactory:
     """피드포워드 레이어 생성"""
@@ -252,10 +242,10 @@ class LinearFactory:
             dtype=dtype,  # dtype 추가
         )
         
-        # 🔑 이후 tying 단계에서 인식할 수 있도록 플래그와 메타정보 부착
-        layer._weight_tying = bool(data.get("weightTying"))   # <-- 추가
-        layer._declared_inDim = data["inDim"]                 # <-- 추가
-        layer._declared_outDim = data["outDim"]               # <-- 추가
+        # 이후 tying 단계에서 인식할 수 있도록 플래그와 메타정보 부착
+        layer._weight_tying = bool(data.get("weightTying"))
+        layer._declared_inDim = data["inDim"]
+        layer._declared_outDim = data["outDim"]
         return layer
 
 

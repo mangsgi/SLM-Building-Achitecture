@@ -36,12 +36,15 @@ class ModelConfig(BaseModel):
     emb_dim: int
     n_heads: int
     n_blocks: int
-    qkv_bias: Optional[bool] = None   # GPT-2
-    drop_rate: Optional[float] = None # GPT-2
-    hidden_dim: Optional[int] = None  # Llama2, Llama3
-    rope_base: Optional[float] = None # Llama3 GQA
-    rope_config: Optional[dict] = None # Llama3 GQA
-    n_kv_groups: Optional[int] = None  # Llama3 GQA
+    qkv_bias: Optional[bool] = None     # GPT-2
+    drop_rate: Optional[float] = None   # GPT-2
+    hidden_dim: Optional[int] = None    # Llama2, Llama3
+    rope_base: Optional[float] = None   # Llama3 GQA
+    rope_config: Optional[dict] = None  # Llama3 GQA
+    n_kv_groups: Optional[int] = None   # Llama3 GQA
+    qk_norm: Optional[bool] = None      # Qwen3 GQA
+    qk_norm_eps: Optional[float] = None # Qwen3 GQA
+    head_dim: Optional[int] = None      # Qwen3 GQA
     dtype: str
 
 # ===== 노드 구성요소 =====
@@ -50,7 +53,7 @@ class LayerData(BaseModel):
     label: Optional[str] = None
     inDim: Optional[int] = None
     outDim: Optional[int] = None
-    vocabSize: Optional[int] = None         # for TokenEmbedding
+    vocabSize: Optional[int] = None         # for Tokenizer
     embDim: Optional[int] = None
     ctxLength: Optional[int] = None
     dropoutRate: Optional[float] = None     # for Dropout, Attention
@@ -69,6 +72,9 @@ class LayerData(BaseModel):
     ropeBase: Optional[float] = None        # for RoPE in Attention
     ropeConfig: Optional[dict] = None       # for RoPE in Attention
     numKvGroups: Optional[int] = None       # for Grouped Query Attention (미구현)
+    qkNorm: Optional[bool] = None           # for Attention
+    qkNormEps: Optional[float] = None       # for Attention
+    headDim: Optional[int] = None           # for Attention
 
 class LayerNode(BaseModel):
     type: str

@@ -15,6 +15,7 @@ import {
   Llama2Config,
   Llama3Config,
   modelConfigs,
+  Qwen3Config,
 } from './constants/modelConfigs';
 import FlowCanvas from './FlowCanvas';
 import { ReactFlowContext } from './store/ReactFlowContext';
@@ -216,7 +217,10 @@ function App() {
       return { ...modelConfigs['Llama2'], model: 'llama2' } as Llama2Config;
     } else if (savedModelType === 'llama3') {
       return { ...modelConfigs['Llama3'], model: 'llama3' } as Llama3Config;
+    } else if (savedModelType === 'qwen3') {
+      return { ...modelConfigs['Qwen3'], model: 'qwen3' } as Qwen3Config;
     }
+
     return { ...modelConfigs['GPT-2'], model: 'gpt-2' } as GPT2Config;
   });
 
@@ -274,7 +278,7 @@ function App() {
   const toggleConfig = () => setIsConfigOpen((prev) => !prev);
 
   const loadReferenceModel = async (
-    modelName: 'GPT-2' | 'Llama2' | 'Llama3',
+    modelName: 'GPT-2' | 'Llama2' | 'Llama3' | 'Qwen3',
   ) => {
     const model = referenceModels[modelName];
     if (!model || !model.nodes || !model.edges || model.nodes.length === 0) {

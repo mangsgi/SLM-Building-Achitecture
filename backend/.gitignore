@@ -13,5 +13,7 @@ mlartifacts/
 mlruns/
 *.pt
 *.pth
+.cache/
+cache/  
 
 __pycache__/
