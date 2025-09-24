@@ -81,14 +81,13 @@ services:
     tmpfs:
       - /app/backend/completed:size=2g,mode=1777
     depends_on: [redis, mlflow, backend]
-    gpus: all
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all # 모든 GPU 사용
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+         reservations:
+           devices:
+             - driver: nvidia
+               count: all # 모든 GPU 사용
+               capabilities: [gpu]
     command: >
       watchmedo auto-restart
       --directory=/app/backend
