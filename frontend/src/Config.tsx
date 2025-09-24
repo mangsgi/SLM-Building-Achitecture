@@ -7,6 +7,7 @@ import { getNodeDataByType } from './nodes/components/nodeRegistry';
 import { calculateNodeHeight } from './constants/nodeHeights';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { ModelType, ModelConfig, modelConfigs } from './constants/modelConfigs';
+import { fieldInformation } from './constants/fieldInformation';
 
 interface ConfigProps {
   config: ModelConfig;
@@ -35,24 +36,23 @@ const configMap: Record<string, string> = {
 };
 
 const configDescriptions: Record<string, string> = {
-  model: '모델 유형을 선택합니다.',
-  epochs: '모델 학습을 반복할 횟수입니다.',
-  batch_size: '한 번에 처리할 데이터의 크기입니다.',
-  stride:
-    '데이터 슬라이딩 윈도우에서의 길이 L(context_length)인 윈도우를 텍스트 위로 옮길 때, 한 번에 몇 토큰을 건너뛸지를 지정합니다.',
-  dtype: '모델의 데이터 타입을 지정합니다. (bf16, fp16, fp32)',
-  vocab_size: '어휘 사전의 크기입니다.',
-  context_length: '입력 시퀀스의 최대 길이입니다.',
-  emb_dim: '임베딩 벡터의 차원입니다.',
-  n_heads: '어텐션 헤드의 개수입니다.',
-  n_blocks: '트랜스포머 블록의 개수입니다.',
-  drop_rate: '드롭아웃 비율입니다. (0~1 사이의 값)',
-  qkv_bias: 'Query, Key, Value 행렬에 편향을 추가할지 여부입니다.',
-  hidden_dim: 'Llama2 모델의 히든 차원입니다.',
-  n_kv_groups: 'Llama3 모델의 KV 그룹 개수입니다.',
-  rope_base: 'RoPE 기본 값입니다.',
-  rope_freq: 'RoPE 주파수 스케일링 값입니다.',
-  qk_norm: 'QK 정규화 여부입니다.',
+  model: fieldInformation.model.description,
+  epochs: fieldInformation.epochs.description,
+  batch_size: fieldInformation.batch_size.description,
+  stride: fieldInformation.stride.description,
+  dtype: fieldInformation.dtype.description,
+  vocab_size: fieldInformation.vocab_size.description,
+  context_length: fieldInformation.context_length.description,
+  emb_dim: fieldInformation.emb_dim.description,
+  n_heads: fieldInformation.n_heads.description,
+  n_blocks: fieldInformation.n_blocks.description,
+  drop_rate: fieldInformation.drop_rate.description,
+  qkv_bias: fieldInformation.qkv_bias.description,
+  hidden_dim: fieldInformation.hidden_dim.description,
+  n_kv_groups: fieldInformation.n_kv_groups.description,
+  rope_base: fieldInformation.rope_base.description,
+  rope_freq: fieldInformation.rope_freq.description,
+  qk_norm: fieldInformation.qk_norm.description,
 };
 
 // 데이터 타입 옵션
