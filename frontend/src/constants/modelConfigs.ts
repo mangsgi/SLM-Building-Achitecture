@@ -65,7 +65,7 @@ const gpt2Config: Omit<GPT2Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 50257,
-  context_length: 128,
+  context_length: 128, // 1024
   stride: 128, // == context_length
   emb_dim: 768,
   n_heads: 12,
@@ -80,7 +80,7 @@ const llama2Config: Omit<Llama2Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 32000,
-  context_length: 128,
+  context_length: 128, // 4096
   stride: 128, // == context_length
   emb_dim: 4096,
   n_heads: 32,
@@ -94,8 +94,8 @@ const llama3Config: Omit<Llama3Config, 'model'> = {
   epochs: 1,
   batch_size: 1,
   vocab_size: 128_256,
-  context_length: 131_072,
-  stride: 131_072, // == context_length
+  context_length: 256, // 131_072,
+  stride: 256, // == context_length
   emb_dim: 2048,
   n_heads: 32,
   n_blocks: 16,
@@ -103,10 +103,10 @@ const llama3Config: Omit<Llama3Config, 'model'> = {
   n_kv_groups: 8,
   rope_base: 500_000.0,
   rope_freq: {
-    factor: 8.0,
+    factor: 32.0,
     low_freq_factor: 1.0,
     high_freq_factor: 4.0,
-    original_context_length: 8192,
+    original_context_length: 256, // 8192
   },
   dtype: 'bf16',
 };
@@ -115,9 +115,9 @@ const qwen3Config: Omit<Qwen3Config, 'model'> = {
   // 0.6B Qwen3
   epochs: 1,
   batch_size: 1,
-  vocab_size: 151_936,
-  context_length: 40_960,
-  stride: 40_960, // == context_length
+  vocab_size: 151_669, // 151_936,
+  context_length: 256, // 40_960
+  stride: 256, // == context_length
   emb_dim: 1024,
   n_heads: 16,
   n_blocks: 28,
@@ -133,9 +133,9 @@ const smollm3Config: Omit<SmolLM3Config, 'model'> = {
   // 0.6B SmolLM3
   epochs: 1,
   batch_size: 1,
-  vocab_size: 151_936,
-  context_length: 40_960,
-  stride: 131_072, // == context_length
+  vocab_size: 151_669, // 151_936
+  context_length: 256, // 40_960
+  stride: 256, // == context_length
   emb_dim: 1024,
   n_heads: 16,
   n_blocks: 28,

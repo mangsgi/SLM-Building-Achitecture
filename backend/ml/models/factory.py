@@ -270,6 +270,8 @@ class CustomSequential(nn.Module):
         for i, layer in enumerate(self.layers):
             # 1) TokenEmbedding → PositionalEmbedding(learned/sinusoidal/relative) 자동 합산
             #    RotaryPositionalEmbedding은 제외 (RoPE는 어텐션 내부에서 처리됨)
+            if hasattr(layer, "layer_id"):
+                cache[f"{layer.layer_id}:in"] = x
             if (
                 i > 0
                 and isinstance(self.layers[i - 1], TokenEmbedding)
@@ -314,7 +316,10 @@ class CustomSequential(nn.Module):
         """캐시를 사용하여 레이어를 포워드 (Llama2 형식)"""
         if caches is None: caches = {}
         new_caches = {}
+        cache = {}
         for i, layer in enumerate(self.layers):
+            if hasattr(layer, "layer_id"):
+                cache[f"{layer.layer_id}:in"] = x
             if isinstance(layer, (MultiHeadAttentionUsingSDP, GroupedQueryAttention)):
                 out, new_cache = layer(x, start_pos=start_pos, kv_cache=caches.get(i), use_cache=use_cache, return_cache=True)
                 x = out
@@ -322,6 +327,9 @@ class CustomSequential(nn.Module):
             else:
                 # 기존 토큰/상대/학습형 포지셔널 임베딩 합산 로직은 유지
                 x = layer(x)
+                
+            if hasattr(layer, "layer_id"):
+                cache[layer.layer_id] = x  # 출력 저장
         return x, new_caches
 
 

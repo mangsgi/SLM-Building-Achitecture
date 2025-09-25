@@ -110,7 +110,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({
               ...node,
               data: {
                 ...node.data,
-                source: newEdge.target,
+                source: newEdge.target + ':in',
               },
             };
           }

@@ -124,14 +124,15 @@ export const getNodeDataByType = (
             numHeads: config.n_heads,
             ctxLength: config.context_length,
             dropoutRate: config.drop_rate,
+            numKvGroups: 8,
+            isRoPE: false,
             ropeBase: 10000.0,
             ropeConfig: {
-              factor: 8.0,
+              factor: 32.0,
               low_freq_factor: 1.0,
               high_freq_factor: 4.0,
               original_context_length: 8192,
             },
-            numKvGroups: 8,
             qkNorm: false,
             qkNormEps: 1e-6,
           };
@@ -180,7 +181,7 @@ export const getNodeDataByType = (
             ...data,
             normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
           };
-        case 'dropout':
+        case 'dropout': // Llama2는 Dropout 사용 안함
           return { ...data, dropoutRate: 0.1 };
         case 'mhAttention':
           return {
@@ -199,14 +200,15 @@ export const getNodeDataByType = (
             numHeads: config.n_heads,
             ctxLength: config.context_length,
             dropoutRate: 0.1,
+            numKvGroups: 8,
+            isRoPE: false,
             ropeBase: 10000.0,
             ropeConfig: {
-              factor: 8.0,
+              factor: 32.0,
               low_freq_factor: 1.0,
               high_freq_factor: 4.0,
               original_context_length: 8192,
             },
-            numKvGroups: 8,
             qkNorm: false,
             qkNormEps: 1e-6,
           };
@@ -255,7 +257,7 @@ export const getNodeDataByType = (
             ...data,
             normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
           };
-        case 'dropout':
+        case 'dropout': // Llama3는 Dropout 사용 안함
           return { ...data, dropoutRate: 0.1 };
         case 'mhAttention': // Llama3는 MHAttention 사용 안함
           return {
@@ -316,7 +318,7 @@ export const getNodeDataByType = (
             ...data,
             normType: 'RMS Normalization', // Layer Normalization, RMS Normalization
           };
-        case 'dropout':
+        case 'dropout': // Qwen3는 Dropout 사용 안함
           return { ...data, dropoutRate: 0.1 };
         case 'feedForward':
           return {
@@ -346,7 +348,7 @@ export const getNodeDataByType = (
             isRoPE: true,
             ropeBase: config.rope_base,
             ropeConfig: {
-              factor: 8.0,
+              factor: 32.0,
               low_freq_factor: 1.0,
               high_freq_factor: 4.0,
               original_context_length: 8192,
@@ -355,6 +357,11 @@ export const getNodeDataByType = (
             qkNorm: true, // Qwen3는 QK Normalization 사용
             qkNormEps: 1e-6, // Qwen3는 QK Normalization 사용
             headDim: config.head_dim,
+          };
+        case 'transformerBlock':
+          return {
+            ...data,
+            numOfBlocks: config.n_blocks,
           };
         default:
           break;

@@ -60,7 +60,7 @@ class DatasetV1(Dataset):
             ids = _safe_encode(tokenizer, doc)
             if add_bos and bos_id is not None:
                 flat_ids.append(bos_id)
-            flat_ids.extend(ids)
+            # flat_ids.extend(ids)
             # 토큰을 누적하되 상한을 넘지 않도록
             for tid in ids:
                 flat_ids.append(tid)

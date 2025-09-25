@@ -1,15 +1,19 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export type TrainingStatus = 'IDLE' | 'TRAINING' | 'COMPLETED';
+export type TrainingStatus =
+  | 'IDLE'
+  | 'SUBMITTING'
+  | 'TRAINING'
+  | 'COMPLETED'
+  | 'ERROR';
 
 interface StatusState {
   trainingStatus: TrainingStatus;
   mlflowUrl: string | null;
   task_id: string | null;
-  error: string | null; // 오류 메시지를 저장할 필드 추가
+  error: string | null;
 }
 
-// localStorage에서 상태를 불러오거나 기본값으로 초기화
 const getInitialState = (): StatusState => {
   const storedStatus = localStorage.getItem(
     'trainingStatus',
@@ -17,15 +21,15 @@ const getInitialState = (): StatusState => {
   const storedMlflowUrl = localStorage.getItem('mlflowUrl');
   const storedTaskId = localStorage.getItem('task_id');
 
-  // COMPLETED 상태는 페이지 새로고침 시 IDLE로 초기화
-  if (storedStatus && storedStatus !== 'COMPLETED') {
+  if (storedStatus === 'TRAINING') {
     return {
-      trainingStatus: storedStatus,
-      mlflowUrl: storedStatus === 'TRAINING' ? storedMlflowUrl : null,
-      task_id: storedStatus === 'TRAINING' ? storedTaskId : null,
-      error: null, // error 필드 초기화
+      trainingStatus: 'TRAINING',
+      mlflowUrl: storedMlflowUrl,
+      task_id: storedTaskId,
+      error: null,
     };
   }
+
   return {
     trainingStatus: 'IDLE',
     mlflowUrl: null,
@@ -38,6 +42,10 @@ const statusSlice = createSlice({
   name: 'status',
   initialState: getInitialState(),
   reducers: {
+    setSubmitting: (state) => {
+      state.trainingStatus = 'SUBMITTING';
+      state.error = null;
+    },
     startTraining: (
       state,
       action: PayloadAction<{ mlflowUrl: string; task_id: string }>,
@@ -45,7 +53,7 @@ const statusSlice = createSlice({
       state.trainingStatus = 'TRAINING';
       state.mlflowUrl = action.payload.mlflowUrl;
       state.task_id = action.payload.task_id;
-      state.error = null; // 학습 시작 시 에러 초기화
+      state.error = null;
       localStorage.setItem('trainingStatus', 'TRAINING');
       localStorage.setItem('mlflowUrl', action.payload.mlflowUrl);
       localStorage.setItem('task_id', action.payload.task_id);
@@ -60,11 +68,11 @@ const statusSlice = createSlice({
       localStorage.removeItem('task_id');
     },
     failTraining: (state, action: PayloadAction<{ message: string }>) => {
-      state.trainingStatus = 'COMPLETED'; // 상태는 완료(Blue)로 변경
-      state.error = action.payload.message; // 에러 메시지 저장
+      state.trainingStatus = 'ERROR';
+      state.error = action.payload.message;
       state.mlflowUrl = null;
       state.task_id = null;
-      localStorage.setItem('trainingStatus', 'COMPLETED');
+      localStorage.removeItem('trainingStatus');
       localStorage.removeItem('mlflowUrl');
       localStorage.removeItem('task_id');
     },
@@ -72,7 +80,7 @@ const statusSlice = createSlice({
       state.trainingStatus = 'IDLE';
       state.mlflowUrl = null;
       state.task_id = null;
-      state.error = null; // 리셋 시 에러 초기화
+      state.error = null;
       localStorage.removeItem('trainingStatus');
       localStorage.removeItem('mlflowUrl');
       localStorage.removeItem('task_id');
@@ -80,6 +88,11 @@ const statusSlice = createSlice({
   },
 });
 
-export const { startTraining, completeTraining, failTraining, resetStatus } =
-  statusSlice.actions;
+export const {
+  setSubmitting,
+  startTraining,
+  completeTraining,
+  failTraining,
+  resetStatus,
+} = statusSlice.actions;
 export default statusSlice.reducer;

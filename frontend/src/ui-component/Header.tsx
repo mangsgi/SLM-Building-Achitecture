@@ -16,8 +16,13 @@ const StatusIndicator: React.FC<{
   const statusConfig = {
     IDLE: {
       color: 'bg-green-500',
-      shortMessage: 'Ready For Training',
+      shortMessage: 'Ready',
       longMessage: 'You can submit a new model for training.',
+    },
+    SUBMITTING: {
+      color: 'bg-yellow-500',
+      shortMessage: 'Submitting...',
+      longMessage: 'Submitting the model structure to the backend.',
     },
     TRAINING: {
       color: 'bg-red-500',
@@ -26,9 +31,13 @@ const StatusIndicator: React.FC<{
     },
     COMPLETED: {
       color: 'bg-blue-500',
-      shortMessage: 'Completed', // 2. 짧은 메시지 통일
-      // 3. 에러 메시지 유무에 따라 다른 메시지 표시
-      longMessage: error ?? 'Training complete! You can now start a new one.',
+      shortMessage: 'Completed',
+      longMessage: 'Training complete! You can now start a new one.',
+    },
+    ERROR: {
+      color: 'bg-gray-500',
+      shortMessage: 'Error',
+      longMessage: error ?? 'An unknown error occurred.',
     },
   };
 

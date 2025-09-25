@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import Header from './ui-component/Header';
-import { resetStatus } from './store/statusSlice';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from './store';
 
 interface Message {
   text: string;
@@ -15,12 +12,6 @@ const TestPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // 상태 초기화
-  const dispatch: AppDispatch = useDispatch();
-  useEffect(() => {
-    dispatch(resetStatus());
-  }, [dispatch]);
 
   // 백엔드 API를 통해 모델 목록을 가져옴
   useEffect(() => {

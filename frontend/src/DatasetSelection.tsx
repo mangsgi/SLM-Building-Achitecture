@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,7 +7,12 @@ import Spinner from './ui-component/Spinner';
 import Modal from './ui-component/Modal';
 import { ModelNode } from './App';
 import { RootState, AppDispatch } from './store';
-import { startTraining, resetStatus, failTraining } from './store/statusSlice';
+import {
+  setSubmitting, // 임포트 추가
+  startTraining,
+  resetStatus,
+  failTraining,
+} from './store/statusSlice';
 
 // 임시 데이터셋 목록
 const datasets = [
@@ -53,25 +58,17 @@ function DatasetSelection() {
     title: string;
     description: string;
   } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 스피너 상태
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch();
-  const trainingStatus = useSelector(
-    (state: RootState) => state.status.trainingStatus,
+  const { trainingStatus, error } = useSelector(
+    (state: RootState) => state.status,
   );
 
   const { model, config } = location.state as {
     model: ModelNode[];
     config: Record<string, any>;
   };
-
-  // 상태 초기화
-  useEffect(() => {
-    if (trainingStatus !== 'TRAINING') {
-      dispatch(resetStatus());
-    }
-  }, [dispatch, trainingStatus]);
 
   const handleShowInfo = (e: React.MouseEvent, dataset: Dataset) => {
     e.stopPropagation();
@@ -88,13 +85,13 @@ function DatasetSelection() {
 
   // 학습 제출 함수
   const handleSubmit = async () => {
-    if (!selectedDatasetId || !modelName || trainingStatus === 'TRAINING')
-      return;
+    if (!selectedDatasetId || !modelName) return;
 
     const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
     if (!selectedDataset) return;
 
-    setIsSubmitting(true);
+    dispatch(setSubmitting()); // setSubmitting 활성화
+
     try {
       const response = await fetch(
         'http://localhost:8000/api/v1/train-complete-model',
@@ -125,26 +122,21 @@ function DatasetSelection() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage =
-          errorData.message || 'Failed to submit model and dataset';
-        dispatch(failTraining({ message: errorMessage }));
+        throw new Error(
+          errorData.detail || 'Failed to submit model and dataset',
+        );
+      }
+
+      const result = await response.json();
+      const mlflowUrl = result.mlflow_url;
+      if (mlflowUrl) {
+        dispatch(startTraining({ mlflowUrl, task_id: result.task_id }));
+        navigate('/canvas');
       } else {
-        const result = await response.json();
-        const mlflowUrl = result.mlflow_url; // 백엔드 응답에서 mlflow_url 추출
-        console.log(result);
-        if (mlflowUrl) {
-          dispatch(startTraining({ mlflowUrl, task_id: result.task_id }));
-        } else {
-          const errorMessage =
-            result.message || 'MLFlow URL not found in response';
-          dispatch(failTraining({ message: errorMessage }));
-        }
+        throw new Error(result.message || 'MLFlow URL not found in response');
       }
     } catch (error) {
       dispatch(failTraining({ message: (error as Error).message }));
-    } finally {
-      setIsSubmitting(false);
-      navigate('/canvas');
     }
   };
 
@@ -172,12 +164,16 @@ function DatasetSelection() {
       dispatch(resetStatus());
     } catch (error) {
       console.error('Error cancelling training:', error);
+      alert((error as Error).message);
     }
   };
 
+  const isActionInProgress =
+    trainingStatus === 'SUBMITTING' || trainingStatus === 'TRAINING';
+
   return (
     <div className="flex flex-col w-full h-screen">
-      {isSubmitting && <Spinner />}
+      {trainingStatus === 'SUBMITTING' && <Spinner />}
       <Header />
 
       <div className="flex-1 p-8">
@@ -227,6 +223,20 @@ function DatasetSelection() {
             </p>
           </div>
 
+          {error && (
+            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              <div className="flex">
+                <div className="py-1">
+                  <FiInfo className="h-5 w-5 text-red-500 mr-3" />
+                </div>
+                <div>
+                  <p className="font-bold">An error occurred:</p>
+                  <p className="text-sm">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-12 flex justify-end gap-4">
             <button
               onClick={() => navigate('/canvas')}
@@ -244,22 +254,18 @@ function DatasetSelection() {
             )}
             <button
               onClick={handleSubmit}
-              disabled={
-                !selectedDatasetId ||
-                !modelName ||
-                trainingStatus === 'TRAINING' ||
-                isSubmitting
-              }
-              className={`px-6 py-2 rounded-md ${
-                selectedDatasetId &&
-                modelName &&
-                trainingStatus !== 'TRAINING' &&
-                !isSubmitting
-                  ? 'bg-black text-white hover:bg-gray-600'
-                  : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              disabled={!selectedDatasetId || !modelName || isActionInProgress}
+              className={`px-6 py-2 rounded-md transition-colors ${
+                !isActionInProgress && selectedDatasetId && modelName
+                  ? 'bg-black text-white hover:bg-gray-800'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {trainingStatus === 'SUBMITTING'
+                ? 'Submitting...'
+                : trainingStatus === 'TRAINING'
+                  ? 'Training in Progress'
+                  : 'Submit'}
             </button>
           </div>
         </div>

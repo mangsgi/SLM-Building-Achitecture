@@ -23,6 +23,21 @@ import requests  # noqa: F401
 
 logger = get_task_logger(__name__)
 
+# ===================== DeepSpeed 관련 함수 =====================
+def _is_rank0(engine_or_none):
+    return (engine_or_none is None) or (getattr(engine_or_none, "global_rank", 0) == 0)
+
+def _maybe_import_deepspeed(use_deepspeed: bool):
+    if not use_deepspeed:
+        return None
+    import os, torch
+    os.environ.setdefault("DS_BUILD_OPS", "0")
+    os.environ.setdefault("DS_SKIP_CUDA_CHECK", "1")
+    if not torch.cuda.is_available():
+        raise RuntimeError("GPU가 없는데 use_deepspeed=True 입니다.")
+    import deepspeed
+    return deepspeed
+
 # ===================== 유틸 =====================
 def _as_int(x, default):
     if x is None:
@@ -189,10 +204,10 @@ def train_and_infer_from_json(self, request_json: dict):
 
         # ---------- 4) 데이터 로드/분할 ----------
         logger.info(f"Loading dataset: {dataset_name}/{dataset_config}")
-        if dataset_name == "allenai/c4" or dataset_name == "roneneldan/TinyStories":
+        if dataset_name == "allenai/c4" or dataset_name == "roneneldan/TinyStories" or dataset_name == "mychen76/openwebtext-100k":
             training_text = load_training_data(dataset_name, dataset_config,
                                    split="train", 
-                                   streaming=True, max_rows=200_000)
+                                   streaming=True, max_rows=20_000)
         else:
             training_text = load_training_data(dataset_name, dataset_config)
         training_text = training_text[:]  # 샘플 컷 (원하면 제거)
@@ -213,9 +228,28 @@ def train_and_infer_from_json(self, request_json: dict):
         logger.info(f"Dataloaders ready. train_batches={len(train_loader)}, val_batches={len(val_loader)}")
 
         # ---------- 6) 장비/옵티마이저 ----------
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = model.to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
+        use_deepspeed = False 
+        deepspeed = _maybe_import_deepspeed(use_deepspeed)
+        ds_engine = None
+
+        if use_deepspeed:
+            assert deepspeed is not None, "DeepSpeed not installed"
+            
+            # 백엔드 기본값(없으면) + 프론트 오버라이드
+            ds_cfg = json.load(open("tasks/files/deepspeed_config.json"))
+            # DeepSpeed가 optimizer를 만들지 않으면, 기존 optimizer를 넘길 수도 있습니다.
+            # 여기선 DS가 직접 생성(권장): model_parameters만 넘김
+            ds_engine, optimizer, _, _ = deepspeed.initialize(
+                model=model,
+                model_parameters=(p for p in model.parameters() if p.requires_grad),
+                config=ds_cfg,
+            )
+            model = ds_engine           # 이후 학습에서 model로 사용
+            device = ds_engine.device
+        else:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model = model.to(device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
 
         eval_freq, eval_iter = 1, 5
         global_step = 0
@@ -300,10 +334,16 @@ def train_and_infer_from_json(self, request_json: dict):
                                 "stopped_at_epoch": epoch + 1
                             }
 
-                        optimizer.zero_grad()
-                        loss = calc_loss_batch(input_batch, target_batch, model, device)
-                        loss.backward()
-                        optimizer.step()
+                        if ds_engine is not None:
+                            model.zero_grad()
+                            loss = calc_loss_batch(input_batch, target_batch, model, device)
+                            model.backward(loss)   # ds_engine.backward
+                            model.step()           # ds_engine.step (grad accumulation은 ds_config가 반영)
+                        else:
+                            optimizer.zero_grad()
+                            loss = calc_loss_batch(input_batch, target_batch, model, device)
+                            loss.backward()
+                            optimizer.step()
 
                         # ---------- 스텝 단위 ----------
                         global_step += 1
@@ -371,7 +411,15 @@ def train_and_infer_from_json(self, request_json: dict):
                     },
                     "state_dict": model.state_dict(),
                 }
-                torch.save(bundle, save_path)
+                
+                if ds_engine is not None:
+                    if _is_rank0(ds_engine):
+                        bundle["state_dict"] = ds_engine.module.state_dict()
+                        torch.save(bundle, save_path)
+                    if ds_engine is not None:
+                        ds_engine.barrier()  # 모든 랭크 동기화
+                else:
+                    torch.save(bundle, save_path)
 
                 # 아티팩트 기록 (실패해도 학습은 완료로 간주)
                 try:

@@ -15,5 +15,6 @@ mlruns/
 *.pth
 .cache/
 cache/  
+mlflow/
 
 __pycache__/

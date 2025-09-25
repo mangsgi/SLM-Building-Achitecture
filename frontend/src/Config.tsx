@@ -33,6 +33,7 @@ const configMap: Record<string, string> = {
   rope_base: 'RoPE Base',
   rope_freq: 'RoPE Frequency',
   qk_norm: 'QK Normalization',
+  head_dim: 'Head Dimension',
 };
 
 const configDescriptions: Record<string, string> = {
@@ -72,6 +73,7 @@ const integerKeys: string[] = [
   'rope_base',
   'stride',
   'hidden_dim',
+  'head_dim',
 ];
 
 const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
@@ -83,6 +85,7 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
     if (modelId === 'llama2') return 'Llama2';
     if (modelId === 'llama3') return 'Llama3';
     if (modelId === 'qwen3') return 'Qwen3';
+    // if (modelId === 'smollm3') return 'SmolLM3';
     return 'GPT-2'; // Fallback
   };
 
@@ -254,6 +257,7 @@ const Config: React.FC<ConfigProps> = ({ config, setConfig }) => {
           <option value="Llama2">Llama2</option>
           <option value="Llama3">Llama3</option>
           <option value="Qwen3">Qwen3</option>
+          {/* <option value="SmolLM3">SmolLM3</option> */} {/* 추후 추가 */}
         </select>
       </div>
 
