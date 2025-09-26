@@ -7,7 +7,7 @@ import { getNodeDataByType } from './nodes/components/nodeRegistry';
 import { calculateNodeHeight } from './constants/nodeHeights';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { ModelType, ModelConfig, modelConfigs } from './constants/modelConfigs';
-import { fieldInformation } from './constants/ConfigInformation';
+import { fieldInformation } from './constants/configInformation';
 
 interface ConfigProps {
   config: ModelConfig;
