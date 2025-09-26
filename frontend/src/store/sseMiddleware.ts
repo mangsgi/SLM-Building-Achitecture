@@ -27,7 +27,7 @@ const sseMiddleware: Middleware<object, RootState> =
 
       // SSE 연결 URL 생성
       const sseUrl = `http://localhost:8000/api/v1/events/${task_id}`;
-      console.log(`[SSE] Connecting to ${sseUrl}`);
+      // console.log(`[SSE] Connecting to ${sseUrl}`);
 
       // EventSource 인스턴스 생성
       eventSource = new EventSource(sseUrl);
@@ -36,23 +36,23 @@ const sseMiddleware: Middleware<object, RootState> =
       eventSource.onmessage = (event) => {
         try {
           const parsedData = JSON.parse(event.data);
-          console.log('[SSE] Received data:', parsedData);
+          // console.log('[SSE] Received data:', parsedData);
 
           // 백엔드가 보낸 이벤트 타입 확인
           if (parsedData.event === 'finished') {
-            console.log(
-              '[SSE] Training complete event received. Dispatching completeTraining.',
-            );
+            // console.log(
+            //   '[SSE] Training complete event received. Dispatching completeTraining.',
+            // );
             // 학습 완료 액션 디스패치
             store.dispatch(completeTraining());
             // 연결 종료
             eventSource?.close();
             eventSource = null;
           } else if (parsedData.event === 'error') {
-            console.error(
-              '[SSE] Training error event received:',
-              parsedData.data?.message,
-            );
+            // console.error(
+            //   '[SSE] Training error event received:',
+            //   parsedData.data?.message,
+            // );
             // 학습 실패 액션 디스패치
             store.dispatch(
               failTraining({
@@ -80,7 +80,7 @@ const sseMiddleware: Middleware<object, RootState> =
     // 학습 중단 액션 처리
     if (resetStatus.match(action)) {
       if (eventSource) {
-        console.log('[SSE] Resetting status, closing EventSource connection.');
+        // console.log('[SSE] Resetting status, closing EventSource connection.');
         eventSource.close();
         eventSource = null;
       }

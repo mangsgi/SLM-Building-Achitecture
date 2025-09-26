@@ -200,6 +200,14 @@ export const nodeFieldInfo: { [key: string]: NodeFieldInfo } = {
       title: 'Rope Base',
       description: nodeAttributeInformation.gqAttention.ropeBase.description,
     },
+    qkNorm: {
+      title: 'QK Normalization',
+      description: nodeAttributeInformation.gqAttention.qkNorm.description,
+    },
+    qkNormEps: {
+      title: 'QK Normalization Eps',
+      description: nodeAttributeInformation.gqAttention.qkNormEps.description,
+    },
   },
   transformerBlock: {
     numOfBlocks: {

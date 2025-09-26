@@ -850,6 +850,8 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
               label: 'QK Normalization Eps:',
               name: 'qkNormEps',
               value: typed.qkNormEps?.toString() || '1e-6',
+              placeholder: 'Enter qk normalization eps value',
+              info: nodeFieldInfo.gqAttention.qkNormEps,
             },
             // {
             //   type: 'number',

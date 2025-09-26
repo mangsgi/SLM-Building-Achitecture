@@ -20,7 +20,7 @@ const TestPage: React.FC = () => {
       .then((data) => {
         const fetchedModels = data.models.map((model: any) => model.model_name);
         setModels(fetchedModels);
-        console.log('Fetched models:', fetchedModels);
+        // console.log('Fetched models:', fetchedModels);
       })
       .catch((err) => console.error('Failed to fetch models:', err));
   }, []);

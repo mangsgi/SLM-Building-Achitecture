@@ -312,7 +312,7 @@ class CustomSequential(nn.Module):
                 cache[layer.layer_id] = x
         return x
 
-    def forward_cached(self, x, caches=None, start_pos=0, use_cache=True):
+    def forward_cached(self, x, caches=None, start_pos=0, use_cache=True, return_logits=None):
         """캐시를 사용하여 레이어를 포워드 (Llama2 형식)"""
         if caches is None: caches = {}
         new_caches = {}

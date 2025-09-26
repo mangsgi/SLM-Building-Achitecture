@@ -110,15 +110,15 @@ function DatasetSelection() {
         },
       );
 
-      console.log(
-        JSON.stringify({
-          config: config,
-          model: model,
-          modelName: modelName,
-          dataset: selectedDataset.path,
-          dataset_config: selectedDataset.config,
-        }),
-      );
+      // console.log(
+      //   JSON.stringify({
+      //     config: config,
+      //     model: model,
+      //     modelName: modelName,
+      //     dataset: selectedDataset.path,
+      //     dataset_config: selectedDataset.config,
+      //   }),
+      // );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -163,7 +163,7 @@ function DatasetSelection() {
 
       dispatch(resetStatus());
     } catch (error) {
-      console.error('Error cancelling training:', error);
+      // console.error('Error cancelling training:', error);
       alert((error as Error).message);
     }
   };

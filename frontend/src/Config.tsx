@@ -7,7 +7,7 @@ import { getNodeDataByType } from './nodes/components/nodeRegistry';
 import { calculateNodeHeight } from './constants/nodeHeights';
 import { BaseNodeData } from './nodes/components/NodeData';
 import { ModelType, ModelConfig, modelConfigs } from './constants/modelConfigs';
-import { fieldInformation } from './constants/fieldInformation';
+import { fieldInformation } from './constants/ConfigInformation';
 
 interface ConfigProps {
   config: ModelConfig;
@@ -54,6 +54,7 @@ const configDescriptions: Record<string, string> = {
   rope_base: fieldInformation.rope_base.description,
   rope_freq: fieldInformation.rope_freq.description,
   qk_norm: fieldInformation.qk_norm.description,
+  head_dim: fieldInformation.head_dim.description,
 };
 
 // 데이터 타입 옵션
