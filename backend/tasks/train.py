@@ -207,7 +207,7 @@ def train_and_infer_from_json(self, request_json: dict):
         if dataset_name == "allenai/c4" or dataset_name == "roneneldan/TinyStories" or dataset_name == "mychen76/openwebtext-100k":
             training_text = load_training_data(dataset_name, dataset_config,
                                    split="train", 
-                                   streaming=True, max_rows=20_000)
+                                   streaming=True, max_rows=50000)
         else:
             training_text = load_training_data(dataset_name, dataset_config)
         training_text = training_text[:]  # 샘플 컷 (원하면 제거)

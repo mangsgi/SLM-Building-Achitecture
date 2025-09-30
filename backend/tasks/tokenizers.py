@@ -19,48 +19,86 @@ class BaseTokenizerAdapter:
     def n_vocab(self) -> int:
         raise NotImplementedError
  
-# --- LLaMA-3 (HF tokenizers) ---
+# --- LLaMA-3 (tiktoken .model) ---
 class Llama3TokenizerAdapter(BaseTokenizerAdapter):
     """
-    Hugging Face 'tokenizers' Runtime을 사용하여 tokenizer.json을 직접 로드.
-    - 대화 템플릿 없이 일반 텍스트 인/디코딩
-    - bos/eos/pad id는 tokenizer.json에 정의된 스페셜 토큰을 탐색해서 설정
+    tiktoken 기반의 LLaMA-3 토크나이저.
+    - Meta Llama-3 tokenizer.model(.tiktoken 포맷) 직접 로드
+    - special 토큰 ID는 Meta tokenizer.json 기준 하드코딩
+    - encode(text) 는 BOS/EOS를 자동으로 붙이지 않음(참고 구현과 동일)
+      * 필요시 encode_with_flags(text, bos=True, eos=True) 제공
     """
-    DEFAULT_PATH = Path(__file__).resolve().parent / "files" / "llama3-tokenizer.json"
+    DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "files" / "llama3-tokenizer.model"
 
-    def __init__(self, tokenizer_file: Optional[str] = None):
-        path = Path(tokenizer_file or self.DEFAULT_PATH)
-        if not path.is_file():
-            raise FileNotFoundError(f"LLaMA-3 tokenizer.json 파일이 필요합니다: {path}")
-        self.tok = Tokenizer.from_file(str(path))
+    def __init__(self, model_path: Optional[str] = None):
+        import tiktoken
+        from tiktoken.load import load_tiktoken_bpe
 
-        # LLaMA3에서 흔히 쓰이는 스페셜 토큰들 탐색
-        candidates = [
-            "<|begin_of_text|>", "<|end_of_text|>",
-            "<|start_header_id|>", "<|end_header_id|>",
-            "<|eot_id|>",
-        ]
-        to_id = {s: self.tok.token_to_id(s) for s in candidates}
-        self._bos_id = to_id.get("<|begin_of_text|>")
-        self._eos_id = to_id.get("<|end_of_text|>") or to_id.get("<|eot_id|>")
-        # pad는 별도 정의가 없는 경우가 대부분이므로 eos로 대체(필요 시 None으로 변경 가능)
-        self._pad_id = self._eos_id
+        path = Path(model_path or self.DEFAULT_MODEL_PATH)
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"{path}")
 
-    def encode(self, text: str, add_bos: bool = False, add_eos: bool = False) -> list[int]:
-        ids = self.tok.encode(text).ids
-        if add_bos and self._bos_id is not None:
-            ids = [self._bos_id] + ids
-        if add_eos and self._eos_id is not None:
-            ids = ids + [self._eos_id]
+        mergeable = load_tiktoken_bpe(str(path))
+
+        # Meta Llama-3 tokenizer.json 기준
+        self.special = {
+            "<|begin_of_text|>": 128000,
+            "<|end_of_text|>": 128001,
+            "<|start_header_id|>": 128006,
+            "<|end_header_id|>": 128007,
+            "<|eot_id|>": 128009,
+        }
+        # reserved_* 채우기
+        self.special.update({
+            f"<|reserved_{i}|>": 128002 + i
+            for i in range(256)
+            if 128002 + i not in self.special.values()
+        })
+
+        pat_str = (
+            r"(?i:'s|'t|'re|'ve|'m|'ll|'d)"
+            r"|[^\r\n\p{L}\p{N}]?\p{L}+"
+            r"|\p{N}{1,3}"
+            r"| ?[^\s\p{L}\p{N}]+[\r\n]*"
+            r"|\s*[\r\n]+"
+            r"|\s+(?!\S)"
+            r"|\s+"
+        )
+
+        self.model = tiktoken.Encoding(
+            name=path.name,
+            pat_str=pat_str,
+            mergeable_ranks=mergeable,
+            special_tokens=self.special,
+        )
+
+        # 편의용 ID들
+        self._bos_id = self.special["<|begin_of_text|>"]
+        self._eos_id = self.special["<|end_of_text|>"]
+        self._pad_id = self._eos_id  # pad 미정의 → eos 대체
+
+    # 참고 구현과 동일: BOS/EOS 자동 미부착
+    def encode(self, text: str) -> list[int]:
+        # 참고 구현은 allowed_special 지정 없이 encode → 스페셜이 문자열에 있으면 에러 가능
+        # 완전 동일 동작을 원하면 아래 한 줄 사용:
+        return self.model.encode(text)
+
+        # 만약 스페셜 문자열을 허용하고 싶다면 위를 아래로 바꾸면 됨:
+        # return self.model.encode(text, allowed_special="all")
+
+    # 참고 구현의 보조 메서드와 동일 동작 (옵션)
+    def encode_with_flags(self, text: str, bos: bool = False, eos: bool = False) -> list[int]:
+        ids = ([self._bos_id] if bos else []) + self.model.encode(text)
+        if eos:
+            ids.append(self._eos_id)
         return ids
 
     def decode(self, ids: Sequence[int]) -> str:
-        # 학습 파이프라인에서 스페셜 토큰을 그대로 보존하려면 skip_special_tokens=False
-        return self.tok.decode(list(ids), skip_special_tokens=False)
+        return self.model.decode(list(ids))
 
     @property
     def n_vocab(self) -> int:
-        return int(self.tok.get_vocab_size())
+        return self.model.n_vocab
 
     @property
     def bos_token_id(self): return self._bos_id
@@ -68,9 +106,9 @@ class Llama3TokenizerAdapter(BaseTokenizerAdapter):
     def eos_token_id(self): return self._eos_id
     @property
     def pad_token_id(self): return self._pad_id
+
  
 # ---- Qwen3 전용 어댑터 ----
-# ---- Qwen3 전용 어댑터 (표준 방식) ----
 class Qwen3TokenizerAdapter(BaseTokenizerAdapter):
     """
     Hugging Face 'tokenizers' Runtime을 사용.

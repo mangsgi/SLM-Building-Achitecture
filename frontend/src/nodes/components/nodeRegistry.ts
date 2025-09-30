@@ -689,6 +689,14 @@ export const nodeRegistry: Map<string, NodeDefinition> = new Map([
         const fields: FieldConfig[] = [
           {
             type: 'number',
+            label: 'Context Length:',
+            name: 'ctxLength',
+            value: typed.ctxLength?.toString() || '',
+            placeholder: 'Enter context length',
+            info: nodeFieldInfo.mhAttention.ctxLength,
+          },
+          {
+            type: 'number',
             label: 'Number of Heads:',
             name: 'numHeads',
             value: typed.numHeads?.toString() || '',
