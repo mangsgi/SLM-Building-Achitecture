@@ -10,7 +10,8 @@ def list_completed_models():
 
     pt_models = {f.stem for f in completed_dir.glob("*.pt")}
     pth_models = {f.stem for f in completed_dir.glob("*.pth")}
-    completed_models = sorted(list(pt_models.union(pth_models)))
+    bin_models = {f.stem for f in completed_dir.glob("*.bin")}
+    completed_models = sorted(list(pt_models.union(pth_models).union(bin_models)))
     structure_files = {f.stem: f.name for f in structures_dir.glob("*.json")}
 
     result = []

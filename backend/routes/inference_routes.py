@@ -1,10 +1,13 @@
+# requirements:
+# pip install transformers tiktoken
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
-import torch
-import json
-from ml.models.factory import build_model_from_json
-from tasks.tokenizers import choose_tokenizer_from_config
+import torch, json
+from ml.models.factory import build_model_from_json          # ← (.pt/.pth)용 기존 경로는 유지
+from tasks.tokenizers import choose_tokenizer_from_config    # ← 토크나이저는 기존 방식 사용
+from transformers import GPT2Config, GPT2LMHeadModel
 
 router = APIRouter()
 
@@ -16,182 +19,264 @@ class InferenceRequest(BaseModel):
     top_k: int = 40
 
 
+# ---------------------------
+# 공통 유틸
+# ---------------------------
+
+def _resolve_model_file(model_name: str) -> tuple[Path, str]:
+    """
+    completed/{name}{.pt|.pth|.bin} 파일을 찾아 반환.
+    return: (경로, 파일명 stem)
+    """
+    base = Path("completed")
+    name = model_name.strip()
+
+    # 사용자가 확장자를 포함한 경우
+    direct = base / name
+    if direct.exists() and direct.suffix in {".pt", ".pth", ".bin"}:
+        return direct, direct.stem
+
+    # 확장자 없이 들어온 경우
+    for ext in (".pt", ".pth", ".bin"):
+        p = base / f"{name}{ext}"
+        if p.exists():
+            return p, p.stem
+
+    raise HTTPException(404, detail=f"모델 파일(.pt/.pth/.bin)을 찾을 수 없습니다: {model_name}")
+
+
+# ---------------------------
+# === BIN PATH (HF GPT-2) ===
+# ---------------------------
+
+def _load_hf_gpt2_cfg_from_json(structure_json: Path) -> GPT2Config:
+    """
+    temp_structures/{stem}.json 에서 HF 스타일의 GPT-2 config(dict)를 읽어 GPT2Config 생성.
+    (딕셔너리가 없거나 키가 부족하면 GPT-2 small 기본값으로 폴백)
+    """
+    if not structure_json.exists():
+        # 같은 이름의 구조 JSON이 반드시 있어야 한다는 요구대로 에러 처리
+        raise HTTPException(404, detail=f"구조 JSON을 찾을 수 없습니다: {structure_json}")
+
+    try:
+        raw = json.loads(structure_json.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise HTTPException(400, detail=f"구조 JSON 파싱 실패: {e}")
+
+    if not isinstance(raw, dict):
+        # 예전 내부 포맷([config, ...layers])이 들어왔다면, 첫 원소가 dict일 가능성 고려
+        if isinstance(raw, list) and raw and isinstance(raw[0], dict):
+            raw = raw[0]
+        else:
+            raise HTTPException(400, detail="구조 JSON이 HF config(dict) 형식이 아닙니다.")
+
+    # HF gpt2 config 키들을 우선 사용, 없으면 안전한 기본값
+    return GPT2Config(
+        n_layer=raw.get("num_hidden_layers", raw.get("n_layer", 12)),
+        n_head=raw.get("num_attention_heads", raw.get("n_head", 12)),
+        n_embd=raw.get("n_embd", raw.get("hidden_size", 768)),
+        n_positions=raw.get("n_positions", raw.get("max_position_embeddings", 1024)),
+        vocab_size=raw.get("vocab_size", 50257),
+        layer_norm_epsilon=raw.get("layer_norm_eps", 1e-5),
+        bos_token_id=raw.get("bos_token_id", 50256),
+        eos_token_id=raw.get("eos_token_id", 50256),
+        # 필요한 필드 더 있으면 여기에 추가
+    )
+
+
+def _build_model_and_tokenizer_from_bin(bin_path: Path, stem: str):
+    """
+    .bin(state_dict) + temp_structures/{stem}.json(HF gpt2 config dict) → HF GPT2 모델 구성
+    토크나이저는 'model=gpt-2'로 choose_tokenizer_from_config를 호출해 로딩.
+    """
+    # 1) config
+    cfg_path = Path("temp_structures") / f"{stem}.json"
+    gpt2_cfg = _load_hf_gpt2_cfg_from_json(cfg_path)
+
+    # 2) model
+    state_dict = torch.load(bin_path, map_location="cpu")
+    if not isinstance(state_dict, dict):
+        raise HTTPException(400, detail=f"{bin_path.name}에서 state_dict(dict)를 읽지 못했습니다.")
+    model = GPT2LMHeadModel(gpt2_cfg)
+    missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    # 필요하면 로그로 확인만 (실행은 계속)
+    if unexpected:
+        print("[BIN] unexpected keys:", unexpected)
+    if missing:
+        print("[BIN] missing keys:", missing)
+    model.eval()
+
+    # 3) tokenizer: 요청대로 새 config에 model='gpt-2' 넣어 사용
+    try:
+        tokenizer = choose_tokenizer_from_config({"model": "gpt-2"})
+    except Exception as e:
+        raise HTTPException(400, detail=f"토크나이저 초기화 실패(gpt-2): {e}")
+
+    # 4) context length
+    context_length = int(getattr(gpt2_cfg, "n_positions", 1024))
+
+    return model, tokenizer, context_length
+
+
+def _generate_with_hf_model(model, tokenizer, text: str, *, max_length: int, temperature: float, top_k: int, context_length: int):
+    # 인코딩
+    try:
+        ids = tokenizer.encode(text)
+    except TypeError:
+        ids = tokenizer.encode(text)
+
+    input_ids = torch.tensor([ids], dtype=torch.long)
+    if input_ids.size(1) > context_length:
+        input_ids = input_ids[:, -context_length:]
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    input_ids = input_ids.to(device)
+
+    if max_length <= 0:
+        raise HTTPException(400, detail="max_length는 1 이상이어야 합니다.")
+    temperature = max(0.0, float(temperature if temperature is not None else 1.0))
+    top_k = max(0, int(top_k if top_k is not None else 0))
+
+    prompt_len = input_ids.size(1)
+    max_new = min(int(max_length), max(0, context_length - prompt_len)) or 1
+
+    with torch.no_grad():
+        out = model.generate(
+            input_ids,
+            max_new_tokens=max_new,
+            temperature=temperature,
+            do_sample=(temperature > 0.0),
+            top_k=top_k,
+            eos_token_id=getattr(model.config, "eos_token_id", 50256),
+            pad_token_id=getattr(model.config, "pad_token_id", 0),
+        )
+
+    return tokenizer.decode(out[0].detach().cpu().tolist())
+
+
+# ---------------------------
+# 기존(.pt/.pth) 경로 유틸
+# ---------------------------
+
+def _load_layers_config_state_bundle_or_statedict(model_path: Path, base_name: str):
+    """
+    (.pt/.pth) 전용 로더: 기존 로직 유지
+    """
+    loaded = torch.load(model_path, map_location="cpu")
+
+    if isinstance(loaded, dict) and "state_dict" in loaded and "layers" in loaded:
+        layers = loaded.get("layers")
+        config = loaded.get("config", {}) or {}
+        state_dict = loaded.get("state_dict")
+    else:
+        state_dict = loaded
+        structure_path = Path("temp_structures") / f"{base_name}.json"
+        if not structure_path.exists():
+            raise HTTPException(
+                404,
+                detail=f"모델 구조 파일({structure_path.name})을 찾을 수 없습니다. "
+                       f"이 모델은 state_dict만 포함하고 있어 구조 파일이 반드시 필요합니다."
+            )
+        structure = json.loads(structure_path.read_text(encoding="utf-8"))
+        config = structure[0] if isinstance(structure, list) and len(structure) > 0 else {}
+        layers = structure[1:] if isinstance(structure, list) and len(structure) > 1 else []
+
+    if not isinstance(layers, list) or not layers or state_dict is None:
+        raise HTTPException(400, detail="모델 구조(layers) 또는 가중치(state_dict)를 로드할 수 없습니다.")
+    return layers, config, state_dict
+
+
+def _generate_with_internal_model(layers, config, state_dict, *, text, max_length, temperature, top_k):
+    dtype = config.get("dtype", "fp32")
+    context_length = int(config.get("context_length", 128))
+
+    model = build_model_from_json(layers, dtype=dtype)
+    model.load_state_dict(state_dict)
+    model.eval()
+
+    try:
+        tokenizer = choose_tokenizer_from_config(config)
+    except Exception as e:
+        raise HTTPException(400, detail=f"토크나이저 초기화 실패: {e}")
+
+    # 아래는 기존 생성 루프 그대로 (요약)
+    try:
+        ids = tokenizer.encode(text)
+    except TypeError:
+        ids = tokenizer.encode(text, allowed_special="all")
+    input_ids = torch.tensor([ids], dtype=torch.long)
+    if input_ids.size(1) > context_length:
+        input_ids = input_ids[:, -context_length:]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device); input_ids = input_ids.to(device)
+    if max_length <= 0:
+        raise HTTPException(400, detail="max_length는 1 이상이어야 합니다.")
+    max_len_req = int(max_length)
+    gen_length = min(max_len_req, max(0, context_length - input_ids.size(1)))
+    top_k = max(0, int(top_k or 0))
+    temperature = max(0.0, float(temperature if temperature is not None else 1.0))
+
+    with torch.no_grad():
+        use_cached_path = hasattr(model, "forward_cached")
+        start_pos = 0; logits = None
+        if use_cached_path:
+            logits, caches = model.forward_cached(input_ids, None, 0, True, True)
+            start_pos = input_ids.size(1)
+        else:
+            logits = model(input_ids[:, -context_length:])
+        for _ in range(gen_length):
+            nxt = logits[:, -1, :]
+            if top_k > 0:
+                top_vals, _ = torch.topk(nxt, top_k)
+                min_val = top_vals[:, -1].unsqueeze(-1)
+                nxt = torch.where(nxt < min_val, torch.full_like(nxt, float("-inf")), nxt)
+            if temperature > 0:
+                probs = torch.softmax(nxt / temperature, dim=-1)
+                tok = torch.multinomial(probs, 1)
+            else:
+                tok = torch.argmax(nxt, dim=-1, keepdim=True)
+            input_ids = torch.cat([input_ids, tok], dim=1)
+            if use_cached_path:
+                logits, caches = model.forward_cached(tok, caches, start_pos, True, True); start_pos += 1
+            else:
+                logits = model(input_ids[:, -context_length:])
+            if input_ids.size(1) >= context_length: break
+
+    return choose_tokenizer_from_config(config).decode(input_ids[0].cpu().tolist())
+
+
+# ---------------------------
+# 라우터
+# ---------------------------
+
 @router.post("/generate-text", tags=["Inference"])
 def generate_text_api(req: InferenceRequest):
     try:
-        # 1) 모델 파일(.pt 또는 .pth) 로드
-        model_name = req.model_name
-        pt_path = Path("completed") / f"{model_name}.pt"
-        pth_path = Path("completed") / f"{model_name}.pth"
+        model_path, stem = _resolve_model_file(req.model_name)
 
-        model_path = None
-        if pt_path.exists():
-            model_path = pt_path
-        elif pth_path.exists():
-            model_path = pth_path
-        
-        if model_path is None:
-            raise HTTPException(status_code=404, detail=f"모델 파일(.pt 또는 .pth)을 찾을 수 없습니다: {model_name}")
+        # BIN이면 HF GPT-2 경로로
+        if model_path.suffix == ".bin":
+            model, tokenizer, context_len = _build_model_and_tokenizer_from_bin(model_path, stem)
+            output = _generate_with_hf_model(
+                model, tokenizer, req.input_text,
+                max_length=req.max_length,
+                temperature=req.temperature,
+                top_k=req.top_k,
+                context_length=context_len,
+            )
+            return {"status": "success", "input_text": req.input_text, "output_text": output}
 
-        loaded_data = torch.load(model_path, map_location="cpu")
-
-        # 시나리오 분기:
-        # 1) 번들(dict)인 경우: layers, config, state_dict 추출
-        # 2) state_dict만 있는 경우: json에서 layers, config 로드
-        if isinstance(loaded_data, dict) and "state_dict" in loaded_data and "layers" in loaded_data:
-            # 번들 시나리오
-            layers = loaded_data.get("layers")
-            config = loaded_data.get("config", {}) or {}
-            state_dict = loaded_data.get("state_dict")
-        else:
-            # state_dict 단독 시나리오
-            state_dict = loaded_data
-            
-            # 해당 모델의 구조(.json) 파일 찾기
-            structure_path = Path("temp_structures") / f"{model_name}.json"
-            if not structure_path.exists():
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"모델 구조 파일({structure_path.name})을 찾을 수 없습니다. "
-                           "이 모델은 state_dict만 포함하고 있어 구조 파일이 반드시 필요합니다."
-                )
-            
-            with open(structure_path, "r", encoding="utf-8") as f:
-                structure = json.load(f)
-            
-            # 구조 파일에서 config와 layers 분리
-            config = structure[0] if isinstance(structure, list) and len(structure) > 0 else {}
-            layers = structure[1:] if isinstance(structure, list) and len(structure) > 1 else []
-
-        if not isinstance(layers, list) or not layers or state_dict is None:
-            raise HTTPException(status_code=400, detail="모델 구조(layers) 또는 가중치(state_dict)를 로드할 수 없습니다.")
-
-        dtype = config.get("dtype", "fp32")
-        context_length = int(config.get("context_length", 128))
-
-        # 2) 모델 복원
-        model = build_model_from_json(layers, dtype=dtype)
-        model.load_state_dict(state_dict)
-        model.eval()
-
-        # 3) 토크나이저 복원
-        try:
-            tokenizer = choose_tokenizer_from_config(config)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"토크나이저 초기화 실패: {e}")
-
-        # 4) 입력 인코딩
-        try:
-            input_ids_list = tokenizer.encode(req.input_text)
-        except TypeError:
-            input_ids_list = tokenizer.encode(req.input_text, allowed_special="all")
-
-        # 텐서로 변환
-        input_ids = torch.tensor([input_ids_list], dtype=torch.long)
-
-        # (안전장치 A) 프롬프트가 context_length를 넘으면 오른쪽 기준으로 슬라이스
-        if input_ids.size(1) > context_length:
-            input_ids = input_ids[:, -context_length:]
-
-        # 5) 디바이스
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        input_ids = input_ids.to(device)
-
-        # 6) 하이퍼파라미터 정리 + (안전장치 B) 생성 길이 캡
-        if req.max_length <= 0:
-            raise HTTPException(status_code=400, detail="max_length는 1 이상이어야 합니다.")
-        max_len_req = int(req.max_length)
-        gen_length = min(max_len_req, context_length)  # 컨텍스트 길이 이상 생성하지 않도록 캡
-
-        top_k = int(req.top_k) if req.top_k is not None else 0
-        if top_k < 0:
-            top_k = 0
-        temperature = float(req.temperature) if req.temperature is not None else 1.0
-        if temperature < 0:
-            temperature = 0.0  # 음수 방지
-
-        # 7) 생성 루프
-        with torch.no_grad():
-            # (안전) 최대 생성 길이 재계산: 프롬프트 길이를 뺀 나머지
-            prompt_len = input_ids.size(1)
-            gen_length = min(max_len_req, max(0, context_length - prompt_len))
-
-            # 캐시 사용 가능 여부 확인: 모델에 forward_cached가 있으면 사용
-            use_cached_path = hasattr(model, "forward_cached")
-            
-            caches = None           # 레이어별 KV 캐시를 dict나 tuple로 보관(모델 구현에 따름)
-            start_pos = 0           # RoPE 오프셋(프리필 시작은 0)
-            logits = None            
-
-            # ---- 7-1) 프리필: 프롬프트 전체를 한 번에 통과시키며 캐시 채우기 ----
-            if use_cached_path:
-                # 모델 쪽 forward_cached가 어텐션 레이어들에 start_pos/kv_cache를 전파해 준다는 전제
-                logits, caches = model.forward_cached(
-                    input_ids,            # (B, T_prompt)
-                    caches=None,          # 처음엔 캐시 없음
-                    start_pos=start_pos,  # 0부터 시작
-                    use_cache=True,       # 캐시 채우기/유지
-                    return_logits=True    # (필요하면) 마지막 출력 반환
-                )
-                start_pos = prompt_len   # 다음 스텝의 시작 위치는 프롬프트 길이
-            else:
-                # 기존 방식(비효율)으로도 동작 가능하게 폴백
-                logits = model(input_ids[:, -context_length:])
-                                    
-            # ---- 7-2) 증분: 토큰을 1개씩 만들며 KV 캐시 재사용 ----
-            for _ in range(gen_length):
-                next_token_logits = logits[:, -1, :]
-
-                # top-k 필터링
-                if top_k > 0:
-                    top_vals, _ = torch.topk(next_token_logits, top_k)
-                    min_val = top_vals[:, -1].unsqueeze(-1)
-                    next_token_logits = torch.where(
-                        next_token_logits < min_val,
-                        torch.full_like(next_token_logits, float("-inf")),
-                        next_token_logits,
-                    )
-
-                # temperature/샘플링
-                if temperature > 0:
-                    probs = torch.softmax(next_token_logits / temperature, dim=-1)
-                    next_token = torch.multinomial(probs, 1)    # (B, 1)
-                else:
-                    next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
-
-                # 시퀀스에 새 토큰 붙이기
-                input_ids = torch.cat([input_ids, next_token], dim=1)
-
-                if use_cached_path:
-                    # 증분 스텝: 새 토큰 1개만 모델에 넣고, 캐시와 start_pos를 넘김
-                    logits, caches = model.forward_cached(
-                        next_token,         # (B, 1)
-                        caches=caches,      # 이전 캐시 재사용
-                        start_pos=start_pos,# 지금까지 쌓인 전체 길이(프리필 길이 + 생성 토큰 수)
-                        use_cache=True,
-                        return_logits=True
-                    )
-                    start_pos += 1         # 다음 스텝은 위치 1 증가
-                else:
-                    # 폴백: 기존처럼 마지막 context_length만 잘라서 전체 재계산(느림)
-                    logits = model(input_ids[:, -context_length:])
-
-                # (옵션) 컨텍스트 초과 방지: 초과하면 중단
-                if input_ids.size(1) >= context_length:
-                    break
-
-        # 8) 디코딩 (CPU로 이동 후 디코딩 권장)
-        output_ids = input_ids[0].detach().cpu().tolist()
-        output_text = tokenizer.decode(output_ids)
-
-        return {
-            "status": "success",
-            "input_text": req.input_text,
-            "output_text": output_text
-        }
+        # 그 외(.pt/.pth)는 기존 경로
+        layers, config, state_dict = _load_layers_config_state_bundle_or_statedict(model_path, stem)
+        output = _generate_with_internal_model(
+            layers, config, state_dict,
+            text=req.input_text, max_length=req.max_length,
+            temperature=req.temperature, top_k=req.top_k,
+        )
+        return {"status": "success", "input_text": req.input_text, "output_text": output}
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"추론 중 오류: {e}")
+        raise HTTPException(500, detail=f"추론 중 오류: {e}")

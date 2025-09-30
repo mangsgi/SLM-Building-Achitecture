@@ -6,8 +6,13 @@ interface Message {
   sender: 'user' | 'bot';
 }
 
+interface Model {
+  fullName: string;
+  displayName: string;
+}
+
 const TestPage: React.FC = () => {
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -18,7 +23,10 @@ const TestPage: React.FC = () => {
     fetch(`http://localhost:8000/api/v1/completed-models`)
       .then((res) => res.json())
       .then((data) => {
-        const fetchedModels = data.models.map((model: any) => model.model_name);
+        const fetchedModels = data.models.map((model: any) => ({
+          fullName: model.model_name,
+          displayName: model.model_name.replace(/\.[^/.]+$/, ''),
+        }));
         setModels(fetchedModels);
         // console.log('Fetched models:', fetchedModels);
       })
@@ -79,6 +87,9 @@ const TestPage: React.FC = () => {
       });
   };
 
+  const selectedModelDisplayName =
+    models.find((m) => m.fullName === selectedModel)?.displayName || null;
+
   return (
     <div className="flex flex-col h-screen">
       <Header />
@@ -88,16 +99,16 @@ const TestPage: React.FC = () => {
           <h2 className="text-xl font-bold mb-4 text-gray-800">Models</h2>
           <ul className="space-y-2">
             {models.map((model) => (
-              <li key={model}>
+              <li key={model.fullName}>
                 <button
-                  onClick={() => setSelectedModel(model)}
+                  onClick={() => setSelectedModel(model.fullName)}
                   className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    selectedModel === model
+                    selectedModel === model.fullName
                       ? 'bg-blue-500 text-white font-semibold'
                       : 'hover:bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {model}
+                  {model.displayName}
                 </button>
               </li>
             ))}
@@ -140,7 +151,7 @@ const TestPage: React.FC = () => {
                 isLoading
                   ? 'Bot is thinking...'
                   : selectedModel
-                    ? `Message ${selectedModel}...`
+                    ? `Message ${selectedModelDisplayName}...`
                     : 'Select a model first'
               }
               className="flex-1 p-3 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

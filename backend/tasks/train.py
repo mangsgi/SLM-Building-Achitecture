@@ -202,6 +202,22 @@ def train_and_infer_from_json(self, request_json: dict):
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         logger.info(f"Model built. total={total_params:,}, trainable={trainable_params:,}")
 
+        # [추가] LM Head 유효성 검사: GPU로 보내기 전에 차원 검사
+        vocab_size = getattr(tokenizer, 'n_vocab', None)
+        if vocab_size is None and hasattr(tokenizer, 'vocab_size'):
+            vocab_size = tokenizer.vocab_size
+
+        if vocab_size and hasattr(model, 'layers') and model.layers:
+            last_layer = model.layers[-1]
+
+            if not isinstance(last_layer, torch.nn.Linear) or last_layer.out_features != vocab_size:
+                raise ValueError(
+                    f"Model's last layer is not a valid LM Head for vocab size {vocab_size}. "
+                    f"Expected nn.Linear(out_features={vocab_size}), but found {type(last_layer)} "
+                    f"with out_features={getattr(last_layer, 'out_features', 'N/A')}."
+                )
+
+
         # ---------- 4) 데이터 로드/분할 ----------
         logger.info(f"Loading dataset: {dataset_name}/{dataset_config}")
         if dataset_name == "allenai/c4" or dataset_name == "roneneldan/TinyStories" or dataset_name == "mychen76/openwebtext-100k":

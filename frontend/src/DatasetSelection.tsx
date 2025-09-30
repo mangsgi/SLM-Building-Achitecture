@@ -13,34 +13,39 @@ import {
   resetStatus,
   failTraining,
 } from './store/statusSlice';
+import { datasetInformation } from './constants/datasetInformation';
 
 // 임시 데이터셋 목록
 const datasets = [
   {
     id: 1,
     name: 'Tiny shakespeare',
-    description: 'Tiny shakespeare dataset',
+    description: datasetInformation.tiny_shakespeare.description,
+    short_description: 'Tiny shakespeare dataset',
     path: 'tiny_shakespeare',
     config: 'default',
   },
   {
     id: 2,
     name: 'OpenWebText-100k',
-    description: 'OpenWebText 10만 샘플 슬라이스',
+    description: datasetInformation.openwebtext_100k.description,
+    short_description: 'OpenWebText 10만 샘플 슬라이스',
     path: 'mychen76/openwebtext-100k',
     config: 'default',
   },
   {
     id: 3,
     name: 'TinyStories',
-    description: '단어 분포가 단순한 합성 동화 텍스트',
+    description: datasetInformation.tinystories.description,
+    short_description: '단어 분포가 단순한 합성 동화 텍스트',
     path: 'roneneldan/TinyStories',
     config: 'default',
   },
   {
     id: 4,
     name: 'C4',
-    description: 'T5 계열이 썼던 대형 웹코퍼스의 원조',
+    description: datasetInformation.c4.description,
+    short_description: 'T5 계열이 썼던 대형 웹코퍼스의 원조',
     path: 'allenai/c4',
     config: 'en',
   },
@@ -53,6 +58,7 @@ function DatasetSelection() {
     null,
   );
   const [modelName, setModelName] = useState('my-slm-model');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalInfo, setModalInfo] = useState<{
     isOpen: boolean;
     title: string;
@@ -72,9 +78,10 @@ function DatasetSelection() {
 
   const handleShowInfo = (e: React.MouseEvent, dataset: Dataset) => {
     e.stopPropagation();
+    setIsModalOpen(true);
     setModalInfo({
       isOpen: true,
-      title: dataset.name,
+      title: 'Dataset Information',
       description: dataset.description,
     });
   };
@@ -200,7 +207,7 @@ function DatasetSelection() {
                     <FiInfo size={20} />
                   </button>
                 </div>
-                <p className="text-gray-600">{dataset.description}</p>
+                <p className="text-gray-600">{dataset.short_description}</p>
               </div>
             ))}
           </div>
@@ -270,11 +277,13 @@ function DatasetSelection() {
           </div>
         </div>
       </div>
-      {modalInfo && (
-        <Modal isOpen={modalInfo.isOpen} onClose={handleCloseModal}>
-          <h3 className="text-lg font-semibold mb-2">{modalInfo.title}</h3>
-          <p className="text-sm">{modalInfo.description}</p>
-        </Modal>
+      {isModalOpen && modalInfo && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          title={modalInfo.title}
+          markdown={modalInfo.description}
+        />
       )}
     </div>
   );
