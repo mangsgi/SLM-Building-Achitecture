@@ -93,7 +93,7 @@ const llama3Config: Omit<Llama3Config, 'model'> = {
   // 1B Llama3
   epochs: 1,
   batch_size: 1,
-  vocab_size: 128_256,
+  vocab_size: 128_258,
   context_length: 256, // 131_072,
   stride: 256, // == context_length
   emb_dim: 2048,
